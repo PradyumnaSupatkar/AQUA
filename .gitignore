@@ -67,3 +67,8 @@ memory/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Re-apply cache ignores last, so folders re-included above (src/aqua/memory)
+# still never commit bytecode.
+**/__pycache__/
+*.py[cod]

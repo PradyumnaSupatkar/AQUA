@@ -56,7 +56,7 @@ class SherpaWakeDetector:
         except (ImportError, OSError, RuntimeError, ValueError, AssertionError) as exc:
             if isinstance(exc, WakeError):
                 raise
-            raise WakeError("Could not load the local Hey Aqua detector; install the approved handsfree extra and check its model files.") from exc
+            raise WakeError("Could not load the local Hey Aqua detector; reinstall Aqua's dependencies (pip install -e .) and check its model files.") from exc
 
     def feed(self, frame: np.ndarray) -> WakeEvent | None:
         try:

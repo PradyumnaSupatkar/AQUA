@@ -82,7 +82,7 @@ def configure_runtime() -> None:
         try:
             spec = importlib.util.find_spec("sherpa_onnx")
             if spec is None or spec.origin is None:
-                raise WakeError("Hands-free dependencies are missing; install Aqua's approved handsfree extra.")
+                raise WakeError("Hands-free dependencies are missing; reinstall Aqua's dependencies (pip install -e .).")
             runtime_path = Path(spec.origin).parent / "lib" / "onnxruntime.dll"
             if not runtime_path.is_file():
                 raise WakeError("The bundled wake ONNX Runtime DLL is missing; startup stopped.")

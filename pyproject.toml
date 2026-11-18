@@ -15,10 +15,12 @@ dependencies = [
     "faster-whisper==1.2.1",
     "numpy==2.5.4",
     "av==19.0.2",
+    "sherpa-onnx==2.0.1",
 ]
 
 [project.optional-dependencies]
-handsfree = ["sherpa-onnx==2.0.1"]
+# Kept empty so existing `.[handsfree,desktop]` installs still work.
+handsfree = []
 desktop = ["pywinauto==0.6.9; platform_system == 'Windows'"]
 
 [project.scripts]

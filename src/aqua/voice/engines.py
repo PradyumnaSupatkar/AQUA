@@ -140,7 +140,7 @@ class _SherpaEngine:
         try:
             import sherpa_onnx
         except ImportError as exc:
-            raise VoiceError("Speech output needs sherpa-onnx; install Aqua's handsfree extra.") from exc
+            raise VoiceError("Speech output needs sherpa-onnx, a core Aqua dependency; reinstall Aqua with pip install -e .") from exc
         try:
             model_config = sherpa_onnx.OfflineTtsModelConfig(
                 **{self.engine_field: self._model_config(sherpa_onnx)},

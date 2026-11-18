@@ -172,7 +172,7 @@ class WakeDetectorTests(unittest.TestCase):
         self.module.KeywordSpotter.assert_not_called()
 
     def test_missing_optional_dependency_produces_setup_error(self):
-        with patch.dict("sys.modules", {"sherpa_onnx": None}), self.assertRaisesRegex(WakeError, "handsfree extra"):
+        with patch.dict("sys.modules", {"sherpa_onnx": None}), self.assertRaisesRegex(WakeError, "reinstall Aqua"):
             keyword.SherpaWakeDetector()
 
     def test_missing_target_token_rejects_model_before_native_load(self):

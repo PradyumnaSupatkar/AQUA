@@ -110,9 +110,12 @@ def run_handsfree(
     end_silence: float = .8, initial_timeout: float = 5.0,
     max_utterance: float = 15.0, pre_roll: float = .5, vad_threshold: float = .5,
     text_entry_apps: tuple[str, ...] = (),
+    speak: bool = False, tts_engine: str = "kokoro", voice: str | None = None,
+    voice_model_dir: Path | None = None, speech_rate: float = 1.0,
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen."""
     state = ActionState()
+    speaker = None
     try:
         config = UtteranceConfig(
             end_silence=end_silence, initial_timeout=initial_timeout,
@@ -128,6 +131,8 @@ def run_handsfree(
         recognizer = OfflineRecognizer() if speech_model_dir is None else OfflineRecognizer(speech_model_dir)
         if diagnostics:
             print(f"Speech model loading: {perf_counter() - started:.3f}s (once per session; CPU INT8)")
+        speaker = chat._open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
+                                     voice_model_dir=voice_model_dir, speech_rate=speech_rate)
         commands = ConsoleCommands()
         # No Ollama request, including metadata, is made until a valid awakened
         # command survives recognition. A silent idle session stays acoustic-only.
@@ -219,6 +224,7 @@ def run_handsfree(
                     chat._respond_or_launch(
                         client, conversation, transcript.text, model=model, settings=generation,
                         diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
+                        speaker=speaker,
                     )
                 except (SpeechError, KeyboardInterrupt) as exc:
                     state.clear()
@@ -238,3 +244,5 @@ def run_handsfree(
         state.clear()
         print("\nHands-free chat ended.")
         return 0
+    finally:
+        chat._close_speaker(speaker)

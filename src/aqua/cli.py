@@ -112,6 +112,23 @@ def _chat_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--diagnostics", action="store_true", help="show response and voice-stage latency measurements")
 
 
+def _voice_options(parser: argparse.ArgumentParser, *, speak_default: bool) -> None:
+    """Spoken-reply (text-to-speech) options shared by chat, voice-chat and handsfree."""
+    from aqua.voice.engines import DEFAULT_ENGINE, ENGINE_NAMES
+    speaking = parser.add_mutually_exclusive_group()
+    speaking.add_argument("--speak", action="store_true", dest="speak",
+                          help="speak replies aloud" + (" (default)" if speak_default else ""))
+    speaking.add_argument("--no-speak", action="store_false", dest="speak",
+                          help="text replies only" + ("" if speak_default else " (default)"))
+    parser.set_defaults(speak=speak_default)
+    parser.add_argument("--tts-engine", choices=ENGINE_NAMES, default=DEFAULT_ENGINE,
+                        help=f"local text-to-speech engine; default: {DEFAULT_ENGINE}")
+    parser.add_argument("--voice", metavar="NAME", help="voice name or speaker id; default: the engine's default voice")
+    parser.add_argument("--voice-model-dir", type=Path, metavar="PATH", help="local voice model directory instead of the default")
+    parser.add_argument("--speech-rate", type=_finite_range(.5, 2), default=1.0, metavar="RATE",
+                        help="speaking speed, 0.5 to 2; default: 1")
+
+
 def _speech_options(parser: argparse.ArgumentParser) -> None:
     speech = parser.add_mutually_exclusive_group()
     speech.add_argument("--speech-model", choices=tuple(MODEL_DIRS), help=f"local Whisper model; default: {DEFAULT_MODEL}")
@@ -179,12 +196,15 @@ def _parser() -> argparse.ArgumentParser:
     wake_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the configured wake assets")
     chat = commands.add_parser("chat", help="interactive text chat with the local Ollama service")
     _chat_options(chat)
-    voice = commands.add_parser("voice-chat", help="press Enter for each speech-to-text chat turn; responses are text")
+    _voice_options(chat, speak_default=False)
+    voice = commands.add_parser("voice-chat", help="press Enter for each speech-to-text chat turn; add --speak for spoken replies")
     _chat_options(voice)
     _speech_options(voice)
+    _voice_options(voice, speak_default=False)
     handsfree = commands.add_parser("handsfree", help='listen locally for "Hey Aqua", then capture speech until silence')
     _chat_options(handsfree)
     _speech_options(handsfree)
+    _voice_options(handsfree, speak_default=True)
     handsfree.add_argument("--wake-model-dir", type=Path, metavar="PATH", help="complete local sherpa keyword-spotting directory")
     handsfree.add_argument("--wake-threshold", type=_finite_range(0, 1), default=.25, help="keyword detection threshold, 0 to 1; default: 0.25")
     handsfree.add_argument("--wake-score", type=_finite_range(0, 10, include_minimum=False), default=1.0, help="keyword boost, greater than 0 to 10; default: 1")
@@ -313,6 +333,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "model": args.model, "settings": settings, "timeout": args.timeout,
                 "max_turns": args.max_turns, "max_chars": args.history_chars,
                 "diagnostics": args.diagnostics,
+                "speak": args.speak, "tts_engine": args.tts_engine, "voice": args.voice,
+                "voice_model_dir": args.voice_model_dir, "speech_rate": args.speech_rate,
             }
             if args.allow_text_entry:
                 common["text_entry_apps"] = tuple(dict.fromkeys(args.allow_text_entry))

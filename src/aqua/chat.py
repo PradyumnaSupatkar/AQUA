@@ -126,13 +126,61 @@ def _respond(
     settings: GenerationSettings,
     diagnostics: bool,
     action_state: ActionState | None = None,
+    speaker=None,
+    wait_for_speech: bool = True,
 ) -> bool:
     """Render the shared controller without a separate intent-classifier call."""
+    return _respond_result(
+        client, conversation, user_text, model=model, settings=settings, diagnostics=diagnostics,
+        action_state=action_state, speaker=speaker, wait_for_speech=wait_for_speech,
+    ).ok
+
+
+def _speech_diagnostics(speaker, *, wait: bool) -> None:
+    if wait:
+        try:
+            speaker.wait(120)
+        except KeyboardInterrupt:
+            speaker.stop()
+    timings = speaker.timings
+    print(timings.describe() if timings is not None else "Speech output: nothing spoken this turn.")
+
+
+def _respond_result(
+    client: OllamaClient,
+    conversation: Conversation,
+    user_text: str,
+    *,
+    model: str,
+    settings: GenerationSettings,
+    diagnostics: bool,
+    action_state: ActionState | None = None,
+    speaker=None,
+    wait_for_speech: bool = True,
+):
+    """Same as _respond, returning the full TurnResult.
+
+    ``speaker`` (a SpeechOutput or None) hears exactly the text that is
+    printed. It is stopped first, so a new turn always silences the old one;
+    playback may continue after this returns.
+    """
     if action_state is not None:
         conversation.bind_action_state(action_state)
+    if speaker is not None:
+        speaker.stop()
+
+    def on_text(content):
+        print(content, end="", flush=True)
+        if speaker is not None:
+            speaker.feed(content)
+
     print("Aqua: ", end="", flush=True)
     controller = ConversationController(client, conversation, model=model, settings=settings, clock=perf_counter)
-    result = controller.respond(user_text, on_text=lambda content: print(content, end="", flush=True))
+    try:
+        result = controller.respond(user_text, on_text=on_text)
+    finally:
+        if speaker is not None:
+            speaker.finish_turn()
     print()
     if result.error:
         print(f"Chat error ({result.stage}): {result.error}", file=sys.stderr)
@@ -155,7 +203,22 @@ def _respond(
             print("Sampling overrides: " + "; ".join(overrides))
         if result.completion is not None:
             _report_server_metrics(result.completion)
-    return result.ok
+        if speaker is not None and wait_for_speech:
+            _speech_diagnostics(speaker, wait=True)
+    return result
+
+
+def _open_speaker(*, speak: bool, tts_engine: str, voice, voice_model_dir, speech_rate: float):
+    """Load the voice once per session; missing voices mean text-only, not an error."""
+    if not speak:
+        return None
+    from aqua.voice.output import open_speaker
+    return open_speaker(engine=tts_engine, voice=voice, model_dir=voice_model_dir, rate=speech_rate)
+
+
+def _close_speaker(speaker) -> None:
+    if speaker is not None:
+        speaker.close()
 
 
 def _start(
@@ -186,8 +249,14 @@ def run_text_chat(
     max_chars: int = 12000,
     diagnostics: bool = False,
     text_entry_apps: tuple[str, ...] = (),
+    speak: bool = False,
+    tts_engine: str = "kokoro",
+    voice: str | None = None,
+    voice_model_dir: Path | None = None,
+    speech_rate: float = 1.0,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
+    speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
@@ -197,6 +266,8 @@ def run_text_chat(
             return 1
         client, conversation, generation = session
         conversation.text_entry_apps = text_entry_apps
+        speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
+                                voice_model_dir=voice_model_dir, speech_rate=speech_rate)
         _help(voice=False)
         while True:
             try:
@@ -212,11 +283,13 @@ def run_text_chat(
                 continue
             _respond(
                 client, conversation, text, model=model,
-                settings=generation, diagnostics=diagnostics,
+                settings=generation, diagnostics=diagnostics, speaker=speaker,
             )
     except KeyboardInterrupt:
         print("\nChat ended.")
         return 0
+    finally:
+        _close_speaker(speaker)
 
 
 def _respond_or_launch(
@@ -229,13 +302,16 @@ def _respond_or_launch(
     diagnostics: bool,
     action_state: ActionState | None = None,
     intent_timeout: float = 15.0,
-) -> None:
+    speaker=None,
+    wait_for_speech: bool = True,
+):
     """Compatibility entry for existing voice front ends; one controller only.
 
     intent_timeout is retained for older callers, but there is no classifier
     request. The configured Ollama client's timeout governs model interactions.
+    Returns the TurnResult (older callers ignore it).
     """
-    _respond(
+    return _respond_result(
         client,
         conversation,
         text,
@@ -243,6 +319,8 @@ def _respond_or_launch(
         settings=settings if settings is not None else GenerationSettings(),
         diagnostics=diagnostics,
         action_state=action_state,
+        speaker=speaker,
+        wait_for_speech=wait_for_speech,
     )
 
 
@@ -294,8 +372,14 @@ def run_voice_chat(
     hotwords: str | None = None,
     diagnostics: bool = False,
     text_entry_apps: tuple[str, ...] = (),
+    speak: bool = False,
+    tts_engine: str = "kokoro",
+    voice: str | None = None,
+    voice_model_dir: Path | None = None,
+    speech_rate: float = 1.0,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
+    speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
@@ -314,6 +398,8 @@ def run_voice_chat(
         load_seconds = perf_counter() - started
         if diagnostics:
             print(f"Speech model loading: {load_seconds:.3f}s (once per session; CPU INT8)")
+        speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
+                                voice_model_dir=voice_model_dir, speech_rate=speech_rate)
         _help(voice=True)
         action_state = conversation.action_state
         while True:
@@ -333,6 +419,8 @@ def run_voice_chat(
                 action_state.clear()
                 print("Press Enter to record, or type /help, /clear, or /quit.")
                 continue
+            if speaker is not None:
+                speaker.stop()  # Never record Aqua's own voice.
             try:
                 print(f"Recording {RECORD_SECONDS} seconds. Speak now. Ctrl+C cancels this turn.", flush=True)
                 capture_started = perf_counter()
@@ -366,8 +454,11 @@ def run_voice_chat(
                 diagnostics=diagnostics,
                 action_state=action_state,
                 intent_timeout=min(timeout, 15.0),
+                speaker=speaker,
             )
 
     except KeyboardInterrupt:
         print("\nVoice chat ended.")
         return 0
+    finally:
+        _close_speaker(speaker)

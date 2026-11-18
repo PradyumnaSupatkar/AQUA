@@ -75,6 +75,13 @@ def _finite_range(minimum: float, maximum: float, *, include_minimum: bool = Tru
     return parse
 
 
+def _follow_up_seconds(value: str) -> float:
+    seconds = float(value)
+    if not isfinite(seconds) or not (seconds == 0 or .5 <= seconds <= 10):
+        raise argparse.ArgumentTypeError("must be 0 (off) or finite between 0.5 and 10 seconds")
+    return seconds
+
+
 def run_handsfree(**options) -> int:
     """Load wake dependencies only for the explicitly selected hands-free mode."""
     from aqua.handsfree import run_handsfree as run
@@ -214,6 +221,9 @@ def _parser() -> argparse.ArgumentParser:
     handsfree.add_argument("--max-utterance", type=_finite_range(1, 30), default=15.0, metavar="SECONDS", help="discard speech exceeding this duration; default: 15")
     handsfree.add_argument("--pre-roll", type=_finite_range(0, 2), default=.5, metavar="SECONDS", help="bounded audio retained before wake; default: 0.5")
     handsfree.add_argument("--vad-threshold", type=_finite_range(.01, 1), default=.5, help="speech activity threshold, 0.01 to 1; default: 0.5")
+    # Mirrors aqua.handsfree.FOLLOW_UP_SECONDS (tested); not imported so parsing stays lightweight.
+    handsfree.add_argument("--follow-up", type=_follow_up_seconds, default=3.0, metavar="SECONDS",
+                           help="after Aqua asks a question, listen this long for an answer without the wake word; 0 disables; default: 3")
     from aqua.benchmark.runner import add_arguments
     benchmark = commands.add_parser("benchmark", help="reproducible installed-model intelligence benchmark; execution disabled")
     add_arguments(benchmark)
@@ -354,6 +364,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 wake_cooldown=args.wake_cooldown, end_silence=args.end_silence,
                 initial_timeout=args.initial_timeout, max_utterance=args.max_utterance,
                 pre_roll=args.pre_roll, vad_threshold=args.vad_threshold,
+                follow_up=args.follow_up,
             )
         if args.command == "setup-wake":
             from aqua.wake.models import WakeError

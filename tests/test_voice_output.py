@@ -67,8 +67,7 @@ class SpeechOutputTests(unittest.TestCase):
         speaker.finish_turn()
         self.assertTrue(self.player.playing.wait(2))
         speaker.stop()
-        self.assertTrue(speaker.wait(1))
-        self.assertFalse(speaker.is_speaking)
+        self.assertFalse(speaker.is_speaking)  # stop() returns only after playback acknowledged.
         self.assertEqual(len(self.player.played), 1)
         self.assertGreaterEqual(self.player.stops, 1)
         self.player.release()

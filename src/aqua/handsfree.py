@@ -1,7 +1,7 @@
 """Wake-gated, bounded audio turns feeding Aqua's existing voice/chat path."""
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import ceil, isfinite
 from pathlib import Path
 import re
@@ -24,6 +24,13 @@ from aqua.speech.reliability import transcript_rejection_reason
 from aqua.wake.keyword import SherpaWakeDetector
 from aqua.wake.models import WakeError
 
+# After Aqua asks a question, listen this long for an answer without the wake
+# word. The window opens only once playback has fully finished plus a short
+# tail, counted in microphone frames so Aqua never hears its own last syllable.
+FOLLOW_UP_SECONDS = 3.0
+FOLLOW_UP_TAIL_SECONDS = .25
+FOLLOW_UP_TAIL_FRAMES = ceil(FOLLOW_UP_TAIL_SECONDS * SAMPLE_RATE / FRAME_SAMPLES)
+
 
 def command_text(text: str) -> str:
     """Remove only a leading fixed wake greeting, never interpret an action."""
@@ -37,10 +44,15 @@ class FrontendEvent:
     speech_seconds: float = 0.0
     duration: float = 0.0
     detector_seconds: float = 0.0
+    follow_up: bool = False
 
 
 class HandsfreeFrontend:
-    """Only acoustic wake events can arm the post-wake speech collector."""
+    """Only acoustic wake events can arm the post-wake speech collector.
+
+    The one exception is arm_follow_up(), which the session calls only after
+    Aqua asked a question and its spoken reply has completely finished.
+    """
 
     def __init__(self, detector, vad, config: UtteranceConfig, *, cooldown: float = 2.0):
         if isinstance(cooldown, bool) or not isinstance(cooldown, (int, float)) or not isfinite(cooldown) or not 0 <= cooldown <= 30:
@@ -50,6 +62,7 @@ class HandsfreeFrontend:
         self._next_wake = float("-inf")
         self._pre_roll = deque(maxlen=ceil(config.pre_roll * SAMPLE_RATE / FRAME_SAMPLES))
         self.collector = None
+        self.follow_up = False
 
     @property
     def active(self) -> bool:
@@ -57,19 +70,36 @@ class HandsfreeFrontend:
 
     def reset(self) -> None:
         self.collector = None
+        self.follow_up = False
         self._pre_roll.clear()
         self.detector.reset()
         self.vad.reset()
 
-    def feed(self, frame, *, now: float) -> FrontendEvent | None:
+    def arm_follow_up(self, seconds: float) -> None:
+        """Collect an answer without the wake word, with no earlier audio as context."""
+        import numpy as np
+
+        # Keep the window inside the utterance cap, so silence ends as
+        # "no_speech" (consent kept) rather than "too_long" (turn discarded).
+        window = max(.5, min(seconds, self.config.max_utterance - .1))
+        self.collector = UtteranceCollector(replace(self.config, initial_timeout=window))
+        self.collector.begin(np.empty(0, dtype=np.float32))
+        self.follow_up = True
+        self._pre_roll.clear()
+        self.vad.reset()
+
+    def feed(self, frame, *, now: float, keep_context: bool = True) -> FrontendEvent | None:
+        """``keep_context=False`` (used while Aqua is speaking) means a wake
+        starts a capture without pre-roll, so no playback audio reaches Whisper."""
         import numpy as np
 
         if self.collector is not None:
             event = self.collector.push(frame, self.vad.probability(frame))
             if event is None:
                 return None
-            self.collector = None
-            return FrontendEvent(event.status, event.samples, event.speech_seconds, event.duration)
+            follow_up, self.collector, self.follow_up = self.follow_up, None, False
+            return FrontendEvent(event.status, event.samples, event.speech_seconds, event.duration,
+                                 follow_up=follow_up)
         self._pre_roll.append(frame.copy())
         started = perf_counter()
         detection = self.detector.feed(frame)
@@ -80,7 +110,8 @@ class HandsfreeFrontend:
             raise WakeError("The wake detector returned an unexpected keyword; no turn was activated.")
         self._next_wake = now + self.cooldown
         self.collector = UtteranceCollector(self.config)
-        context = np.concatenate(tuple(self._pre_roll)) if self._pre_roll else np.empty(0, dtype=np.float32)
+        context = (np.concatenate(tuple(self._pre_roll)) if self._pre_roll and keep_context
+                   else np.empty(0, dtype=np.float32))
         self.collector.begin(context)
         self._pre_roll.clear()
         self.vad.reset()
@@ -96,7 +127,17 @@ def _recording(samples, device_info) -> Recording:
 
 def _help() -> None:
     print('Say "Hey Aqua", followed by a command or question. No Enter is needed.')
-    print("Type /clear, /help, or /quit then Enter; Ctrl+C cancels a capture or exits while idle.")
+    print("Type /clear, /help, or /quit then Enter; Ctrl+C stops speech, cancels a capture, or exits while idle.")
+
+
+def _asked_question(result, state: ActionState) -> bool:
+    """A follow-up answer is expected only after a question or pending confirmation."""
+    from aqua.voice.text import is_question
+
+    if state.pending_app is not None:
+        return True
+    text = getattr(result, "text", None)
+    return isinstance(text, str) and is_question(text)
 
 
 def run_handsfree(
@@ -112,11 +153,20 @@ def run_handsfree(
     text_entry_apps: tuple[str, ...] = (),
     speak: bool = False, tts_engine: str = "kokoro", voice: str | None = None,
     voice_model_dir: Path | None = None, speech_rate: float = 1.0,
+    follow_up: float = FOLLOW_UP_SECONDS,
 ) -> int:
-    """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen."""
+    """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
+
+    While a reply is being spoken, the microphone feeds only the wake
+    detector. A wake stops playback and starts a capture without pre-roll, so
+    audio heard during playback never reaches Whisper.
+    """
     state = ActionState()
     speaker = None
     try:
+        if isinstance(follow_up, bool) or not isinstance(follow_up, (int, float)) or not isfinite(follow_up) \
+                or not (follow_up == 0 or .5 <= follow_up <= 10):
+            raise ValueError("The follow-up window must be 0 (off) or between 0.5 and 10 seconds.")
         config = UtteranceConfig(
             end_silence=end_silence, initial_timeout=initial_timeout,
             max_utterance=max_utterance, pre_roll=pre_roll, speech_threshold=vad_threshold,
@@ -139,6 +189,20 @@ def run_handsfree(
         client = None
         wake_started = 0.0
         vad_started = False
+        follow_up_due = False       # Aqua asked a question; open the window after playback.
+        tail_frames = 0             # Frames still to skip after playback before opening it.
+        report_speech = False       # Print speech timings once playback ends (--diagnostics).
+
+        def speaking() -> bool:
+            return speaker is not None and speaker.is_speaking
+
+        def silence(reason: str) -> None:
+            nonlocal follow_up_due, report_speech
+            follow_up_due = report_speech = False
+            if speaker is not None and speaker.is_speaking:
+                speaker.stop()
+                print(reason, flush=True)
+
         with MicrophoneStream(device=device, sample_rate=sample_rate) as microphone:
             _help()
             print('Listening for "Hey Aqua"...', flush=True)
@@ -147,6 +211,7 @@ def run_handsfree(
                     control = commands.poll()
                     if control is not None:
                         state.clear()
+                        silence("Speech stopped.")
                         microphone.pause()
                         frontend.reset()
                         if control == "/help":
@@ -164,9 +229,27 @@ def run_handsfree(
                     frame = microphone.read_frame(timeout=.1)
                     if frame is None:
                         continue
-                    event = frontend.feed(frame, now=perf_counter())
+                    playing = speaking()
+                    if report_speech and not playing:
+                        report_speech = False
+                        chat._speech_diagnostics(speaker, wait=False)
+                    if follow_up_due and not playing and not frontend.active:
+                        if tail_frames > 0:
+                            tail_frames -= 1
+                        else:
+                            follow_up_due = False
+                            frontend.arm_follow_up(follow_up)
+                            wake_started, vad_started = perf_counter(), False
+                            print("Listening for your answer...", flush=True)
+                    event = frontend.feed(frame, now=perf_counter(), keep_context=not playing)
                 except KeyboardInterrupt:
+                    if speaking() and not frontend.active:
+                        # Ctrl+C while Aqua talks silences it; pending consent is untouched.
+                        silence("\nSpeech stopped.")
+                        print('Listening for "Hey Aqua"...', flush=True)
+                        continue
                     state.clear()
+                    follow_up_due = False
                     if not frontend.active:
                         print("\nHands-free chat ended.")
                         return 0
@@ -182,11 +265,16 @@ def run_handsfree(
                         print(f"VAD: speech started; {perf_counter() - wake_started:.3f}s after wake detection")
                     continue
                 if event.status == "wake":
+                    silence("Speech stopped.")
                     wake_started = perf_counter()
                     vad_started = False
                     print("Wake word detected.\nListening...", flush=True)
                     if diagnostics:
                         print(f"Wake detector: {event.detector_seconds:.4f}s on triggering frame; CPU; cooldown {wake_cooldown:g}s")
+                    continue
+                if event.follow_up and event.status == "no_speech":
+                    # Silence after a question is not a cancelled turn; consent stays as it was.
+                    print('No answer heard. Listening for "Hey Aqua"...', flush=True)
                     continue
                 capture_seconds = perf_counter() - wake_started
                 microphone.pause()  # Never queue speech or detect wakes during processing.
@@ -221,13 +309,18 @@ def run_handsfree(
                         client, conversation, generation = session
                         conversation.bind_action_state(state)
                         conversation.text_entry_apps = text_entry_apps
-                    chat._respond_or_launch(
+                    result = chat._respond_or_launch(
                         client, conversation, transcript.text, model=model, settings=generation,
                         diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
-                        speaker=speaker,
+                        speaker=speaker, wait_for_speech=False,
                     )
+                    # Playback may continue; the loop resumes wake-only listening meanwhile.
+                    report_speech = diagnostics and speaker is not None
+                    if follow_up and _asked_question(result, state):
+                        follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
                 except (SpeechError, KeyboardInterrupt) as exc:
                     state.clear()
+                    silence("Speech stopped.")
                     message = "Voice turn cancelled" if isinstance(exc, KeyboardInterrupt) else f"Voice turn error: {exc}"
                     print(f"\n{message}; no new action was authorized.", file=sys.stderr)
                 finally:
@@ -246,3 +339,4 @@ def run_handsfree(
         return 0
     finally:
         chat._close_speaker(speaker)
+

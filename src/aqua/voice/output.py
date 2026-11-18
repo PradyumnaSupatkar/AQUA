@@ -9,13 +9,14 @@ after a single warning instead of breaking the turn.
 from dataclasses import dataclass
 from queue import Empty, Full, Queue
 import sys
-from threading import Condition, Lock, Thread
+from threading import Condition, Lock, Thread, current_thread
 from time import perf_counter
 
 from .engines import VoiceError
 from .text import MAX_SPOKEN_SENTENCES, SentenceSplitter, SpokenBudget, speakable
 
 _CLOSE = object()
+STOP_ACK_SECONDS = .5
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,7 +125,16 @@ class SpeechOutput:
             self._fail(exc)
 
     def stop(self) -> None:
-        """Silence immediately: drop queued sentences and audio, stop playback."""
+        """Silence immediately: drop queued sentences and audio, stop playback.
+
+        Returns once in-flight playback has acknowledged (bounded), so
+        is_speaking is False afterwards unless a device hangs.
+        """
+        self._halt()
+        if current_thread() not in self._threads:
+            self.wait(STOP_ACK_SECONDS)
+
+    def _halt(self) -> None:
         with self._lock:
             self._generation += 1
             self._splitter.reset()
@@ -209,7 +219,7 @@ class SpeechOutput:
             self._disabled = True
         reason = str(exc) or type(exc).__name__
         self._warn(f"Speech output stopped ({reason}); replies continue as text for the rest of this session.")
-        self.stop()
+        self._halt()
 
     def _synth_worker(self) -> None:
         while True:

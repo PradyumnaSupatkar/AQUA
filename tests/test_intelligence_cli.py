@@ -36,7 +36,7 @@ class IntelligenceCliTests(unittest.TestCase):
         settings = run.call_args.kwargs["settings"]
         self.assertEqual(settings.thinking, "auto")
         self.assertIsNone(settings.seed)
-        self.assertEqual(settings.temperature, .5)
+        self.assertEqual(settings.temperature, .2)
         self.assertEqual(settings.num_ctx, 4096)
         self.assertEqual(settings.num_predict, 1024)
         for name in ("top_p", "top_k", "presence_penalty", "repeat_penalty"):

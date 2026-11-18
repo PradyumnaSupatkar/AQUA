@@ -147,7 +147,7 @@ class OllamaTests(unittest.TestCase):
         self.assertEqual(payload["messages"], self.messages)
         self.assertNotIn("think", payload)
         self.assertIs(payload["stream"], True)
-        self.assertEqual(payload["options"], {"temperature": 0.5, "num_predict": 1024, "num_ctx": 4096})
+        self.assertEqual(payload["options"], {"temperature": 0.2, "num_predict": 1024, "num_ctx": 4096})
         self.assertEqual(payload["keep_alive"], "5m")
         self.assertNotIn("tools", payload)
 

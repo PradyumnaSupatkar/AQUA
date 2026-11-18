@@ -31,7 +31,7 @@ class ChatCliTests(unittest.TestCase):
         self.assertEqual(errors, "")
         options = run.call_args.kwargs
         self.assertEqual(options["model"], DEFAULT_CHAT_MODEL)
-        self.assertEqual(options["settings"].temperature, 0.5)
+        self.assertEqual(options["settings"].temperature, 0.2)
         self.assertEqual(options["settings"].num_predict, 1024)
         self.assertEqual(options["settings"].num_ctx, 4096)
         self.assertEqual(options["timeout"], 120.0)

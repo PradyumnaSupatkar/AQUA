@@ -91,7 +91,7 @@ class ThinkingTests(unittest.TestCase):
         list(OllamaClient().stream_chat(self.messages, model="qwen3:4b", settings=settings))
         payload = json.loads(connection.request.call_args.kwargs["body"])
         self.assertNotIn("think", payload)
-        self.assertEqual(payload["options"], {"temperature": .5, "num_predict": 1024, "num_ctx": 4096})
+        self.assertEqual(payload["options"], {"temperature": .2, "num_predict": 1024, "num_ctx": 4096})
 
     def test_invalid_thinking_and_sampling_settings_fail_locally(self):
         for thinking in (None, True, "ON", "false", "sometimes"):

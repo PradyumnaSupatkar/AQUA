@@ -39,7 +39,7 @@ class HandsfreeCliTests(unittest.TestCase):
         options = run.call_args.kwargs
         self.assertEqual(options["model"], DEFAULT_CHAT_MODEL)
         self.assertEqual(options["settings"].num_ctx, 4096)
-        self.assertEqual(options["settings"].temperature, .5)
+        self.assertEqual(options["settings"].temperature, .2)
         self.assertEqual(options["speech_model_dir"], DEFAULT_MODEL_DIR)
         self.assertIsNone(options["device"])
         self.assertIsNone(options["sample_rate"])

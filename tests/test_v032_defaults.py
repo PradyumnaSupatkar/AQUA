@@ -36,10 +36,10 @@ class FinalizedConversationDefaultsTests(unittest.TestCase):
     def test_finalized_configuration_keeps_requested_inference_settings(self):
         self.assertEqual(DEFAULT_CHAT_MODEL, "qwen3:4b-instruct-2507-q4_K_M")
         self.assertEqual(DEFAULT_CONTEXT_SIZE, 4096)
-        self.assertEqual(DEFAULT_TEMPERATURE, .5)
+        self.assertEqual(DEFAULT_TEMPERATURE, .2)
         self.assertEqual(DEFAULT_KEEP_ALIVE, "5m")
         self.assertEqual(GenerationSettings().num_ctx, 4096)
-        self.assertEqual(GenerationSettings().temperature, .5)
+        self.assertEqual(GenerationSettings().temperature, .2)
         self.assertEqual(DEFAULT_MODEL_DIR, MODEL_DIRS["small"])
 
     def test_both_cli_modes_still_allow_explicit_thinking_model(self):
@@ -125,7 +125,7 @@ class FinalizedConversationDefaultsTests(unittest.TestCase):
         self.assertEqual(payload["model"], DEFAULT_CHAT_MODEL)
         self.assertEqual(payload["keep_alive"], "5m")
         self.assertEqual(payload["options"]["num_ctx"], 4096)
-        self.assertEqual(payload["options"]["temperature"], .5)
+        self.assertEqual(payload["options"]["temperature"], .2)
         self.assertTrue(response.close.called and connection.close.called)
 
 

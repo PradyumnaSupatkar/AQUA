@@ -19,6 +19,15 @@ Test counts are the offline regression suite at the end of each stage.
   for 3 seconds without the wake word (`--follow-up`). Developed and tested with a fake engine only (1071 tests).
   Voice downloads (`aqua setup-voice`) and the voice benchmark are part B; until then Aqua prints one note and stays
   text-only.
+- Removed retired code (the standalone intent classifier, router, regex intents, the paused append backend and
+  `tools/smoke_semantic.py`) and its 75 tests; `desktop/worker.py` stays, as the live UI Automation worker.
+- Default temperature is now 0.2, the model benchmark's recommended preset (was 0.5).
+- New `--keep-alive` option (for example `5m`, `30m`, `1h`, or `0`): `chat` and `voice-chat` default to 5m, `handsfree`
+  to 30m so the model stays loaded between spoken commands; shown with `--diagnostics`.
+- sherpa-onnx is now a core dependency: install with `pip install -e ".[desktop]"` (the `handsfree` extra remains,
+  empty, for compatibility).
+- `setup-model --model small [--download]` installs or verifies Whisper Small, pinned to one revision with checked
+  sizes and SHA-256 hashes; the default is still Base. The offline suite is now 1020 tests.
 - **Experimental, unfinished:** source-grounded entry objectives (`brain/entry_objective.py`). The model proposes a
   literal writing objective tied to the exact request, and the user confirms it once. Its tests pass (1014 total),
   but its final development evaluation stopped partway and the held-out set was never run. It is expected to be

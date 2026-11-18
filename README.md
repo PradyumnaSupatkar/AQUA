@@ -34,7 +34,7 @@ for people who want privacy **and** don't own a high-end PC. The current minimum
   - list and inspect their windows through Windows UI Automation, and describe what is actually there
   - write exact text into an empty Notepad document (opt-in), verified by reading it back
 - **Three ways to use it:** typed chat, push-to-talk voice and fully hands-free, all sharing one controller.
-- **Measured, not assumed:** 1014 offline tests, plus frozen benchmarks for
+- **Measured, not assumed:** 1020 offline tests, plus frozen benchmarks for
   [model choice](benchmarks/model_intelligence/REPORT.md) and
   [intent safety](benchmarks/semantic-intent-v1/report.md).
 
@@ -77,22 +77,18 @@ Requirements: Windows 11, Python 3.12, [Ollama](https://ollama.com), a microphon
 git clone https://github.com/PradyumnaSupatkar/AQUA.git
 cd AQUA
 py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[handsfree,desktop]"
+.\.venv\Scripts\python.exe -m pip install -e ".[desktop]"
 
 # Local models (one-time downloads)
 ollama pull qwen3:4b-instruct-2507-q4_K_M
+.\.venv\Scripts\python.exe -m aqua setup-model --model small --download
 .\.venv\Scripts\python.exe -m aqua setup-wake --download
 ```
-
-Speech recognition also needs the Whisper Small model files (`model.bin`, `config.json`, `tokenizer.json`,
-`vocabulary.txt`) from [Systran/faster-whisper-small](https://huggingface.co/Systran/faster-whisper-small) in
-`models\faster-whisper-small`. Alternatively, run `aqua setup-model --download` to fetch the smaller Base model and
-add `--speech-model base`. See the [detailed reference](docs/reference-v0.8.md#existing-local-models-and-base-setup).
 
 Then, with Ollama running:
 
 ```powershell
-.\.venv\Scripts\python.exe -m aqua chat --temperature 0.2                 # typed
+.\.venv\Scripts\python.exe -m aqua chat                                   # typed
 .\.venv\Scripts\python.exe -m aqua voice-chat --language en               # press Enter to talk
 .\.venv\Scripts\python.exe -m aqua handsfree --language en --hints         # say "Hey Aqua, open Notepad"
 ```
@@ -117,7 +113,7 @@ for timings. Run any command with `--help` for all options. The
 ## Development
 
 ```powershell
-.\.venv\Scripts\python.exe -B tools\test_offline.py     # 1014 tests, ~7 s; network and process launches blocked
+.\.venv\Scripts\python.exe -B tools\test_offline.py     # 1020 tests, ~5 s; network and process launches blocked
 ```
 
 The tests need no microphone, Ollama or models, and run on every push via GitHub Actions. Stage reports are in

@@ -39,7 +39,8 @@ for people who want privacy **and** don't own a high-end PC. The current minimum
   [intent safety](benchmarks/semantic-intent-v1/report.md).
 
 **Not yet:** spoken replies, launching any installed app, system controls (volume, power), file and editor
-tasks, or longer multi-step plans. These are the next milestones.
+tasks, or longer multi-step plans. These are the next milestones. The speech output code (playback, interruption,
+follow-up questions) now exists and is tested, but no voice is installed yet, so replies are still text-only.
 
 ## How it works
 
@@ -103,6 +104,8 @@ for timings. Run any command with `--help` for all options. The
 ## Roadmap
 
 1. **Spoken replies:** natural local text-to-speech (Kokoro), spoken yes/no confirmations, "stop" to interrupt.
+   *In progress:* the speech output pipeline is written and tested with a stand-in engine; installing real voices
+   and benchmarking them comes next.
 2. **Windows control by risk level:** launch any installed app, window management, volume, brightness, media,
    and power. Safe actions just happen, reversible ones can be undone, and disruptive or destructive ones
    (shutdown, delete, send) always ask first.

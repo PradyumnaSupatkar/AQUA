@@ -10,6 +10,15 @@ Test counts are the offline regression suite at the end of each stage.
 - README rewritten as a short overview; the full former README moved to `docs/reference-v0.8.md`.
 - Licensed under Apache-2.0.
 - Tests: temporary paths are resolved so Windows short (8.3) paths match on CI.
+- **Spoken replies, part A (code only; no voices installed yet).** New `aqua.voice` package: a streaming sentence
+  splitter, speakable-text cleanup (markdown, code, links, emoji, and the "Hey Aqua" phrase removed), a spoken-length
+  limit (three sentences, then "The rest is on screen."; a final question is always spoken), Kokoro, Piper and Kitten
+  engines on sherpa-onnx, and a two-thread playback pipeline that stops instantly and falls back to text after one
+  warning if anything fails. Hands-free speaks by default (`--no-speak` to disable); `chat` and `voice-chat` take
+  `--speak`. In hands-free, "Hey Aqua" or Ctrl+C interrupts playback, and after Aqua asks a question it listens
+  for 3 seconds without the wake word (`--follow-up`). Developed and tested with a fake engine only (1071 tests).
+  Voice downloads (`aqua setup-voice`) and the voice benchmark are part B; until then Aqua prints one note and stays
+  text-only.
 - **Experimental, unfinished:** source-grounded entry objectives (`brain/entry_objective.py`). The model proposes a
   literal writing objective tied to the exact request, and the user confirms it once. Its tests pass (1014 total),
   but its final development evaluation stopped partway and the held-out set was never run. It is expected to be

@@ -78,6 +78,7 @@ class ModelSelectionTests(unittest.TestCase):
         self.assertIn("No download was attempted", message)
         self.assertIn("--model base", message)
         self.assertNotIn("setup-model --download", message)
+        self.assertIn("setup-model --model small --download", message)
         self.assertFalse(self.small.exists())
 
     def test_complete_small_model_uses_same_file_validation_without_hub_import(self):
@@ -98,7 +99,7 @@ class ModelSelectionTests(unittest.TestCase):
         with self.registry(), patch.dict("sys.modules", {"huggingface_hub": None}):
             with self.assertRaises(ModelSetupError) as error:
                 setup_model(self.small, download=True)
-        self.assertIn("Base only", str(error.exception))
+        self.assertIn("Use --model small", str(error.exception))
         self.assertIn("No download was attempted", str(error.exception))
         self.assertFalse(self.small.exists())
 

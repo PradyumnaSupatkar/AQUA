@@ -18,7 +18,7 @@ from aqua.brain.ollama import (
     parse_keep_alive,
 )
 from aqua.speech.comparison import compare_recording, load_models
-from aqua.speech.models import BASE_MODEL_DIR, DEFAULT_MODEL, MODEL_DIRS, SpeechError, resolve_model_dir, setup_model
+from aqua.speech.models import DEFAULT_MODEL, MODEL_DIRS, MODEL_SOURCES, SpeechError, resolve_model_dir, setup_model
 from aqua.speech.recognizer import OfflineRecognizer, Transcript
 from aqua.speech.vocabulary import DEFAULT_HOTWORDS, normalize_hotwords
 
@@ -211,9 +211,11 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--gain-db", type=_gain_db, default=0.0, metavar="DB", help="recognition gain; default: 0 (no automatic gain)")
     compare.add_argument("--language", metavar="CODE", help="spoken language code, e.g. en; default: automatic detection")
     compare.add_argument("--hotwords", metavar="TEXT", help="custom context for hinted passes instead of the default vocabulary")
-    setup = commands.add_parser("setup-model", help="verify the local base model; download only with --download")
-    setup.add_argument("--model-dir", type=Path, default=BASE_MODEL_DIR, metavar="PATH")
-    setup.add_argument("--download", action="store_true", help="explicitly permit the one-time approximately 148 MB base model download")
+    setup = commands.add_parser("setup-model", help="verify a local Whisper model; download only with --download")
+    setup.add_argument("--model", choices=tuple(MODEL_SOURCES), default="base",
+                       help="Whisper model to verify or install (Base about 148 MB, Small about 486 MB); default: base")
+    setup.add_argument("--model-dir", type=Path, metavar="PATH", help="directory to verify or install into; default: the model's own directory")
+    setup.add_argument("--download", action="store_true", help="explicitly permit the one-time pinned model download if files are missing")
     wake_setup = commands.add_parser("setup-wake", help="verify local Hey Aqua assets; download only with --download")
     wake_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="local sherpa keyword-spotting model directory")
     wake_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the configured wake assets")
@@ -393,10 +395,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Offline Hey Aqua wake assets ready: {path}")
             return 0
         if args.command == "setup-model":
+            model_dir = args.model_dir if args.model_dir is not None else MODEL_DIRS[args.model]
             if args.download:
-                print(f"Setting up the approved multilingual base model at {args.model_dir} (approximately 148 MB if missing).")
-            path = setup_model(args.model_dir, download=args.download)
-            print(f"Offline base model ready: {path}")
+                size = MODEL_SOURCES[args.model].approximate_mb
+                print(f"Setting up the approved multilingual {args.model} model at {model_dir} (approximately {size} MB if missing).")
+            path = setup_model(model_dir, download=args.download, model=args.model)
+            print(f"Offline {args.model} model ready: {path}")
             return 0
         if args.command == "devices":
             devices = list_devices(include_output=args.all)

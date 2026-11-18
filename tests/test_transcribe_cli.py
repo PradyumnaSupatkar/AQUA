@@ -133,7 +133,7 @@ class TranscribeCliTests(unittest.TestCase):
             status, output, errors = self.invoke(["setup-model"])
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
-        setup.assert_called_once_with(BASE_MODEL_DIR, download=False)
+        setup.assert_called_once_with(BASE_MODEL_DIR, download=False, model="base")
         record.assert_not_called()
         model_class.assert_not_called()
         self.assertIn("Offline base model ready", output)
@@ -148,7 +148,7 @@ class TranscribeCliTests(unittest.TestCase):
             ])
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
-        setup.assert_called_once_with(model_dir, download=True)
+        setup.assert_called_once_with(model_dir, download=True, model="base")
         record.assert_not_called()
         self.assertIn(str(model_dir), output)
 

@@ -1,0 +1,392 @@
+[
+  {
+    "model": "gemma4:latest",
+    "thinking": "off",
+    "stream": false,
+    "settings": {
+      "temperature": 0.2,
+      "num_predict": 1024,
+      "num_ctx": 4096,
+      "thinking": "off",
+      "seed": 42,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0,
+      "repeat_penalty": 1
+    },
+    "model_info": {
+      "name": "gemma4:latest",
+      "version": "0.40.16",
+      "family": "gemma4",
+      "thinking_control": "native_toggle",
+      "thinking_options": [
+        "auto",
+        "on",
+        "off"
+      ],
+      "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+    },
+    "actual_applications_launched": 0,
+    "host_results_simulated": true,
+    "proposal_response": {
+      "content": "",
+      "done": true,
+      "total_duration": 1796437600,
+      "eval_count": 17,
+      "eval_duration": 1220037000,
+      "load_duration": 5200300,
+      "prompt_eval_count": 417,
+      "prompt_eval_duration": 550628000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": [
+        {
+          "id": "call_y5yz7jlt",
+          "function": {
+            "index": 0,
+            "name": "open_application",
+            "arguments": {
+              "app_id": "notepad"
+            }
+          }
+        }
+      ]
+    },
+    "followup_response": {
+      "content": "Notepad.",
+      "done": true,
+      "total_duration": 757841200,
+      "eval_count": 4,
+      "eval_duration": 233830000,
+      "load_duration": 6752900,
+      "prompt_eval_count": 367,
+      "prompt_eval_duration": 510323000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": []
+    },
+    "ok": true,
+    "off_thinking_channels_absent": true,
+    "buffered_phase_timestamps_absent": true,
+    "wall_seconds": 2.5907059999999547
+  },
+  {
+    "model": "gemma4:latest",
+    "thinking": "on",
+    "stream": false,
+    "settings": {
+      "temperature": 0.2,
+      "num_predict": 1024,
+      "num_ctx": 4096,
+      "thinking": "on",
+      "seed": 42,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0,
+      "repeat_penalty": 1
+    },
+    "model_info": {
+      "name": "gemma4:latest",
+      "version": "0.40.16",
+      "family": "gemma4",
+      "thinking_control": "native_toggle",
+      "thinking_options": [
+        "auto",
+        "on",
+        "off"
+      ],
+      "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+    },
+    "actual_applications_launched": 0,
+    "host_results_simulated": true,
+    "proposal_response": {
+      "content": "",
+      "done": true,
+      "total_duration": 4982920200,
+      "eval_count": 60,
+      "eval_duration": 4428545000,
+      "load_duration": 5416500,
+      "prompt_eval_count": 419,
+      "prompt_eval_duration": 531976000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 1,
+      "thinking_characters": 178,
+      "tool_calls": [
+        {
+          "id": "call_vp7n44ko",
+          "function": {
+            "index": 0,
+            "name": "open_application",
+            "arguments": {
+              "app_id": "notepad"
+            }
+          }
+        }
+      ]
+    },
+    "followup_response": {
+      "content": "Notepad.",
+      "done": true,
+      "total_duration": 10309407300,
+      "eval_count": 131,
+      "eval_duration": 9790350000,
+      "load_duration": 6275800,
+      "prompt_eval_count": 369,
+      "prompt_eval_duration": 505283000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 1,
+      "thinking_characters": 542,
+      "tool_calls": []
+    },
+    "ok": true,
+    "off_thinking_channels_absent": null,
+    "buffered_phase_timestamps_absent": true,
+    "wall_seconds": 15.295392699999866
+  },
+  {
+    "model": "qwen3.5:9b-q4_K_M",
+    "thinking": "off",
+    "stream": false,
+    "settings": {
+      "temperature": 0.2,
+      "num_predict": 1024,
+      "num_ctx": 4096,
+      "thinking": "off",
+      "seed": 42,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0,
+      "repeat_penalty": 1
+    },
+    "model_info": {
+      "name": "qwen3.5:9b-q4_K_M",
+      "version": "0.40.16",
+      "family": "qwen35",
+      "thinking_control": "native_toggle",
+      "thinking_options": [
+        "auto",
+        "on",
+        "off"
+      ],
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+    },
+    "actual_applications_launched": 0,
+    "host_results_simulated": true,
+    "proposal_response": {
+      "content": "",
+      "done": true,
+      "total_duration": 20349738200,
+      "eval_count": 28,
+      "eval_duration": 4228104999,
+      "load_duration": 13871321400,
+      "prompt_eval_count": 629,
+      "prompt_eval_duration": 2237454000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": [
+        {
+          "id": "call_shjs0j43",
+          "function": {
+            "index": 0,
+            "name": "open_application",
+            "arguments": {
+              "app_id": "notepad"
+            }
+          }
+        }
+      ]
+    },
+    "followup_response": {
+      "content": "The launch attempt for Notepad was reported as successful.",
+      "done": true,
+      "total_duration": 3234920000,
+      "eval_count": 12,
+      "eval_duration": 1901813000,
+      "load_duration": 6618600,
+      "prompt_eval_count": 372,
+      "prompt_eval_duration": 1302223000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": []
+    },
+    "ok": true,
+    "off_thinking_channels_absent": true,
+    "buffered_phase_timestamps_absent": true,
+    "wall_seconds": 23.58709219999946
+  },
+  {
+    "model": "qwen3.5:9b-q4_K_M",
+    "thinking": "on",
+    "stream": false,
+    "settings": {
+      "temperature": 0.2,
+      "num_predict": 1024,
+      "num_ctx": 4096,
+      "thinking": "on",
+      "seed": 42,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0,
+      "repeat_penalty": 1
+    },
+    "model_info": {
+      "name": "qwen3.5:9b-q4_K_M",
+      "version": "0.40.16",
+      "family": "qwen35",
+      "thinking_control": "native_toggle",
+      "thinking_options": [
+        "auto",
+        "on",
+        "off"
+      ],
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+    },
+    "actual_applications_launched": 0,
+    "host_results_simulated": true,
+    "proposal_response": {
+      "content": "",
+      "done": true,
+      "total_duration": 11256122400,
+      "eval_count": 71,
+      "eval_duration": 10979915000,
+      "load_duration": 5001600,
+      "prompt_eval_count": 627,
+      "prompt_eval_duration": 227752000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 1,
+      "thinking_characters": 190,
+      "tool_calls": [
+        {
+          "id": "call_7n3ss2hc",
+          "function": {
+            "index": 0,
+            "name": "open_application",
+            "arguments": {
+              "app_id": "notepad"
+            }
+          }
+        }
+      ]
+    },
+    "followup_response": {
+      "content": "Notepad's launch attempt was reported as successful.",
+      "done": true,
+      "total_duration": 17310081500,
+      "eval_count": 110,
+      "eval_duration": 17050506000,
+      "load_duration": 6720100,
+      "prompt_eval_count": 370,
+      "prompt_eval_duration": 218453000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 1,
+      "thinking_characters": 429,
+      "tool_calls": []
+    },
+    "ok": true,
+    "off_thinking_channels_absent": null,
+    "buffered_phase_timestamps_absent": true,
+    "wall_seconds": 28.569055599999956
+  },
+  {
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "thinking": "off",
+    "stream": false,
+    "settings": {
+      "temperature": 0.2,
+      "num_predict": 1024,
+      "num_ctx": 4096,
+      "thinking": "off",
+      "seed": 42,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0,
+      "repeat_penalty": 1
+    },
+    "model_info": {
+      "name": "qwen3:4b-instruct-2507-q4_K_M",
+      "version": "0.40.16",
+      "family": "qwen3",
+      "thinking_control": "non_thinking",
+      "thinking_options": [
+        "auto",
+        "off"
+      ],
+      "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0"
+    },
+    "actual_applications_launched": 0,
+    "host_results_simulated": true,
+    "proposal_response": {
+      "content": "",
+      "done": true,
+      "total_duration": 7960984700,
+      "eval_count": 22,
+      "eval_duration": 895690000,
+      "load_duration": 6553383400,
+      "prompt_eval_count": 505,
+      "prompt_eval_duration": 492030000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": [
+        {
+          "id": "uSqx8L8oUKD6KNgU2xcZTPWjNoarLl3n",
+          "function": {
+            "index": 0,
+            "name": "open_application",
+            "arguments": {
+              "app_id": "notepad"
+            }
+          }
+        }
+      ]
+    },
+    "followup_response": {
+      "content": "Notepad's launch attempt was reported as successful.",
+      "done": true,
+      "total_duration": 630968900,
+      "eval_count": 11,
+      "eval_duration": 407788000,
+      "load_duration": 5089500,
+      "prompt_eval_count": 361,
+      "prompt_eval_duration": 182321000,
+      "first_stream_seconds": null,
+      "first_thinking_seconds": null,
+      "first_content_seconds": null,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "tool_calls": []
+    },
+    "ok": true,
+    "off_thinking_channels_absent": true,
+    "buffered_phase_timestamps_absent": true,
+    "wall_seconds": 8.595356599999832
+  },
+  {
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "thinking": "on",
+    "expected_unsupported": true,
+    "rejected_before_generation": true
+  }
+]

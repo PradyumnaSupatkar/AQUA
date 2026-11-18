@@ -1,0 +1,1128 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-11-14T17:45:28.175285+05:30",
+  "reviewer": "Codex reference audit; not human validation",
+  "dataset_sha256": "59f2a33ca1c1f48ee1d7dd93c612931f73b8b0e5e25b54e2007ff51f24d1c5d1",
+  "raw_snapshot_sha256": "039b057b7a84be23d029a8a99256b529cc6b097f50c85d52e43da9f9e0c16925",
+  "scope": "Uniform supplementary reasoning-conclusion audit of all 60 reasoning observations across all six completed configurations. Visible final conclusions are compared with frozen references; generated code is never executed and hidden reasoning is never credited. Original grades remain intact.",
+  "policy": "One unambiguous final result is compared with the static reference using the frozen numeric tolerance. Multiple differing JSON conclusions remain manual review. Reasoning r04 is directly checked against the explicit set-inclusion/exclusion premises. Whole-response JSON shape/fences are checked separately from numeric/logical correctness. Mathematical reasoning can be correct while the original case fails formatting or tool behavior.",
+  "configuration_summary": {
+    "A": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "correct": 5,
+        "incorrect": 5
+      },
+      "format_compliant": 10,
+      "correct_conclusion_with_noncompliant_format": 0,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    },
+    "A05": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "correct": 5,
+        "incorrect": 5
+      },
+      "format_compliant": 10,
+      "correct_conclusion_with_noncompliant_format": 0,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    },
+    "C": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "incorrect": 3,
+        "correct": 4,
+        "no_answer": 3
+      },
+      "format_compliant": 7,
+      "correct_conclusion_with_noncompliant_format": 0,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    },
+    "B": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "no_answer": 6,
+        "correct": 4
+      },
+      "format_compliant": 4,
+      "correct_conclusion_with_noncompliant_format": 0,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    },
+    "E": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "correct": 4,
+        "incorrect": 6
+      },
+      "format_compliant": 8,
+      "correct_conclusion_with_noncompliant_format": 1,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    },
+    "D": {
+      "completed_reasoning_cases": 10,
+      "conclusion_counts": {
+        "no_answer": 1,
+        "correct": 9
+      },
+      "format_compliant": 9,
+      "correct_conclusion_with_noncompliant_format": 0,
+      "warning": "Supplementary conclusion metric only; original case grades still include tools, visible-response completion, and requested formatting."
+    }
+  },
+  "reviewed_records": [
+    {
+      "configuration_id": "A",
+      "case_id": "r01",
+      "raw_record_sha256": "41b8f17c75a12a401178638099d6dde15a19c859193d304b16a1e32bbf0d4469",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "amount": 120
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r02",
+      "raw_record_sha256": "a93d02cc2990cb7e97ff5bbcb04e45401815645fdae1209475d87fd4b7401638",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "probability": 0.3
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r03",
+      "raw_record_sha256": "7f184e5ae100f520be63745f0426f12f81e718ea9dba77ba819d9b9a0bfbfcf0",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "speed_kmh": 48
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r04",
+      "raw_record_sha256": "ff90b251968c87d3e2d86e74ccc44cf5e997f91c7f1a5eb184908a0f2387219a",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible negative conclusion follows from every kel being a zor and no zor being a mip. The supplied explanation explicitly grounds the exclusion; only visible text was considered."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r05",
+      "raw_record_sha256": "1b298785b144f21aa425407420f0b928e8bb9bd6ef4fdd310c2e2ae2cbc9f39e",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "minutes": 9
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r06",
+      "raw_record_sha256": "f96dd77aed534db99486f517939633da670bdf6ac27e63c9bfdc92fea06b8091",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "probability": 0.1667
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r07",
+      "raw_record_sha256": "0195fb275009de1945155757c14cdee933fe302e9701756182d7a299a4eafdea",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "number": 23
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r08",
+      "raw_record_sha256": "365fdbef14e3130bf4414945e5cd07b62771bc938a5eecdf39280706d58980eb",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": [
+        7,
+        7
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r09",
+      "raw_record_sha256": "6fc0078e42c67a53dfa934b7f480c716a0c541ab953a6aa0f578451b0a4d8995",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A",
+      "case_id": "r10",
+      "raw_record_sha256": "6b2c7364f6954349ec494ccafa1b9ceae73c7c7bee9da1011a04feb826cac064",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "degrees": 105
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r01",
+      "raw_record_sha256": "05f7a84330147d1f3f89a22321fd4b8afddfa253509667369413f88ab92e819f",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "amount": 120
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r02",
+      "raw_record_sha256": "12fd69cfb6087dacd525765c822aab21eb405e38d29e8afa6df1df443bc4a0ce",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "probability": 0.3
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r03",
+      "raw_record_sha256": "5f0b2e95cff7092068ca3fbe3699699cdf42552e1e4433629bfac65d4b59ea87",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "speed_kmh": 48
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r04",
+      "raw_record_sha256": "276e72eaeb66dd27c5e971a85651249ee35ad10aec28de5456881c41d1ad8a34",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible negative conclusion follows from every kel being a zor and no zor being a mip. The supplied explanation explicitly grounds the exclusion; only visible text was considered."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r05",
+      "raw_record_sha256": "5f29d656c19598356cdd9b90e86ab2a3760368c8bec152fef0a42e2e4c187532",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "minutes": 9
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r06",
+      "raw_record_sha256": "ed7d9606535873a7a95521f4226ef2ad3337c708eabd9fbc7b10fb61e9f669bd",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "probability": 0.1667
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r07",
+      "raw_record_sha256": "5737d892ae0007deca36c429da93e80d7a4fcce6e78c1ad1d63ffef58d40cb58",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "number": 23
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r08",
+      "raw_record_sha256": "c91cacfa035eef8861bc66677c0e73f8763388309ec96ca9b3e68f160e85f016",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": [
+        7,
+        7
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r09",
+      "raw_record_sha256": "39d324f501b9c7a8039b28602abc7e9807c1f0b4b12877b801683d3287e7f0a5",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "A05",
+      "case_id": "r10",
+      "raw_record_sha256": "e6279439676fb676400398d8e62615c5689d5fc952121094dc2b296fa86c4152",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "degrees": 105
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r01",
+      "raw_record_sha256": "113d59afb85ce5222ecdd5fcbe46f033ee29b3497b6a7a49f0d1f5224161c6af",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "amount": 105
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r02",
+      "raw_record_sha256": "359e9ea43249658ef918ad8bf3cecee12a646e31652643235bdfb48d00dc14a5",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "probability": 0.3
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r03",
+      "raw_record_sha256": "80b813b770cb57586fdd5950a9c3b8be1272a92595fe4e38d617482a0ef51fc0",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r04",
+      "raw_record_sha256": "5067bd4c57de191e3fc8de17ac6a58048ad3b75d9d00b17d129c99a2b1ed1475",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible negative conclusion follows from every kel being a zor and no zor being a mip. The supplied explanation explicitly grounds the exclusion; only visible text was considered."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r05",
+      "raw_record_sha256": "134158204661971cd195d88590d1ca7ad0566c91ba0a4c5b694dc36444918177",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "minutes": 7
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r06",
+      "raw_record_sha256": "ee3d339f8019615d8755bd340a03c748b41e905b4dd4e8921afd036e18400a1f",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r07",
+      "raw_record_sha256": "ea011b7e5f640a1576a71888525ba43ee13ed883c5ee7609c91538ed83b7b15c",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "number": 52
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r08",
+      "raw_record_sha256": "316057895db9f1df86646884833e9ad34556bcda9b78249374704b9eb6443396",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r09",
+      "raw_record_sha256": "f0355ca9ec80870efbbfccbaa699c216dc12a8805aff223ae6e34e95b1e4c9b0",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "C",
+      "case_id": "r10",
+      "raw_record_sha256": "ddc7d6a366720cba6762fefed6189915f0521f5e0ae2a2ed59cd1af1d4c3242d",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r01",
+      "raw_record_sha256": "a33fe3f2887c93f7d47cc2b1eb80b7b5d197294e3d6c443964a95b2e17fb7f22",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r02",
+      "raw_record_sha256": "35d38dc8efec7c03a1235a7e125331c4cbd336d42bea4e161f7bfcdd98205991",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r03",
+      "raw_record_sha256": "b3f77c6f3471e78229e7953cbbe0c96d1dbaec19d3d5c8ca69a0df7e712434a2",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r04",
+      "raw_record_sha256": "2766972860c6e3cd3e6065ebc20b7327c795a665aa5a7ed9d68dc8af72291dae",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible negative conclusion follows from every kel being a zor and no zor being a mip. The supplied explanation explicitly grounds the exclusion; only visible text was considered."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r05",
+      "raw_record_sha256": "d2b3c1ab5a295fd788c7cd7b6b6f59e786a359b0323572514c477615f401b1ff",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r06",
+      "raw_record_sha256": "69c6b68d550364383ec45de0864290e735c85d9f9139aa9e585bba7ef35fc818",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r07",
+      "raw_record_sha256": "8cd4dd489521850c88f4480b2a776f4879b3d5e280c03ece6d6c91c54ba7bcd7",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "number": 17
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r08",
+      "raw_record_sha256": "c8293c0bad26627347d526120a9e2cee624398325ffb84cd53fd83bd834d5830",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r09",
+      "raw_record_sha256": "d70f962afbb1e388c6c84c46bea92fcec4b8ba127747838946652d94048f8c1d",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "r10",
+      "raw_record_sha256": "631677f36c4f4bb7733317d39e1f7b927b74ef3f57fb57b7105bb9603e6abc3c",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "No unambiguous visible conclusion in the requested result shape is present. Host clarification/validation messages and Calculator proposals are not mathematical answers. Hidden reasoning receives no credit."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r01",
+      "raw_record_sha256": "7068eb137c7cb35639e79ff51f98e46b5d84cc233ddc0fe5f7f237fbec426290",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "amount": 120
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r02",
+      "raw_record_sha256": "ebf9c523810311e774e9ab57b851135cded955eb439b83f936c75150a59be5bf",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "probability": 0.6
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r03",
+      "raw_record_sha256": "3fb2b659cbe83dbb863452d760d93879ad4b8ae71aef332fe06c6fec6afb828d",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "speed_kmh": 50
+      },
+      "format_compliant": false,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference. Leading explanation or surrounding prose violates the frozen JSON-only response shape, but conclusion correctness is reported separately."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r04",
+      "raw_record_sha256": "8f21781b77cc1b43c2f13a9a3e3fae6eee7bd46bf7f1d6e9f7a23a928125f416",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible negative conclusion follows from every kel being a zor and no zor being a mip. The supplied explanation explicitly grounds the exclusion; only visible text was considered."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r05",
+      "raw_record_sha256": "04f4b6a07aac860225e84f13fd846c47c34a3f5691ebd44cf7bf2f7749dc0148",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "minutes": 7
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r06",
+      "raw_record_sha256": "aef8531be0dc3e98e5a32813c792958457f65526ddce5d087c9530500918d7f4",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "probability": 0.9524
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r07",
+      "raw_record_sha256": "6a569b42cf088bb76a6090682a596f5cb8c275000462c8a5ea1e663e4de9a89c",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": {
+        "number": 23
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r08",
+      "raw_record_sha256": "fb6bc865901e772a2b2832151b38b9f717c735e63df91c0b54e497f6b0c148cd",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "incorrect",
+      "conclusion_correct": false,
+      "visible_final_conclusion": [
+        7,
+        0
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion differs from the independently checked static reference."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r09",
+      "raw_record_sha256": "6859cf1b4edd67d37f406da7f47319c9758d10f80f5e453359d7053414d9ab7b",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": false,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference. Leading explanation or surrounding prose violates the frozen JSON-only response shape, but conclusion correctness is reported separately."
+    },
+    {
+      "configuration_id": "E",
+      "case_id": "r10",
+      "raw_record_sha256": "067d933193ade09b534ecaedcd3fab5db13a33a008e8e57796ba36bccb988361",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "degrees": 7.5
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible final conclusion matches the independently checked static reference."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r01",
+      "raw_record_sha256": "10230f46f0472c7b2ed42ab3771cd240c411ab2151cadb20307602c4f7aa1eac",
+      "automated_case_status": "incorrect",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "amount": 120
+      },
+      "conclusion_status": "no_answer",
+      "conclusion_correct": false,
+      "visible_final_conclusion": null,
+      "format_compliant": false,
+      "rationale": "The visible response asks permission to open Calculator and supplies no numerical conclusion. No hidden reasoning is credited as a final answer."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r02",
+      "raw_record_sha256": "319490bd019e3e5028b4f685c7ed1928fadeccef7f88f3eb0ac09ba258836f19",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.3
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "probability": 0.3
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r03",
+      "raw_record_sha256": "3909429370b93629f2e31804649248b49ec590c527ef230692d28d652bd64484",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "speed_kmh": 48
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "speed_kmh": 48
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r04",
+      "raw_record_sha256": "25e094f9d2dc3d3c934ff6825e2fcbfb39cd4dd884426787763a3b2c046ac27f",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": "No: every kel is a zor, and zors cannot be mips.",
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": "No",
+      "format_compliant": true,
+      "rationale": "The visible conclusion No and its set-inclusion/exclusion justification follow the explicit premises: kels are zors and no zor is a mip."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r05",
+      "raw_record_sha256": "b16e21024035dad261c01a57f76dcf8abea813cb77b04b19397055b7d6f66234",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "minutes": 6
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "minutes": 6
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r06",
+      "raw_record_sha256": "5b8c19ed0b78c2b119d37b9054847a52202aa0d2345df56db526bb4d3480deeb",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "probability": 0.1538
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "probability": 0.1538
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r07",
+      "raw_record_sha256": "270764a7f20da62e7648c18baa961ca17adf7b9273d9667386a05279b75e4da2",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "number": 17
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "number": 17
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r08",
+      "raw_record_sha256": "684351071dc737a51a5814b19e72507c8bca7c168fa64eb26975c8f6f03870e5",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          0
+        ]
+      ],
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r09",
+      "raw_record_sha256": "1d8efc3873495ae248c5784d07e33cb5f1c145801caf5dc4ef45bfbda6790410",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "A": "liar",
+        "B": "truth-teller"
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    },
+    {
+      "configuration_id": "D",
+      "case_id": "r10",
+      "raw_record_sha256": "1ac92fc6b2551f201db4f15fe9f074be8625406592d5144b7b5f1dda4c64b2b6",
+      "automated_case_status": "correct",
+      "reviewer": "Codex reference audit; not human validation",
+      "reference_conclusion": {
+        "degrees": 7.5
+      },
+      "conclusion_status": "correct",
+      "conclusion_correct": true,
+      "visible_final_conclusion": {
+        "degrees": 7.5
+      },
+      "format_compliant": true,
+      "rationale": "The unambiguous visible JSON conclusion matches the independently checked static reference. Fenced JSON is permitted by the original non-strict reasoning response shape."
+    }
+  ]
+}

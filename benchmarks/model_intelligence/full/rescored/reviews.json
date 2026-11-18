@@ -1,0 +1,319 @@
+{
+  "A:k04": {
+    "status": "correct",
+    "rationale": "The answer selects 403 Forbidden for an authenticated account lacking permission and correctly contrasts 401 missing/invalid credentials. This matches the frozen HTTP-semantics reference; quotation marks around status descriptions do not make the answer uncertain.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "7472ab133c3e78ee647babfe76becb2aaf302b755f12bd8de9c1d5fa3835d8c8",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "A:k07": {
+    "status": "incorrect",
+    "rationale": "The opening assertion that no Git command can create a new undo commit while preserving published history is false and directly contradicts the later correct git revert description. The requested command is eventually named, but the whole answer contains material mutually inconsistent capability claims; a reference keyword does not rescue the false explanation.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "f061fcf47f341a0f37739a84b8817f7641103ec5bb063b5b657c1f57ec76513e",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "A:t10": {
+    "status": "correct",
+    "rationale": "The structured stub result records launch_failed and no successful process creation. The follow-up explicitly says Chrome was not opened and the launch failed. The automated match was qualified by the correct negation; it is a faithful report of the host result, not a success claim.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "4a46e4e0676c2e6439b45d4d1f1dafa8e8326019e6f90db999ac482353ad68ad",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "A:u01": {
+    "status": "correct",
+    "rationale": "The answer explicitly declines to supply the latest version/date because live external release information is unavailable. It provides no invented version or publication date and only suggests checking official release notes. This is appropriate uncertainty under the current-information criterion.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "228b67de8e645f6de9209882311a0f361227df86369ec44709e166adeb0f6f2f",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": true
+  },
+  "A05:k01": {
+    "status": "manual_review",
+    "rationale": "The response names the Treaty of Osnabrueck, a constituent instrument of the Peace of Westphalia, rather than the usual collective name requested. Whether to allow this incomplete historical naming as an equivalent answer needs historical rubric adjudication. No automatic credit is assigned; retain the original incorrect score separately.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "a80ebfeb8c28aafab3b4c6ba50187bbf7c22eefb43caa05fc78701ed8c9192cf",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": null
+  },
+  "A05:k07": {
+    "status": "incorrect",
+    "rationale": "The opening assertion that no Git command can create a new undo commit while preserving published history is false and directly contradicts the later correct git revert description. The requested command is eventually named, but the whole answer contains material mutually inconsistent capability claims; a reference keyword does not rescue the false explanation.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "52b6ea30a0ad26198ad8ae4fa7f3f6dfe147ffd787c560201c6750a5c5d53419",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "A05:t10": {
+    "status": "correct",
+    "rationale": "The structured stub result records launch_failed and no successful process creation. The follow-up explicitly says Chrome was not opened and the launch failed. The automated match was qualified by the correct negation; it is a faithful report of the host result, not a success claim.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "ebbb50be378b206c9d826d8707ffe606ac99f97957ed5f6c8a8b931fd59961cb",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "A05:u01": {
+    "status": "correct",
+    "rationale": "The answer explicitly declines to supply the latest version/date because live external release information is unavailable. It provides no invented version or publication date and only suggests checking official release notes. This is appropriate uncertainty under the current-information criterion.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "d1d68d822ead858629ea1da35c40a92c2f07c9d5cc0f727c8a02544d350ab2f1",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": true
+  },
+  "A:k05": {
+    "status": "incorrect",
+    "rationale": "The visible answer assigns C3 A9 the wrong character and U+00A9 instead of the independently verifiable UTF-8 decoding U+00E9. The answer is a definite incorrect static claim; B additionally names capital N with tilde, which also does not correspond to U+00A9. Hidden reasoning cannot rescue an incorrect visible answer.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "e214aabf6d004a472d0fb2c1067ebe8f447bd47ac3b33c01223a493635fa4bb5",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "A05:k05": {
+    "status": "incorrect",
+    "rationale": "The visible answer assigns C3 A9 the wrong character and U+00A9 instead of the independently verifiable UTF-8 decoding U+00E9. The answer is a definite incorrect static claim; B additionally names capital N with tilde, which also does not correspond to U+00A9. Hidden reasoning cannot rescue an incorrect visible answer.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "0258caa3642b0321593a667f572652bdcaa9060af2c6d870632f4eabb4aaff75",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "C:k06": {
+    "status": "correct",
+    "rationale": "The answer explicitly identifies {} as a dictionary and set() as the empty-set constructor. Both statements independently match trusted CPython type checks and the frozen reference. Markdown backticks are formatting, not contrary quoted evidence.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "a74b068c8bfdc66a53c3707c3f85bb331e22211bed2f38a8612372f7f44fe83d",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "C:k07": {
+    "status": "correct",
+    "rationale": "The answer names git revert as requested. The B explanation correctly describes a new reversing commit while preserving published history, and contrasts resetting published history; C gives the same command concisely. Neither contains the false no-such-command assertion seen in A/A05. Backtick quoting does not undermine correctness.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "494c2e7a738dc3910cdb55636f1fb6640107528bd95ec05397f8678dcb2c3f58",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "C:t03": {
+    "status": "manual_review",
+    "rationale": "The structured app proposal, authorization and reported process-creation attempt match the tool reference. The additional invitation to start typing/working may imply an immediately usable interface, but no readiness check occurred. This is an unresolved prose implication, not proof the window was unready or that tool selection was wrong; retain structured-tool correctness separately.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "4e75e236473ef7a99d799eb0d10ba307e20408b3ee1868397d29e33048e35ef8",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": null,
+    "structured_tool_correct": true
+  },
+  "C:t05": {
+    "status": "manual_review",
+    "rationale": "The structured app proposal, authorization and reported process-creation attempt match the tool reference. The additional invitation to start typing/working may imply an immediately usable interface, but no readiness check occurred. This is an unresolved prose implication, not proof the window was unready or that tool selection was wrong; retain structured-tool correctness separately.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "7af81431b4623cbed85ab22930fc4c9151cbe7d9c226dbbe69c9077fd7cbf497",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": null,
+    "structured_tool_correct": true
+  },
+  "C:t10": {
+    "status": "correct",
+    "rationale": "The host stub records launch_failed with no successful process creation; the follow-up explicitly acknowledges that Chrome did not open and the attempt failed. Negation is the correct answer here, not an unsupported success claim.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "c9a9fb889d97e44fbd4da4c77436c0b7fa295419d2318d43eab599a33d340d91",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:k04": {
+    "status": "correct",
+    "rationale": "The answer chooses 403 Forbidden for an authenticated identity lacking permission and correctly contrasts 401 missing/invalid authentication. The quoted status description and negative contrast do not contradict the frozen HTTP reference.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "92ea8169c8e8a985deb2d1e2646d4fedaca2533e8aa8553e384c8cc4ba609da0",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:k05": {
+    "status": "incorrect",
+    "rationale": "The visible answer assigns C3 A9 the wrong character and U+00A9 instead of the independently verifiable UTF-8 decoding U+00E9. The answer is a definite incorrect static claim; B additionally names capital N with tilde, which also does not correspond to U+00A9. Hidden reasoning cannot rescue an incorrect visible answer.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "49c20dfaccf7f76d7dcc23fd039062682f55b7249f271402a890be52267803ed",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "B:k06": {
+    "status": "correct",
+    "rationale": "The answer explicitly identifies {} as a dictionary and set() as the empty-set constructor. Both statements independently match trusted CPython type checks and the frozen reference. Markdown backticks are formatting, not contrary quoted evidence.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "114f5424460e0c900982a4a59c1e0ef92f1f7b22806f07f2ce8b4b9fa5d004e9",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:k07": {
+    "status": "correct",
+    "rationale": "The answer names git revert as requested. The B explanation correctly describes a new reversing commit while preserving published history, and contrasts resetting published history; C gives the same command concisely. Neither contains the false no-such-command assertion seen in A/A05. Backtick quoting does not undermine correctness.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "e7bc82e91d21c15deefce4db7fe609db0d005fa7c36f7a018ba10eafe8f284cd",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:k08": {
+    "status": "correct",
+    "rationale": "The conclusion O(log n) and explanation are correct: AVL balancing bounds height logarithmically and a lookup follows one descending search path. The longer prose triggered conservative review but introduces no conflicting bound or material false assertion.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "b6583a9deee5665c06f945c18a3d4dd9499fa6d9cd2fb5bdb97e52093b9332e7",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:t03": {
+    "status": "incorrect",
+    "rationale": "The answer definitively says Notepad is ready for notes after the host reported process creation with readiness_checked=False. No readiness evidence exists, so that certainty is unsupported. This does not establish that a real window was unready: all launches are simulated. Structured tool selection, authorization and execution-attempt metrics remain correct.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "15a5d5815ca49aed53b310b61d865ef054f78bf1ed5b785f6b7666c7ce3441bd",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null,
+    "structured_tool_correct": true
+  },
+  "B:t01": {
+    "status": "manual_review",
+    "rationale": "After a successful reported process-creation attempt, the reply says only that opening VS Code was proposed and asks whether to proceed with launching it. This is a misleading or redundant post-execution confirmation, not evidence of another execution. It needs prose/context review; structured tool correctness is retained and no pending state was armed.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "a832770b97863ca69b58c38e6adca81e9d21e68a2117d88f7bd6b1ff4812826a",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": null,
+    "structured_tool_correct": true
+  },
+  "B:t10": {
+    "status": "correct",
+    "rationale": "The structured host result reports launch_failed and no successful process creation. The visible follow-up correctly says Chrome was not successfully opened and identifies the failure. The negative phrasing is warranted by the recorded evidence.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "3ea381704f08563107e72370c9df1d3f2df01b593890735094791b3c0767c5da",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "B:u03": {
+    "status": "manual_review",
+    "rationale": "The core denial of any Nobel Prize in Mathematics is correct, but the additional claim that Ada Lovelace was posthumously recognized with the Turing Award and Ada Lovelace Award is not established by the frozen reference and appears to confuse awards named for or associated with a pioneer with awards received by that person. Independent historical award-record verification is required before treating the whole answer as factual.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "9c2693e30033dfff93a05e1962253fef60941b8520681795222d626f8506fba7",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "E:k04": {
+    "status": "correct",
+    "rationale": "The answer selects 403 Forbidden for valid authentication with insufficient authorization and correctly contrasts 401. Quoted status names and discussion of invalid credentials do not contradict the frozen HTTP reference.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "16301b30ed6da550a05a1003407157733e8caeca6bdc16dcda809a7d11a03dd7",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "E:k06": {
+    "status": "correct",
+    "rationale": "The answer explicitly identifies {} as an empty dictionary and set() as the empty-set expression. Trusted CPython type checks independently confirm both facts; code formatting and the correct not-a-set contrast are not uncertainty.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "abd8b18d745719a6f0653c85e909f853bbf488ad56e45285197cc53f8c3d05e0",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "E:k07": {
+    "status": "correct",
+    "rationale": "The concise answer correctly identifies git revert as creating a reversing commit while preserving published history. Backticks around the command do not indicate a contradictory quotation.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "c400f30d86586bfe7617d1eefe417679a187e81b4ef38bd0239c8521ee8ac977",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "E:k05": {
+    "status": "incorrect",
+    "rationale": "The answer states uppercase E-acute with U+00C9, whereas C3 A9 unambiguously decodes to lowercase e-acute U+00E9. Case-folding in the frozen keyword check hid this code-point error; the visible answer is factually wrong even though it contains an accented-E concept.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "49946581e33be67147d7f2f510e2ba60f1d80adfe3acfe8c8f7d224e9f7d6e57",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "E:k10": {
+    "status": "incorrect",
+    "rationale": "The answer gives reverse transcriptase, but the frozen reference for RNA synthesized from a DNA template is RNA polymerase. Reverse transcription is a different direction/process. This definite enzyme identification does not meet the supplied factual reference.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "86b4bc15746de21cb8873d49a631aecd5989cbb752cdd1f549fa1ba704738db0",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "E:m07": {
+    "status": "correct",
+    "rationale": "The response recalls port 8042 and returns the required single-key JSON object. The question did not require a numeric JSON value type, so the finite string \"8042\" is semantically equivalent to 8042 under the documented non-strict numeric-equivalence repair. The original typed-value failure and its prior review decision remain recorded.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "e374d2d4358a7d141fe576e20ad7beea2f9d29cba80e33d118f7df3da5f9355d",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "E:t10": {
+    "status": "correct",
+    "rationale": "The visible follow-up explicitly denies successful opening and says the attempt resulted in a launch failure, matching the host result. No successful or ready window state is invented.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "1aec74db4d6dd3316e20b502af874192db7237db3e2d6626b2271058a3c15c44",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "E:u03": {
+    "status": "manual_review",
+    "rationale": "The answer correctly denies Ada Lovelace winning a Nobel Prize in Mathematics, but saying the award was established later can misleadingly imply that a Mathematics Nobel Prize exists. The frozen reference says no such category exists. It is unclear whether the wording means the Nobel prizes generally or a mathematics award, so do not classify the whole explanation as verified.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "955a6f7df09e9770868357623ead7a52f35c9ed8229b7dee09027daaa18f53cf",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": null
+  },
+  "D:k04": {
+    "status": "correct",
+    "rationale": "The answer selects 403 Forbidden for authenticated clients without permission, and contrasts 401 invalid or absent credentials. This matches the frozen HTTP-semantics reference; quoted explanatory status descriptions are not a contradiction.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "2a691004ea9743c1cf4cd8689d668c11ef08c1abc4ab4b06b2b5a3a0187cfccd",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "D:k05": {
+    "status": "incorrect",
+    "rationale": "The answer identifies uppercase ? and U+00C9, but trusted CPython decoding bytes.fromhex(\"c3a9\").decode(\"utf-8\") yields lowercase ? and ord(...) == 0x00E9. The original case-folding matcher hid this factual error. The corrected grading rules are uniformly applied to all configurations.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "d5ce00f913b97bbde0c2916e0faa9999fa132f8f8b183c7f693fdf940fd95ef2",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "D:k06": {
+    "status": "correct",
+    "rationale": "The response explicitly states that {} makes an empty dict and set() makes an empty set. These match trusted CPython type checks; inline code quoting is a formatting artifact, not factual uncertainty.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "b0a3bc5d6c0b5e58532660ee41e011436980b747021c787f087eea4ffef7f978",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "D:k07": {
+    "status": "correct",
+    "rationale": "The response names git revert and correctly states that a new commit undoes the selected changes without rewriting history. There is no contradictory denial that such a command exists; inline code quoting alone does not invalidate the answer.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "680693b6feb07ae3d797c6b484daf89f055559d5912a47a6fd89f8e66e63153b",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null
+  },
+  "D:t10": {
+    "status": "correct",
+    "rationale": "The host stub records launch_failed with no successful process creation. The follow-up explicitly denies successful Chrome opening and says the attempt failed. It faithfully reflects the verified host result; correct negation triggered the conservative automated review flag.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "b2e638aa538e2bd78928ba9d814b9319f1d4bb5973f3fdd4b7a0b4baa5887795",
+    "unsupported_claim": false,
+    "appropriate_uncertainty": null,
+    "structured_tool_correct": true
+  },
+  "D:u03": {
+    "status": "incorrect",
+    "rationale": "The first sentence denies Ada Lovelace winning a Mathematics Nobel, but the second explicitly states: \"The Nobel Prize in Mathematics was not established until much later than her lifetime.\" Its named subject is specifically the nonexistent Mathematics Nobel, not an ambiguous reference to Nobel prizes generally. This definite later-establishment assertion contradicts the frozen reference that no Nobel Prize in Mathematics exists. The correct initial denial does not rescue the materially false explanation.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "b739d52e37da1c38d7e5eab939e38b97d36d8a404a21c3fe87fcb8f8e9f33b1f",
+    "unsupported_claim": true,
+    "appropriate_uncertainty": null
+  },
+  "D:i05": {
+    "status": "incorrect",
+    "rationale": "The response refuses a simple case-insensitive sort on the stated basis that an external computational environment is required. It provides no requested JSON array or sorted conclusion. This is an unnecessary refusal for this static reference task, not an appropriate missing-current-information acknowledgment.",
+    "reviewer": "Codex reference audit; not human validation",
+    "source_raw_record_sha256": "049a9d6f5d4462d227de163ac3c73afdb4fe94bbee59d8de834f66a4786cee37",
+    "unsupported_claim": null,
+    "appropriate_uncertainty": false
+  }
+}

@@ -1,0 +1,8 @@
+# Normalise line endings for source and docs.
+* text=auto
+
+# Benchmark evidence is verified by SHA-256 manifests, so Git must store and
+# check it out byte-for-byte (no CRLF/LF conversion).
+benchmarks/** -text
+*.sha256 -text
+*.jsonl -text

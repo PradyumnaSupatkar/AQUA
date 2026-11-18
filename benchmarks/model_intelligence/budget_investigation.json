@@ -1,0 +1,83 @@
+[
+  {
+    "budget": 1024,
+    "num_ctx": 4096,
+    "presence_penalty": 0.0,
+    "temperature": 0.2,
+    "seed": 42,
+    "http_status": 200,
+    "total_wall_seconds": 151.7868394000002,
+    "first_visible_seconds": 151.30755420000014,
+    "answer": "323",
+    "thinking_characters": 2505,
+    "duplicate_5gram_fraction": 0.02203856749311295,
+    "largest_5gram_repeat_count": 3,
+    "stats": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "created_at": "2026-11-14T04:41:18.092619Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 151771192300,
+      "load_duration": 13766178900,
+      "prompt_eval_count": 50,
+      "prompt_eval_cached_count": 0,
+      "prompt_eval_duration": 1137081000,
+      "eval_count": 791,
+      "eval_duration": 136853100000
+    }
+  },
+  {
+    "budget": 1024,
+    "num_ctx": 4096,
+    "presence_penalty": 1.5,
+    "temperature": 0.2,
+    "seed": 42,
+    "http_status": 200,
+    "total_wall_seconds": 96.29328860000032,
+    "first_visible_seconds": 95.80336960000022,
+    "answer": "323",
+    "thinking_characters": 1433,
+    "duplicate_5gram_fraction": 0.0,
+    "largest_5gram_repeat_count": 1,
+    "stats": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "created_at": "2026-11-14T04:42:54.3869835Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 96291795300,
+      "load_duration": 10862500,
+      "prompt_eval_count": 50,
+      "prompt_eval_cached_count": 46,
+      "prompt_eval_duration": 251529000,
+      "eval_count": 551,
+      "eval_duration": 96009590000
+    }
+  },
+  {
+    "budget": 2048,
+    "num_ctx": 4096,
+    "presence_penalty": 1.5,
+    "temperature": 0.2,
+    "seed": 42,
+    "http_status": 200,
+    "total_wall_seconds": 92.62986609999962,
+    "first_visible_seconds": 92.06972569999971,
+    "answer": "323",
+    "thinking_characters": 1433,
+    "duplicate_5gram_fraction": 0.0,
+    "largest_5gram_repeat_count": 1,
+    "stats": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "created_at": "2026-11-14T04:44:27.018043Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 92628303000,
+      "load_duration": 6660900,
+      "prompt_eval_count": 50,
+      "prompt_eval_cached_count": 46,
+      "prompt_eval_duration": 244574000,
+      "eval_count": 551,
+      "eval_duration": 92358190000
+    }
+  }
+]

@@ -1,0 +1,242 @@
+[
+  {
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "thinking_requested": false,
+    "stream": true,
+    "http_status": 200,
+    "first_visible_seconds": 5.717025400001148,
+    "total_wall_seconds": 5.828110900001775,
+    "answer": "323",
+    "thinking_characters": 0,
+    "thinking_chunks": 0,
+    "stats": {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "created_at": "2026-11-13T18:22:18.7328476Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 5827232700,
+      "load_duration": 5480381800,
+      "prompt_eval_count": 48,
+      "prompt_eval_cached_count": 0,
+      "prompt_eval_duration": 226857000,
+      "eval_count": 4,
+      "eval_duration": 111656000
+    },
+    "ps": {
+      "models": [
+        {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "model": "qwen3:4b-instruct-2507-q4_K_M",
+          "size": 3534917467,
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-13T23:57:18.7328476+05:30",
+          "size_vram": 2344636907,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  {
+    "model": "qwen3.5:9b-q4_K_M",
+    "thinking_requested": true,
+    "stream": true,
+    "http_status": 200,
+    "first_visible_seconds": null,
+    "total_wall_seconds": 98.9423775000032,
+    "answer": "",
+    "thinking_characters": 1428,
+    "thinking_chunks": 397,
+    "stats": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "created_at": "2026-11-13T18:23:57.6775213Z",
+      "done": true,
+      "done_reason": "length",
+      "total_duration": 98941264400,
+      "load_duration": 13204582700,
+      "prompt_eval_count": 50,
+      "prompt_eval_cached_count": 0,
+      "prompt_eval_duration": 1036321999,
+      "eval_count": 512,
+      "eval_duration": 84690573000
+    },
+    "ps": {
+      "models": [
+        {
+          "name": "qwen3.5:9b-q4_K_M",
+          "model": "qwen3.5:9b-q4_K_M",
+          "size": 6254997009,
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-13T23:58:57.6775213+05:30",
+          "size_vram": 1661783243,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  {
+    "model": "qwen3.5:9b-q4_K_M",
+    "thinking_requested": false,
+    "stream": true,
+    "http_status": 200,
+    "first_visible_seconds": 0.42700170000171056,
+    "total_wall_seconds": 0.8859853999965708,
+    "answer": "323",
+    "thinking_characters": 0,
+    "thinking_chunks": 0,
+    "stats": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "created_at": "2026-11-13T18:23:58.5651028Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 884384600,
+      "load_duration": 6649200,
+      "prompt_eval_count": 52,
+      "prompt_eval_cached_count": 46,
+      "prompt_eval_duration": 401509000,
+      "eval_count": 4,
+      "eval_duration": 459106000
+    },
+    "ps": {
+      "models": [
+        {
+          "name": "qwen3.5:9b-q4_K_M",
+          "model": "qwen3.5:9b-q4_K_M",
+          "size": 6254997009,
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-13T23:58:58.5656078+05:30",
+          "size_vram": 1661783243,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  {
+    "model": "gemma4:latest",
+    "thinking_requested": true,
+    "stream": true,
+    "http_status": 200,
+    "first_visible_seconds": 27.79282129999774,
+    "total_wall_seconds": 28.001391099998727,
+    "answer": "323",
+    "thinking_characters": 433,
+    "thinking_chunks": 165,
+    "stats": {
+      "model": "gemma4:latest",
+      "created_at": "2026-11-13T18:24:26.5694152Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 28000096000,
+      "load_duration": 12724706100,
+      "prompt_eval_count": 51,
+      "prompt_eval_cached_count": 0,
+      "prompt_eval_duration": 503617000,
+      "eval_count": 205,
+      "eval_duration": 14768097000
+    },
+    "ps": {
+      "models": [
+        {
+          "name": "gemma4:latest",
+          "model": "gemma4:latest",
+          "size": 9608133343,
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-13T23:59:26.5694152+05:30",
+          "size_vram": 1494808001,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  {
+    "model": "gemma4:latest",
+    "thinking_requested": false,
+    "stream": true,
+    "http_status": 200,
+    "first_visible_seconds": 0.3911724999998114,
+    "total_wall_seconds": 0.6018139000007068,
+    "answer": "323",
+    "thinking_characters": 0,
+    "thinking_chunks": 0,
+    "stats": {
+      "model": "gemma4:latest",
+      "created_at": "2026-11-13T18:24:27.1730837Z",
+      "done": true,
+      "done_reason": "stop",
+      "total_duration": 600064700,
+      "load_duration": 5789800,
+      "prompt_eval_count": 49,
+      "prompt_eval_cached_count": 0,
+      "prompt_eval_duration": 374900000,
+      "eval_count": 4,
+      "eval_duration": 210710000
+    },
+    "ps": {
+      "models": [
+        {
+          "name": "gemma4:latest",
+          "model": "gemma4:latest",
+          "size": 9608133343,
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-13T23:59:27.1735867+05:30",
+          "size_vram": 1494808001,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  }
+]

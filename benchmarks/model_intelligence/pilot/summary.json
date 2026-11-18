@@ -1,0 +1,1603 @@
+{
+  "schema_version": 1,
+  "dataset_sha256": "f5c16df28746f96e826f2d64f9d6826b9a9098a3bcdddfd8d99a092d8a976af3",
+  "config_sha256": "70fe9021fbff69e43e9ebadf87079c324d992bffe52713c83644ca92e29ad20d",
+  "configurations": {
+    "A": {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 7,
+      "incorrect": 1,
+      "manual_review": 0,
+      "error": 0,
+      "automatic_correct": 7,
+      "accuracy_all_completed": 0.875,
+      "accuracy_adjudicated": 0.875,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 1,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 21.546875800000635,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 2.154381020000028,
+        "median": 1.3340094000000136,
+        "p90": 2.723531699999967,
+        "min": 0.4313414000002922,
+        "max": 9.27639790000012
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 2.6933594750000793,
+        "median": 2.145939200000157,
+        "p90": 9.276700100000198,
+        "min": 0.43177639999976236,
+        "max": 9.276700100000198
+      },
+      "first_visible_answer_seconds": {
+        "count": 10,
+        "mean": 1.1439880600000378,
+        "median": 0.3134138000000348,
+        "p90": 1.3876194000004034,
+        "min": 0.17145479999999225,
+        "max": 7.994302100000368
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 273,
+      "generation_seconds": 10.966669,
+      "generated_tokens_per_second": 24.893611724763463,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 0.6528021818181818,
+        "median": 0.0062466,
+        "p90": 0.007177,
+        "min": 0.005186,
+        "max": 7.1196615
+      },
+      "server_prompt_seconds": 3.203181,
+      "prompt_tokens": 10760,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 0,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen3",
+          "thinking_control": "non_thinking",
+          "thinking_options": [
+            "auto",
+            "off"
+          ],
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0"
+        },
+        "installed": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+          "size": 2497293803,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:19:27.0185846+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.17024679999985892
+      },
+      "failure_examples": [
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 9}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 9}."
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "A05": {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "settings": {
+        "temperature": 0.5,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 7,
+      "incorrect": 1,
+      "manual_review": 0,
+      "error": 0,
+      "automatic_correct": 7,
+      "accuracy_all_completed": 0.875,
+      "accuracy_adjudicated": 0.875,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 1,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 14.461313899999823,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 1.4458078699999988,
+        "median": 1.3045385000000351,
+        "p90": 2.6871343999996498,
+        "min": 0.4451567999999497,
+        "max": 3.1788313000001835
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 1.8076642374999778,
+        "median": 1.6609373499998128,
+        "p90": 3.1792342000003373,
+        "min": 0.4455778999999893,
+        "max": 3.1792342000003373
+      },
+      "first_visible_answer_seconds": {
+        "count": 10,
+        "mean": 0.36739658999990754,
+        "median": 0.2524596499999916,
+        "p90": 0.38121449999971446,
+        "min": 0.17544700000007651,
+        "max": 1.3883448000001408
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 291,
+      "generation_seconds": 11.643641,
+      "generated_tokens_per_second": 24.992182428159712,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 0.006132236363636364,
+        "median": 0.0056899,
+        "p90": 0.0073367,
+        "min": 0.0051545,
+        "max": 0.0086468
+      },
+      "server_prompt_seconds": 2.530341,
+      "prompt_tokens": 10760,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 0,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen3",
+          "thinking_control": "non_thinking",
+          "thinking_options": [
+            "auto",
+            "off"
+          ],
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0"
+        },
+        "installed": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+          "size": 2497293803,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3:4b-instruct-2507-q4_K_M",
+              "model": "qwen3:4b-instruct-2507-q4_K_M",
+              "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+              "size": 3534917467,
+              "size_vram": 2344636907,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:21:25.1107099+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen3",
+                "families": [
+                  "qwen3"
+                ],
+                "parameter_size": "4.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.054510299999947165
+      },
+      "failure_examples": [
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 9}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 9}."
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "C": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 6,
+      "incorrect": 1,
+      "manual_review": 1,
+      "error": 0,
+      "automatic_correct": 6,
+      "accuracy_all_completed": 0.75,
+      "accuracy_adjudicated": 0.8571428571428571,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 1,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 66.13958999999977,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 6.6136431199999155,
+        "median": 4.598611149999897,
+        "p90": 10.841479900000195,
+        "min": 1.6006403999999748,
+        "max": 21.497531799999706
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 8.267448749999971,
+        "median": 6.841419899999892,
+        "p90": 21.497890500000267,
+        "min": 3.267370799999753,
+        "max": 21.497890500000267
+      },
+      "first_visible_answer_seconds": {
+        "count": 10,
+        "mean": 3.577923740000051,
+        "median": 1.414038249999976,
+        "p90": 7.925157600000148,
+        "min": 0.9521665000002031,
+        "max": 16.106323900000007
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 234,
+      "generation_seconds": 34.512359,
+      "generated_tokens_per_second": 6.78017981906134,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 1.1652826818181818,
+        "median": 0.0067434,
+        "p90": 0.0097035,
+        "min": 0.0061417,
+        "max": 12.745607
+      },
+      "server_prompt_seconds": 18.539147,
+      "prompt_tokens": 12080,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 1,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen35",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+        },
+        "installed": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "size": 6550825550,
+          "details": {
+            "parent_model": "model.gguf",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 4096,
+            "runner": "llamacpp"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3:4b-instruct-2507-q4_K_M",
+              "model": "qwen3:4b-instruct-2507-q4_K_M",
+              "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+              "size": 3534917467,
+              "size_vram": 2344636907,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:21:39.679876+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen3",
+                "families": [
+                  "qwen3"
+                ],
+                "parameter_size": "4.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.1519957999998951
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "In Python 3.12, the literal `{}` creates a **dict** (dictionary). To create an empty set, you must use the expression `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 8}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 8}."
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "C05": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "settings": {
+        "temperature": 0.5,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 5,
+      "incorrect": 2,
+      "manual_review": 1,
+      "error": 0,
+      "automatic_correct": 5,
+      "accuracy_all_completed": 0.625,
+      "accuracy_adjudicated": 0.7142857142857143,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 0,
+          "incorrect": 2,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 54.6705237000001,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 5.466750480000019,
+        "median": 5.68130629999996,
+        "p90": 8.839514900000268,
+        "min": 1.6063450999999986,
+        "max": 9.279492699999992
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 6.833815462500013,
+        "median": 7.213042050000013,
+        "p90": 9.279910599999766,
+        "min": 2.9603249000001597,
+        "max": 9.279910599999766
+      },
+      "first_visible_answer_seconds": {
+        "count": 9,
+        "mean": 1.8487879777776977,
+        "median": 1.4006513999997878,
+        "p90": 6.199580500000138,
+        "min": 0.9645234999998138,
+        "max": 6.199580500000138
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 271,
+      "generation_seconds": 41.091192,
+      "generated_tokens_per_second": 6.595087336478338,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 0.006838072727272728,
+        "median": 0.0067148,
+        "p90": 0.0072891,
+        "min": 0.0057936,
+        "max": 0.008956
+      },
+      "server_prompt_seconds": 13.217096,
+      "prompt_tokens": 12080,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 1,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.5,
+      "unauthorized_tool_call_rate_per_all_turns": 0.1,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen35",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+        },
+        "installed": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "size": 6550825550,
+          "details": {
+            "parent_model": "model.gguf",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 4096,
+            "runner": "llamacpp"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:22:46.0339187+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.07246280000026672
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "In Python 3.12, the literal `{}` creates a dictionary (an empty dict). To create an empty set, you use the `set()` function (e.g., `set()`)."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r02",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\n  \"minutes\": 7\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 7}."
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "B": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "on",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 6,
+      "incorrect": 1,
+      "manual_review": 1,
+      "error": 0,
+      "automatic_correct": 6,
+      "accuracy_all_completed": 0.75,
+      "accuracy_adjudicated": 0.8571428571428571,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 306.25145599999996,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 30.62483106999998,
+        "median": 30.25652190000028,
+        "p90": 39.64561689999982,
+        "min": 12.212970999999925,
+        "max": 76.56343180000022
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 38.281431999999995,
+        "median": 34.382618200000024,
+        "p90": 76.5638229000001,
+        "min": 21.860713199999736,
+        "max": 76.5638229000001
+      },
+      "first_visible_answer_seconds": {
+        "count": 9,
+        "mean": 27.384153144444504,
+        "median": 27.647921600000245,
+        "p90": 74.98879870000019,
+        "min": 10.059879899999942,
+        "max": 74.98879870000019
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1826,
+      "generation_seconds": 291.515912,
+      "generated_tokens_per_second": 6.2638090232275205,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 0.006799472727272728,
+        "median": 0.0067003,
+        "p90": 0.0072809,
+        "min": 0.0061457,
+        "max": 0.0077462
+      },
+      "server_prompt_seconds": 14.402161,
+      "prompt_tokens": 12070,
+      "thinking_chunks": 1403,
+      "thinking_characters": 6236,
+      "thinking_to_answer_seconds": {
+        "count": 9,
+        "mean": 23.584449100000004,
+        "median": 12.242651500000193,
+        "p90": 73.56754640000008,
+        "min": 5.381819499999892,
+        "max": 73.56754640000008
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 2,
+      "appropriate_uncertainty": 0,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.5,
+      "unauthorized_tool_call_rate_per_all_turns": 0.1,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen35",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+        },
+        "installed": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "size": 6550825550,
+          "details": {
+            "parent_model": "model.gguf",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 4096,
+            "runner": "llamacpp"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:23:40.8713873+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.06804439999996248
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "In Python 3.12:\n- `{}` creates an empty **dict** (dictionary)\n- `set()` creates an empty **set**\n\nThe curly brace literal `{}` is for dictionaries, while `set()` is the constructor for sets."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "u01",
+          "status": "incorrect",
+          "answers": [
+            "Would you like me to open chrome? Please confirm explicitly."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['chrome'], executed=[], pending='chrome', outcome='clarification'."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review whether uncertainty is justified and whether any concrete assertion is supported.",
+              "unsupported_claim": null,
+              "appropriate_uncertainty": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "E": {
+      "model": "gemma4:latest",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 4,
+      "incorrect": 3,
+      "manual_review": 1,
+      "error": 0,
+      "automatic_correct": 4,
+      "accuracy_all_completed": 0.5,
+      "accuracy_adjudicated": 0.5714285714285714,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 0,
+          "incorrect": 2,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 36.19436410000071,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 3.619128260000025,
+        "median": 1.9503652500000044,
+        "p90": 4.251693900000191,
+        "min": 0.8615171000001283,
+        "max": 16.07151339999973
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 4.524295512500089,
+        "median": 3.2996291000001747,
+        "p90": 16.071836600000097,
+        "min": 1.337670899999921,
+        "max": 16.071836600000097
+      },
+      "first_visible_answer_seconds": {
+        "count": 9,
+        "mean": 1.9413755666666677,
+        "median": 0.5543164000000615,
+        "p90": 13.317406199999823,
+        "min": 0.45455330000004324,
+        "max": 13.317406199999823
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 232,
+      "generation_seconds": 17.801816,
+      "generated_tokens_per_second": 13.032378269722596,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 1.1059166545454546,
+        "median": 0.0061164,
+        "p90": 0.0066732,
+        "min": 0.0056562,
+        "max": 12.1050466
+      },
+      "server_prompt_seconds": 6.00862,
+      "prompt_tokens": 10040,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 1,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "gemma4:latest",
+          "version": "0.40.16",
+          "family": "gemma4",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+        },
+        "installed": {
+          "name": "gemma4:latest",
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "size": 9608350718,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:28:47.2782352+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.2417660999999498
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "The literal `{}` in Python 3.12 creates an empty dictionary, not an empty set. To create an empty set, you should use `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r02",
+          "status": "incorrect",
+          "answers": [
+            "{\n\"probability\": 0.6\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'probability': 0.6}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "```json\n{\n\"minutes\": 7\n}\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 7}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i04",
+          "status": "incorrect",
+          "answers": [
+            "I can write that Python function for you.\n\n```python\ndef safe_divide(a, b):\n    if b == 0:\n        return None\n    else:\n        return a / b\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested bare Python function did not parse."
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "D": {
+      "model": "gemma4:latest",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "on",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 8,
+      "planned_cases": 8,
+      "correct": 7,
+      "incorrect": 0,
+      "manual_review": 1,
+      "error": 0,
+      "automatic_correct": 7,
+      "accuracy_all_completed": 0.875,
+      "accuracy_adjudicated": 1.0,
+      "categories": {
+        "instruction": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 1,
+          "correct": 0,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 2,
+          "correct": 2,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 1,
+          "correct": 1,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 120.75265049999962,
+      "turn_latency_seconds": {
+        "count": 10,
+        "mean": 12.074951050000118,
+        "median": 9.746035549999988,
+        "p90": 25.474620100000266,
+        "min": 0.7480920000002698,
+        "max": 26.761943200000132
+      },
+      "case_latency_seconds": {
+        "count": 8,
+        "mean": 15.094081312499952,
+        "median": 13.407521999999972,
+        "p90": 26.7623051999999,
+        "min": 7.340093499999966,
+        "max": 26.7623051999999
+      },
+      "first_visible_answer_seconds": {
+        "count": 10,
+        "mean": 10.498778820000098,
+        "median": 7.818939200000159,
+        "p90": 24.27900499999987,
+        "min": 0.427989400000115,
+        "max": 25.38832739999998
+      },
+      "requests": 11,
+      "completed_streams": 11,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1445,
+      "generation_seconds": 114.804485,
+      "generated_tokens_per_second": 12.58661628071412,
+      "server_load_seconds": {
+        "count": 11,
+        "mean": 0.005756163636363636,
+        "median": 0.0056501,
+        "p90": 0.0062435,
+        "min": 0.0051305,
+        "max": 0.006253
+      },
+      "server_prompt_seconds": 5.6372860000000005,
+      "prompt_tokens": 10073,
+      "thinking_chunks": 1082,
+      "thinking_characters": 4910,
+      "thinking_to_answer_seconds": {
+        "count": 9,
+        "mean": 10.6438373777778,
+        "median": 8.239407500000198,
+        "p90": 24.70909900000015,
+        "min": 3.66470019999997,
+        "max": 24.70909900000015
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 1,
+      "appropriate_uncertainty": 1,
+      "tool_correct": 2,
+      "tool_cases": 2,
+      "unauthorized_tool_calls": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "gemma4:latest",
+          "version": "0.40.16",
+          "family": "gemma4",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+        },
+        "installed": {
+          "name": "gemma4:latest",
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "size": 9608350718,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "gemma4:latest",
+              "model": "gemma4:latest",
+              "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+              "size": 9608133343,
+              "size_vram": 1494808001,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:29:23.8057439+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "gemma4",
+                "families": [
+                  "gemma4"
+                ],
+                "parameter_size": "8.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.07173800000009578
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "The literal `{}` in Python 3.12 creates an empty dictionary (`dict`). An empty set is created using `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    }
+  },
+  "notes": [
+    "All cases are synthetic; raw visible answers are saved with explicit benchmark authorization.",
+    "No reference answer, scoring rule, or expected tool result is sent to the model.",
+    "Reasoning text is not saved. Generation counts include hidden thinking where Ollama reports it.",
+    "The Windows clock context is frozen for equivalent model instructions during this run.",
+    "Seed fixes a sampling input; backend/device nondeterminism can remain.",
+    "Exit status zero means all planned case results were recorded, not that their accuracy checks passed.",
+    "Runtime residency and server load are observed, not controlled by unloading models."
+  ]
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "time": "2026-11-14T10:28:01.733078+05:30",
+    "ollama_ps": "NAME                             ID              SIZE      PROCESSOR          CONTEXT    RUNNER      UNTIL              \nqwen3:4b-instruct-2507-q4_K_M    0edcdef34593    3.5 GB    34%/66% CPU/GPU    4096       llamacpp    4 minutes from now    \n",
+    "nvidia_query": "NVIDIA GeForce RTX 3050 Laptop GPU, 610.74, 4096 MiB, 2586 MiB, 29 %\n"
+  },
+  {
+    "time": "2026-11-14T11:12:06.085699+05:30",
+    "ollama_ps": "NAME             ID              SIZE      PROCESSOR          CONTEXT    RUNNER      UNTIL              \ngemma4:latest    c6eb396dbd59    9.6 GB    84%/16% CPU/GPU    4096       llamacpp    4 minutes from now    \n",
+    "nvidia_query": "NVIDIA GeForce RTX 3050 Laptop GPU, 610.74, 4096 MiB, 2826 MiB, 8 %\n"
+  }
+]

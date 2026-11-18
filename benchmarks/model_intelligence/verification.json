@@ -1,0 +1,16 @@
+{
+  "verified_at": "2026-11-14T17:57:30.735264+05:30",
+  "python_command": "D:\\Aqua\\.venv\\Scripts\\python.exe",
+  "suite_command": ".\\.venv\\Scripts\\python.exe -B tools\\test_offline.py",
+  "tests_passed": 685,
+  "test_runtime_seconds": 3.167,
+  "original_tests_preserved": 617,
+  "new_tests": 68,
+  "pip_check": "No broken requirements found.",
+  "network_connections_blocked_in_tests": true,
+  "process_launches_blocked_in_tests": true,
+  "model_generation_repeated_for_rescoring": false,
+  "buffered_compatibility_checks_file": "buffered_compatibility.json",
+  "models_downloaded_or_modified": false,
+  "dependencies_installed": false
+}

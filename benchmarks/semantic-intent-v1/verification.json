@@ -1,0 +1,22 @@
+{
+  "post_live_change": "Ambiguity veto ignores surrounding whitespace for comparison only; literal bytes are never rewritten.",
+  "saved_native_entry_proposals_checked": 35,
+  "changed_decisions_on_saved_proposals": [],
+  "paused_files_unchanged": {
+    "src/aqua/desktop/append.py": true,
+    "src/aqua/desktop/interaction_session.py": true,
+    "src/aqua/desktop/worker.py": true,
+    "src/aqua/brain/conversation.py": true,
+    "src/aqua/actions/tools.py": true,
+    "tools/diagnose_notepad.py": true
+  },
+  "current_source_sha256": {
+    "src/aqua/brain/intent.py": "d1c56a6423ae3b6d1b9c13540d441f3b2ac8d9cead1bdced4033c28b829509ad",
+    "src/aqua/brain/controller.py": "5e81267c53434dd23dca2e42be0d5cc75fc22f1a422dd0bb57d016219a19cbdf"
+  },
+  "raw_sha256": {
+    "baseline.jsonl": "4c989229af3ef721e750d34314c1c7f393ad1b632af26c3a8fb866c27309d27c",
+    "semantic-guidance.jsonl": "b8c9da19bf999f1cb9b5db3aca789941868391167b3100f892a327de7926a543",
+    "final.jsonl": "1777f72c47b9a569a8d31fab8d3b0b7fbbbad2dbb3050cecf1c00b1c1fbc90ff"
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "dataset": "dataset.json",
+  "shared": {
+    "num_ctx": 4096,
+    "num_predict": 1024,
+    "seed": 42,
+    "timeout": 600,
+    "top_p": 0.95,
+    "top_k": 40,
+    "presence_penalty": 0.0,
+    "repeat_penalty": 1.0,
+    "max_turns": 8,
+    "max_chars": 12000
+  },
+  "configurations": [
+    {
+      "id": "A",
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "thinking": "off",
+      "temperature": 0.2
+    },
+    {
+      "id": "B",
+      "model": "qwen3.5:9b-q4_K_M",
+      "thinking": "on",
+      "temperature": 0.2
+    },
+    {
+      "id": "C",
+      "model": "qwen3.5:9b-q4_K_M",
+      "thinking": "off",
+      "temperature": 0.2
+    },
+    {
+      "id": "D",
+      "model": "gemma4:latest",
+      "thinking": "on",
+      "temperature": 0.2
+    },
+    {
+      "id": "E",
+      "model": "gemma4:latest",
+      "thinking": "off",
+      "temperature": 0.2
+    },
+    {
+      "id": "A05",
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "thinking": "off",
+      "temperature": 0.5,
+      "enabled": false
+    },
+    {
+      "id": "B05",
+      "model": "qwen3.5:9b-q4_K_M",
+      "thinking": "on",
+      "temperature": 0.5,
+      "enabled": false
+    },
+    {
+      "id": "C05",
+      "model": "qwen3.5:9b-q4_K_M",
+      "thinking": "off",
+      "temperature": 0.5,
+      "enabled": false
+    },
+    {
+      "id": "D05",
+      "model": "gemma4:latest",
+      "thinking": "on",
+      "temperature": 0.5,
+      "enabled": false
+    },
+    {
+      "id": "E05",
+      "model": "gemma4:latest",
+      "thinking": "off",
+      "temperature": 0.5,
+      "enabled": false
+    }
+  ]
+}

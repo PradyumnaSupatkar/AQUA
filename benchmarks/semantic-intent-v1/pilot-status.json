@@ -1,0 +1,7 @@
+{
+  "status": "stopped pilot",
+  "reason": "Removing the existing protocol examples regressed the known indirect programming offer. Restored existing examples; no new phrase parser was added. Partial results are not combined with the full matched runs.",
+  "completed_turns": 18,
+  "last_case": "entry-type",
+  "raw_file": "benchmarks\\semantic-intent-v1\\semantic-guidance.jsonl"
+}

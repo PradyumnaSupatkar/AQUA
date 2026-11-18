@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-14T10:27:39.344669+05:30",
+  "endpoint": "http://127.0.0.1:11434",
+  "python": "3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "config_sha256": "70fe9021fbff69e43e9ebadf87079c324d992bffe52713c83644ca92e29ad20d",
+  "dataset_sha256": "f5c16df28746f96e826f2d64f9d6826b9a9098a3bcdddfd8d99a092d8a976af3",
+  "source_sha256": {
+    "brain/controller.py": "1d006d03c2c760e9590a1d7152dd2565172586b926594bad3371aa8200776423",
+    "brain/conversation.py": "cdf418d240f30e1a527a98751bb88656471c699dea73b5c8324bdf8a07cd0302",
+    "brain/ollama.py": "3da6dbf52111f71b600bc274f6d0fc3f185918b6818092d45ae34ac1ab83c466",
+    "brain/filtering.py": "8537fe827412bc7d7b2f8fe8b95b0f40ac7d1499bf0fa90a89da8cb9f4e15e8d",
+    "actions/tools.py": "3947d6860a2e074dc2ad9df6ce5f940ce685e7c06ac4f05406e8314b0f367f13",
+    "actions/launcher.py": "5d266f9d55dce9c385c249e1930eb155746060429a27e29452ecf80f184a90b8",
+    "benchmark/runner.py": "df9459f4371de0c44cf6f1450a4e19f94438158d43ad7e4143e47e7fd475500a",
+    "benchmark/dataset.py": "b1ae9fdba7b8a006ae2e3dc8a200b1fadc4cd7ea01dd0d3c0a1e62a6550421c5",
+    "benchmark/scoring.py": "88458207bfb61db9596fca8b7eb881a8bc16b209e639c31c586e9ff6334b60e6"
+  },
+  "system_prompt": "You are Aqua, a local, privacy-first Windows voice assistant using Qwen. Be natural, helpful, concise, and honest about uncertainty. Reply in the user's language without internal reasoning or thought tags. Available capabilities are supplied by the host. Tool calls are proposals: only verified host results establish what happened. Never invent completed actions or claim application readiness from process creation alone. Answer well-supported stable facts directly. For changing, private, or unavailable information, state what you cannot verify instead of inventing details. User statements are session context, not independently verified external facts; correct mistakes when given new evidence. Never claim web, screen, or file access without a verified result establishing that access.",
+  "system_prompt_sha256": "855c05224ea130699c83c7260248e65926c567e3fe35501660312320b2035624",
+  "initial_controller_context": "You are Aqua, a local, privacy-first Windows voice assistant using a local Qwen model. You can converse and propose exactly one approved desktop tool per user turn: open_application(app_id), with app_id one of: notepad, calculator, vs code, chrome. The application IDs come from the enabled launcher registry. There are no other desktop tools: no shell commands, arbitrary executable paths, file operations, web searches, or scheduling. Understand natural wording, harmless introductions, and polite multi-sentence requests. When a user only suggests an activity, propose the relevant approved app through the tool; the executor will require confirmation and no app should launch yet. Do not merely ask an unstructured app question when a structured proposal is needed. Questions, discussion, negation, quotations, hypotheticals, and conditions are not launch permission. Decline unsupported or compound operations without executing a partial subset. Never invent a completed action: use verified tool results in the conversation. A successful launch result means a process-creation attempt was reported, not that the app is ready, visible, or responding. Never claim readiness unless a tool explicitly verifies it. Answer naturally, helpfully, and concisely; acknowledge uncertainty.\nUse a native tool call alone, without a prose preamble, when proposing an app. For an implied activity, use the tool to register a proposal; the host asks for confirmation. An explicit unconditional launch request already counts as user approval; do not say every launch needs another yes. For ordinary conversation answer directly with no tool. After tool results, do not request another tool. Report the actual host status: only a successful result permits 'launch attempt succeeded'; a failed result means it failed. Process creation never proves app readiness.\nCurrent Windows local date/time: 2026-11-14T10:27:39+05:30 (India Standard Time). Use this clock value; do not guess today's date.\nCurrent pending application: none. Old suggestions in history are not current authorization.\nRetained verified action facts: []\nProtocol examples only, not real action history:\nUser: \"I feel like programming.\" -> call open_application with {\"app_id\":\"vs code\"}. This only registers an offer; the host will ask for confirmation. Do not ask an unregistered prose question first.\nUser: \"I want to write something.\" -> register an open_application offer for app_id \"notepad\"; the host requires confirmation.\nUser: \"I might browse the internet.\" -> register an open_application offer for app_id \"chrome\"; the host requires confirmation.\nUser: \"If I said open Chrome, what would you do?\" -> explain that a real explicit unconditional request authorizes one approved launch, while this hypothetical authorizes nothing. No tool call and no offer to proceed.",
+  "controller_context_sha256": "5ce202907edc955d96601804a64318eb37ec3fbb0189fe3e2d9d59206c7a9948",
+  "tool_definitions": [
+    {
+      "type": "function",
+      "function": {
+        "name": "open_application",
+        "description": "Propose opening exactly one approved application. For an explicit unconditional user request the trusted executor may launch it. For an implied activity, propose the relevant app with this tool and let the executor require confirmation. Never substitute an app for an unsupported request, or call for negated, quoted, hypothetical, conditional, explanatory, or multiple operations. A tool call is only a proposal; do not claim it succeeded until its result arrives.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "app_id": {
+              "type": "string",
+              "enum": [
+                "notepad",
+                "calculator",
+                "vs code",
+                "chrome"
+              ]
+            }
+          },
+          "required": [
+            "app_id"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "tools_sha256": "7ac8f512ff50e0ca252b7eee3626151cf09a719055dd75c33dbb55173fe1bbc9",
+  "frozen_local_clock": "Current Windows local date/time: 2026-11-14T10:27:39+05:30 (India Standard Time). Use this clock value; do not guess today's date.",
+  "selection": {
+    "configuration_ids": [
+      "A",
+      "A05",
+      "C",
+      "B",
+      "E",
+      "D"
+    ],
+    "case_ids": [
+      "k01",
+      "k02",
+      "k03",
+      "k04",
+      "k05",
+      "k06",
+      "k07",
+      "k08",
+      "k09",
+      "k10",
+      "r01",
+      "r02",
+      "r03",
+      "r04",
+      "r05",
+      "r06",
+      "r07",
+      "r08",
+      "r09",
+      "r10",
+      "m01",
+      "m02",
+      "m03",
+      "m04",
+      "m05",
+      "m06",
+      "m07",
+      "m08",
+      "i01",
+      "i02",
+      "i03",
+      "i04",
+      "i05",
+      "i06",
+      "i07",
+      "t01",
+      "t02",
+      "t03",
+      "t04",
+      "t05",
+      "t06",
+      "t07",
+      "t08",
+      "t09",
+      "t10",
+      "u01",
+      "u02",
+      "u03",
+      "u04",
+      "u05"
+    ]
+  },
+  "config": {
+    "schema_version": 1,
+    "dataset": "dataset.json",
+    "shared": {
+      "num_ctx": 4096,
+      "num_predict": 1024,
+      "seed": 42,
+      "timeout": 600,
+      "top_p": 0.95,
+      "top_k": 40,
+      "presence_penalty": 0.0,
+      "repeat_penalty": 1.0,
+      "max_turns": 8,
+      "max_chars": 12000
+    },
+    "configurations": [
+      {
+        "id": "A",
+        "model": "qwen3:4b-instruct-2507-q4_K_M",
+        "thinking": "off",
+        "temperature": 0.2
+      },
+      {
+        "id": "B",
+        "model": "qwen3.5:9b-q4_K_M",
+        "thinking": "on",
+        "temperature": 0.2
+      },
+      {
+        "id": "C",
+        "model": "qwen3.5:9b-q4_K_M",
+        "thinking": "off",
+        "temperature": 0.2
+      },
+      {
+        "id": "D",
+        "model": "gemma4:latest",
+        "thinking": "on",
+        "temperature": 0.2
+      },
+      {
+        "id": "E",
+        "model": "gemma4:latest",
+        "thinking": "off",
+        "temperature": 0.2
+      },
+      {
+        "id": "A05",
+        "model": "qwen3:4b-instruct-2507-q4_K_M",
+        "thinking": "off",
+        "temperature": 0.5,
+        "enabled": false
+      },
+      {
+        "id": "B05",
+        "model": "qwen3.5:9b-q4_K_M",
+        "thinking": "on",
+        "temperature": 0.5,
+        "enabled": false
+      },
+      {
+        "id": "C05",
+        "model": "qwen3.5:9b-q4_K_M",
+        "thinking": "off",
+        "temperature": 0.5,
+        "enabled": false
+      },
+      {
+        "id": "D05",
+        "model": "gemma4:latest",
+        "thinking": "on",
+        "temperature": 0.5,
+        "enabled": false
+      },
+      {
+        "id": "E05",
+        "model": "gemma4:latest",
+        "thinking": "off",
+        "temperature": 0.5,
+        "enabled": false
+      }
+    ]
+  },
+  "notes": [
+    "All cases are synthetic; raw visible answers are saved with explicit benchmark authorization.",
+    "No reference answer, scoring rule, or expected tool result is sent to the model.",
+    "Reasoning text is not saved. Generation counts include hidden thinking where Ollama reports it.",
+    "The Windows clock context is frozen for equivalent model instructions during this run.",
+    "Seed fixes a sampling input; backend/device nondeterminism can remain.",
+    "Exit status zero means all planned case results were recorded, not that their accuracy checks passed.",
+    "Runtime residency and server load are observed, not controlled by unloading models."
+  ]
+}

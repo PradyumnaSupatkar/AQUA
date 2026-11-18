@@ -1,0 +1,28 @@
+{
+  "frozen_at": "2026-11-14T10:16:02.598092+05:30",
+  "dataset_file_sha256": "59f2a33ca1c1f48ee1d7dd93c612931f73b8b0e5e25b54e2007ff51f24d1c5d1",
+  "config_file_sha256": "fb08d954194eaa259cc811dba15ba7d6aabb858d2c01904f3fc32edebdafbfa2",
+  "categories": {
+    "knowledge": 10,
+    "reasoning": 10,
+    "memory": 8,
+    "instruction": 7,
+    "tool": 10,
+    "uncertainty": 5
+  },
+  "pilot_case_ids": [
+    "k06",
+    "r02",
+    "r05",
+    "m02",
+    "i04",
+    "t01",
+    "t07",
+    "u01"
+  ],
+  "notes": [
+    "Question selection and scoring fixed before scored candidate requests.",
+    "Same1024outputlimit,4096context,seed42 and common sampling controls; temperature variations explicitly separateconfigs.",
+    "Reference answers and criteria remainhost-side only."
+  ]
+}

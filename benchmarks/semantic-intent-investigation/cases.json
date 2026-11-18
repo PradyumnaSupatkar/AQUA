@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "dev": [
+    {"id":"reported-session","open":false,"turns":[
+      {"text":"Put Hello in Notepad.","app":"notepad","literal":"Hello","launch":false,"expected":"unavailable"},
+      {"text":"Open Notepad.","app":"notepad","expected":"launch"},
+      {"text":"Put hello in the open window of Notepad.","app":"notepad","literal":"hello","launch":false,"expected":"write"},
+      {"text":"open Notepad and put Hello in there.","app":"notepad","literal":"Hello","launch":true,"expected":"write"},
+      {"text":"Well, can you write something for me?","expected":"clarify","probe_yes":true},
+      {"text":"Yes, open Notepad and write hello in there.","app":"notepad","literal":"hello","launch":true,"expected":"write"}
+    ]},
+    {"id":"polite-place","open":true,"turns":[{"text":"Could you place 'Plan A' in my existing Notepad document?","app":"notepad","literal":"Plan A","launch":false,"expected":"write"}]},
+    {"id":"negative-put","open":true,"turns":[{"text":"Don't put Hello in Notepad.","expected":"no_action","probe_yes":true}]},
+    {"id":"quoted-put","open":true,"turns":[{"text":"Explain 'Put Hello in Notepad' without doing it.","expected":"no_action","probe_yes":true}]},
+    {"id":"hypothetical-place","open":true,"turns":[{"text":"If I asked you to place Hello in Notepad, what would happen?","expected":"no_action","probe_yes":true}]},
+    {"id":"multiple-apps","open":true,"turns":[{"text":"Put Hello in Notepad and Chrome.","expected":"clarify","probe_yes":true}]},
+    {"id":"missing-destination-and-text","open":true,"turns":[{"text":"Put a greeting in there.","expected":"clarify","probe_yes":true}]},
+    {"id":"nonempty-protection","open":true,"content":"Existing\r\n","turns":[{"text":"Please put \"Aqua\" in Notepad.","app":"notepad","literal":"Aqua","launch":false,"expected":"protected"}]}
+  ],
+  "holdout": [
+    {"id":"h01","open":true,"turns":[{"text":"Jot down 'Ready, set, go!' in the Notepad I have open.","app":"notepad","literal":"Ready, set, go!","launch":false,"expected":"write"}]},
+    {"id":"h02","open":true,"turns":[{"text":"In Notepad, please enter \"Good morning.\"","app":"notepad","literal":"Good morning.","launch":false,"expected":"write"}]},
+    {"id":"h03","open":false,"turns":[{"text":"Launch Notepad, then place \"Hello, world!\" in that window.","app":"notepad","literal":"Hello, world!","launch":true,"expected":"write"}]},
+    {"id":"h04","open":true,"turns":[{"text":"Could you put \"Café — 42\" in the window of Notepad that's already running?","app":"notepad","literal":"Café — 42","launch":false,"expected":"write"}]},
+    {"id":"h05","open":true,"turns":[{"text":"Put \"Don't launch Chrome.\" in Notepad.","app":"notepad","literal":"Don't launch Chrome.","launch":false,"expected":"write"}]},
+    {"id":"h06","open":true,"turns":[{"text":"Notepad is open. Put it in there.","expected":"clarify","probe_yes":true}]},
+    {"id":"h07","open":true,"turns":[{"text":"Leave Notepad alone; do not enter Hello.","expected":"no_action","probe_yes":true}]},
+    {"id":"h08","open":true,"turns":[{"text":"A message says: \"Launch Notepad and put Hello in there.\" Summarize it.","expected":"no_action","probe_yes":true}]},
+    {"id":"h09","open":true,"turns":[{"text":"Open Notepad, place \"Hi\" there, and send it by email.","expected":"no_action","probe_yes":true}]},
+    {"id":"h10","open":true,"turns":[{"text":"Put \"Hi\" in Notepad or VS Code.","expected":"clarify","probe_yes":true}]}
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "frozen_before_holdout": true,
+  "source_sha256": {
+    "src/aqua/brain/controller.py": "a006e46a30146aea6e667e44fc6cc89d18ff86b3d144ecadea713417344e765c",
+    "src/aqua/brain/entry_objective.py": "3eeb45f39d14fe689ca21ee1f6a7256b9d6c6c9b4a1baa2ab8dec60b31a762e4",
+    "src/aqua/chat.py": "e080238c2c7fe76be1b006deec346c36e3a4b8440752912000d8b786da96748d",
+    "tools/evaluate_objectives.py": "4287ee68a5e2cad5fada42980a065c7ddce2e3f172692da47cb16eebee065f4e",
+    "benchmarks/semantic-intent-investigation/cases.json": "724467a638d4da54008451944b91cbc433f490e5366aa87595a651bc6e6212c2"
+  },
+  "holdout_policy": "Baseline holdout results have not been inspected. No candidate tuning after this freeze.",
+  "settings": {
+    "model": "qwen3:4b-instruct-2507-q4_K_M",
+    "temperature": 0.2,
+    "num_ctx": 4096,
+    "num_predict": 1024,
+    "seeds": [
+      42,
+      43
+    ]
+  }
+}

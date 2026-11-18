@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "audited_at": "2026-11-14T10:20:02.071884+05:30",
+  "reviewer": "Codex reference audit; not human validation",
+  "dataset_sha256": "59f2a33ca1c1f48ee1d7dd93c612931f73b8b0e5e25b54e2007ff51f24d1c5d1",
+  "raw_snapshot_sha256": "e3541cb069e2a587423f58265b17db8320ed1dbe9bb7ded0c13c4b51e4bd4430",
+  "scope": "Only completed manual_review records in this raw snapshot. This file does not modify automated scores, raw records, or summaries. Decisions are reference-based audits, not human validation or a candidate model grading itself.",
+  "reviewed_records": [
+    {
+      "configuration_id": "C",
+      "case_id": "k06",
+      "raw_record_sha256": "8731e9b78a0659edbe2c8e871cca06a687da4756ff077abe0197d47b6d3fecd6",
+      "automated_status": "manual_review",
+      "reference_audit_status": "correct",
+      "points": 1,
+      "max_points": 1,
+      "unsupported_claim": false,
+      "appropriate_uncertainty": null,
+      "reviewer": "Codex reference audit; not human validation",
+      "rationale": "The visible answer explicitly identifies {} as an empty dictionary and set() as the empty-set expression, matching the frozen reference and trusted CPython type checks. There is no contradictory factual claim or tool proposal. Markdown backticks are formatting, not quoted contrary evidence.",
+      "independent_check": {
+        "dict_literal_type": "dict",
+        "empty_set_expression_type": "set"
+      }
+    },
+    {
+      "configuration_id": "C05",
+      "case_id": "k06",
+      "raw_record_sha256": "67a52bcea5f9aa27e3bf4ecff4a835220c1a887ac7928595205f5560df83b05f",
+      "automated_status": "manual_review",
+      "reference_audit_status": "correct",
+      "points": 1,
+      "max_points": 1,
+      "unsupported_claim": false,
+      "appropriate_uncertainty": null,
+      "reviewer": "Codex reference audit; not human validation",
+      "rationale": "The visible answer explicitly identifies {} as an empty dictionary and set() as the empty-set expression, matching the frozen reference and trusted CPython type checks. There is no contradictory factual claim or tool proposal. Markdown backticks are formatting, not quoted contrary evidence.",
+      "independent_check": {
+        "dict_literal_type": "dict",
+        "empty_set_expression_type": "set"
+      }
+    },
+    {
+      "configuration_id": "B",
+      "case_id": "k06",
+      "raw_record_sha256": "46c89a3844cf2d2e154ab974c37874bc1000bbea36bccd5d75b72ae0d646a035",
+      "automated_status": "manual_review",
+      "reference_audit_status": "correct",
+      "points": 1,
+      "max_points": 1,
+      "unsupported_claim": false,
+      "appropriate_uncertainty": null,
+      "reviewer": "Codex reference audit; not human validation",
+      "rationale": "The visible answer explicitly identifies {} as an empty dictionary and set() as the empty-set expression, matching the frozen reference and trusted CPython type checks. There is no contradictory factual claim or tool proposal. Markdown backticks are formatting, not quoted contrary evidence.",
+      "independent_check": {
+        "dict_literal_type": "dict",
+        "empty_set_expression_type": "set"
+      }
+    }
+  ],
+  "unresolved_records": []
+}

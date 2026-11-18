@@ -1,0 +1,11 @@
+{
+  "source_sha256": {
+    "src/aqua/brain/controller.py": "b61005b0ce3b722834363327ff299bca8c3101a6c50c544fc659d458fb174c96",
+    "src/aqua/brain/entry_objective.py": "2726920ce67582a7e249e0aec52182517e19c73ecadecd4b25cc9950580555eb",
+    "src/aqua/chat.py": "e080238c2c7fe76be1b006deec346c36e3a4b8440752912000d8b786da96748d",
+    "tools/evaluate_objectives.py": "fd3be7d8f2e38bc7ce69f62a827f25ef69ff1633e69259eb217f3e8ac7d0cee1",
+    "benchmarks\\semantic-intent-investigation\\cases.json": "724467a638d4da54008451944b91cbc433f490e5366aa87595a651bc6e6212c2"
+  },
+  "holdout_results_inspected": false,
+  "policy": "Evaluate dev, then release holdout without further tuning; previous development runs preserved separately."
+}

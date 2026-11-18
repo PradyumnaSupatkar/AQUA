@@ -1,0 +1,14 @@
+{
+  "completed_at": "2026-11-14T11:32:32.471722+05:30",
+  "records": 300,
+  "raw_sha256": "039b057b7a84be23d029a8a99256b529cc6b097f50c85d52e43da9f9e0c16925",
+  "dataset_file_sha256": "59f2a33ca1c1f48ee1d7dd93c612931f73b8b0e5e25b54e2007ff51f24d1c5d1",
+  "original_sources": {
+    "runner.py.txt": "df9459f4371de0c44cf6f1450a4e19f94438158d43ad7e4143e47e7fd475500a",
+    "scoring.py.txt": "88458207bfb61db9596fca8b7eb881a8bc16b209e639c31c586e9ff6334b60e6"
+  },
+  "notes": [
+    "All model collection completed before reporting/scoring repairs.",
+    "Original raw answers and automatic grades will not be rewritten."
+  ]
+}

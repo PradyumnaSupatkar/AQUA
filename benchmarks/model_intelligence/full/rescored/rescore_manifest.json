@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-11-14T17:52:53.440011+05:30",
+  "source_raw_sha256": "039b057b7a84be23d029a8a99256b529cc6b097f50c85d52e43da9f9e0c16925",
+  "source_dataset_sha256": "f5c16df28746f96e826f2d64f9d6826b9a9098a3bcdddfd8d99a092d8a976af3",
+  "grading_dataset_sha256": "26342bd0b65d50a1c1682ac24540900a9e873be3552eddb3f32aaee986d03c88",
+  "grading_file_sha256": "03308c600acc36325f40ffa40f469dbfd695e7accde7e3b59cfdeea4e758aab0",
+  "grading_revision": "1.1",
+  "scoring_source_sha256": "9a470bafa9f66f026966df09d14aef9adc12e36efa7060922b677a529584778f",
+  "note": "Recomputed scores only; original raw records and collection scores were not changed."
+}

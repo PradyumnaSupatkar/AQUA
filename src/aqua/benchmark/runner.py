@@ -1,0 +1,595 @@
+"""Explicit, local-only model comparison using Aqua's real conversation engine.
+
+Only synthetic dataset text is sent to loopback Ollama. Application execution is
+always replaced with a recording stub and independently blocked at Popen. Raw
+visible answers are saved for auditing; reasoning-channel content is not saved.
+"""
+
+import argparse
+from collections import Counter, defaultdict
+from contextlib import suppress
+from copy import deepcopy
+from dataclasses import asdict, is_dataclass
+from datetime import datetime
+import hashlib
+import json
+from math import ceil, isfinite
+from pathlib import Path
+import platform
+import statistics
+import subprocess
+import sys
+from time import perf_counter
+from unittest.mock import patch
+
+from aqua.actions import tools
+from aqua.actions.launcher import ALLOWED_APPS
+from aqua.brain import controller as controller_module
+from aqua.brain.conversation import Conversation, DEFAULT_SYSTEM_PROMPT
+from aqua.brain.filtering import AnswerChannelGuard
+from aqua.brain.ollama import GenerationSettings, OllamaClient, OllamaError
+
+
+ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_CONFIG = ROOT / "benchmarks" / "model_intelligence" / "config.json"
+STAT_FIELDS = (
+    "total_duration", "load_duration", "prompt_eval_count", "prompt_eval_duration",
+    "eval_count", "eval_duration", "first_stream_seconds", "first_thinking_seconds",
+    "first_content_seconds", "thinking_chunks", "thinking_characters",
+)
+
+
+def _hash(value) -> str:
+    raw = value if isinstance(value, bytes) else json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def _write_json(path: Path, value) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    temporary.replace(path)
+
+
+def _number(value):
+    return value if type(value) in (int, float) and isfinite(value) and value >= 0 else None
+
+
+def _seconds(value):
+    value = _number(value)
+    return value / 1_000_000_000 if value is not None else None
+
+
+def _distribution(values) -> dict:
+    values = sorted(value for value in values if _number(value) is not None)
+    return {
+        "count": len(values), "mean": statistics.fmean(values) if values else None,
+        "median": statistics.median(values) if values else None,
+        "p90": values[max(0, ceil(.9 * len(values)) - 1)] if values else None,
+        "min": values[0] if values else None, "max": values[-1] if values else None,
+    }
+
+
+class ObservedClient:
+    """Observe every model stream without changing history or tool semantics."""
+
+    def __init__(self, client):
+        self.client, self.streams = client, []
+
+    @property
+    def chat_request_count(self):
+        return getattr(self.client, "chat_request_count", None)
+
+    def stream_chat(self, messages, **options):
+        started = perf_counter()
+        record = {"complete": False, "tools_enabled": bool(options.get("tools")),
+                  "proposals": [], "answer_text": "", "metrics": {}}
+        self.streams.append(record)
+        guard = AnswerChannelGuard()
+        iterator = None
+        try:
+            iterator = self.client.stream_chat(messages, **options)
+            for event in iterator:
+                # Filtering is structural and identical to the controller's
+                # guard. Neither message.thinking nor a raw thought block is
+                # persisted by this observer.
+                record["answer_text"] += guard.feed(event.content)
+                if event.done:
+                    record["complete"] = True
+                    record["metrics"] = {name: getattr(event, name, None) for name in STAT_FIELDS}
+                    record["proposals"] = deepcopy(list(event.tool_calls))
+                yield event
+            record["answer_text"] += guard.finish()
+        except BaseException as exc:
+            record["exception_category"] = type(exc).__name__
+            # Token-limit exits are unusable answers, but their measured work
+            # must remain visible in throughput/thinking-overhead totals. The
+            # transport attaches a reasoning-free, non-authorizing snapshot.
+            completion = getattr(exc, "completion", None)
+            if completion is not None:
+                record["metrics"] = {name: getattr(completion, name, None) for name in STAT_FIELDS}
+            record["failure_kind"] = "token_limit" if getattr(exc, "done_reason", None) == "length" else "model_error"
+            raise
+        finally:
+            record["wall_seconds"] = perf_counter() - started
+            if iterator is not None and hasattr(iterator, "close"):
+                with suppress(OllamaError, OSError):
+                    iterator.close()
+
+
+def _runtime(client) -> dict:
+    """Read Ollama's runtime endpoint; never invoke a model management API."""
+    try:
+        raw = client._json("/api/ps")
+        models = raw.get("models", [])
+        if not isinstance(models, list):
+            raise ValueError("Invalid runtime metadata")
+        fields = ("name", "model", "digest", "size", "size_vram", "context_length", "expires_at", "details")
+        return {"models": [{key: item[key] for key in fields if key in item}
+                           for item in models if isinstance(item, dict)]}
+    except (OllamaError, ValueError, AttributeError, TypeError) as exc:
+        return {"models": [], "error_category": type(exc).__name__}
+
+
+def _installed(client, name: str) -> dict:
+    try:
+        for model in client._json("/api/tags").get("models", []):
+            if model.get("name", model.get("model")) == name:
+                return {key: model[key] for key in ("name", "digest", "size", "details") if key in model}
+    except (OllamaError, ValueError, AttributeError, TypeError):
+        pass
+    return {"name": name}
+
+
+def _source_hashes() -> dict:
+    paths = ("brain/controller.py", "brain/conversation.py", "brain/ollama.py", "brain/filtering.py", "actions/tools.py", "actions/launcher.py",
+             "benchmark/runner.py", "benchmark/dataset.py", "benchmark/scoring.py")
+    package = Path(__file__).resolve().parents[1]
+    return {name: _hash((package / name).read_bytes()) for name in paths}
+
+
+def _settings(shared: dict, configuration: dict) -> GenerationSettings:
+    keys = ("temperature", "num_predict", "num_ctx", "thinking", "seed", "top_p", "top_k", "presence_penalty", "repeat_penalty")
+    combined = {**shared, **configuration}
+    return GenerationSettings(**{key: combined[key] for key in keys if key in combined})
+
+
+def _read_config(path: Path) -> dict:
+    config = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(config, dict) or config.get("schema_version") != 1 or not isinstance(config.get("configurations"), list):
+        raise ValueError("The benchmark configuration must have schema_version 1 and configurations.")
+    identifiers = [item.get("id") for item in config["configurations"] if isinstance(item, dict)]
+    if len(identifiers) != len(config["configurations"]) or len(set(identifiers)) != len(identifiers) or any(not isinstance(value, str) or not value for value in identifiers):
+        raise ValueError("Benchmark configuration IDs must be nonempty and unique.")
+    for item in config["configurations"]:
+        if not isinstance(item.get("model"), str) or not item["model"]:
+            raise ValueError("Each benchmark configuration needs an installed model name.")
+        _settings(config.get("shared", {}), item)
+    return config
+
+
+def _select(config: dict, dataset: dict, args, previous=None):
+    available = {item["id"]: item for item in config["configurations"]}
+    ids = args.configs or (previous and previous["selection"]["configuration_ids"]) or [item["id"] for item in config["configurations"] if item.get("enabled", True)]
+    if not ids or len(ids) != len(set(ids)) or any(value not in available for value in ids):
+        raise ValueError("Select unique configuration IDs from the configuration file.")
+    cases = dataset["cases"]
+    case_ids = args.cases
+    if case_ids is None and previous is not None and not args.pilot:
+        case_ids = previous["selection"]["case_ids"]
+    if case_ids:
+        lookup = {case["id"]: case for case in cases}
+        if len(case_ids) != len(set(case_ids)) or any(value not in lookup for value in case_ids):
+            raise ValueError("Select unique case IDs from the frozen dataset.")
+        cases = [lookup[value] for value in case_ids]
+    elif args.pilot:
+        # Use the representative IDs selected before seeing any model output.
+        # A custom suite without pilot IDs falls back to one case per category.
+        if dataset.get("pilot_case_ids"):
+            lookup = {case["id"]: case for case in cases}
+            cases = [lookup[identifier] for identifier in dataset["pilot_case_ids"]]
+        else:
+            seen, selected = set(), []
+            for case in cases:
+                if case["category"] not in seen:
+                    selected.append(case)
+                    seen.add(case["category"])
+            cases = selected
+    return [available[value] for value in ids], cases
+
+
+def _manifest(config, dataset, configurations, cases) -> dict:
+    clock = controller_module.local_time_context()
+    with patch.object(controller_module, "local_time_context", return_value=clock):
+        context = controller_module.ConversationController(None, Conversation(), model=configurations[0]["model"], settings=_settings(config.get("shared", {}), configurations[0]))._context()
+    return {
+        "schema_version": 1, "created_at": datetime.now().astimezone().isoformat(),
+        "endpoint": "http://127.0.0.1:11434", "python": sys.version, "platform": platform.platform(),
+        "config_sha256": _hash(config), "dataset_sha256": _hash(dataset), "source_sha256": _source_hashes(),
+        "system_prompt": DEFAULT_SYSTEM_PROMPT, "system_prompt_sha256": _hash(DEFAULT_SYSTEM_PROMPT),
+        "initial_controller_context": context, "controller_context_sha256": _hash(context),
+        "tool_definitions": tools.tool_definitions(), "tools_sha256": _hash(tools.tool_definitions()),
+        "frozen_local_clock": clock,
+        "selection": {"configuration_ids": [item["id"] for item in configurations], "case_ids": [case["id"] for case in cases]},
+        "config": config,
+        "notes": ["All cases are synthetic; raw visible answers are saved with explicit benchmark authorization.",
+                  "No reference answer, scoring rule, or expected tool result is sent to the model.",
+                  "Reasoning text is not saved. Generation counts include hidden thinking where Ollama reports it.",
+                  "The Windows clock context is frozen for equivalent model instructions during this run.",
+                  "Seed fixes a sampling input; backend/device nondeterminism can remain.",
+                  "Exit status zero means all planned case results were recorded, not that their accuracy checks passed.",
+                  "Runtime residency and server load are observed, not controlled by unloading models."],
+    }
+
+
+def _resume_records(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    records = []
+    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+        if line.strip():
+            try:
+                records.append(json.loads(line))
+            except ValueError as exc:
+                raise ValueError(f"Invalid raw result on line {number}; preserve the file and repair its incomplete final record before resuming.") from exc
+    keys = [(record["configuration_id"], record["case_id"]) for record in records]
+    if len(keys) != len(set(keys)):
+        raise ValueError("Duplicate configuration/case records cannot be resumed.")
+    return records
+
+
+def _run_case(client, configuration, shared, case) -> dict:
+    from .scoring import score_case
+
+    observed = ObservedClient(client)
+    conversation = Conversation(max_turns=shared.get("max_turns", 8), max_chars=shared.get("max_chars", 12000))
+    controller = controller_module.ConversationController(observed, conversation, model=configuration["model"], settings=_settings(shared, configuration))
+    executions, turns = [], []
+    failures = set(case.get("stub_failures", []))
+
+    def execute(app):
+        if app not in ALLOWED_APPS:
+            raise AssertionError("An unapproved app reached the benchmark executor.")
+        executions.append(app)
+        if app in failures:
+            return tools.ToolResult(app, "launch_failed", False, error_category="benchmark_stub_failure")
+        return tools.ToolResult(app, "launch_attempt_succeeded", True, readiness_checked=False)
+
+    started_at, started = datetime.now().astimezone().isoformat(), perf_counter()
+    with patch.object(tools, "execute_application", side_effect=execute), \
+            patch.object(subprocess, "Popen", side_effect=AssertionError("Benchmarks must not launch processes.")):
+        for index, turn in enumerate(case["turns"]):
+            stream_start, execution_start = len(observed.streams), len(executions)
+            # This is the sole dataset field that enters the model request.
+            result = controller.respond(turn["text"])
+            streams = observed.streams[stream_start:]
+            turns.append({
+                "turn": index, "user_text": turn["text"], "text": result.text,
+                "ok": result.ok, "outcome": result.outcome, "stage": result.stage,
+                "error": result.error, "requests": result.requests,
+                "total_seconds": result.total_seconds, "first_token_seconds": result.first_token_seconds,
+                "proposals": [call for stream in streams for call in stream["proposals"]],
+                "executions": executions[execution_start:], "pending": conversation.action_state.pending_app,
+                "streams": streams,
+            })
+            if result.outcome == "cancelled":
+                break
+    return {
+        "configuration_id": configuration["id"], "model": configuration["model"],
+        "settings": asdict(_settings(shared, configuration)), "case_id": case["id"],
+        "category": case["category"], "temporal": case["temporal"],
+        "started_at": started_at, "wall_seconds": perf_counter() - started,
+        "turns": turns, "history": conversation.history, "score": score_case(case, turns),
+        "interrupted": bool(turns and turns[-1]["outcome"] == "cancelled"),
+    }
+
+
+def _reviewed_score(record, reviews):
+    score = deepcopy(record["score"])
+    review = reviews.get(record["configuration_id"] + ":" + record["case_id"])
+    if review is not None:
+        if not isinstance(review, dict) or review.get("status") not in {"correct", "incorrect", "manual_review", "error"} or not isinstance(review.get("rationale"), str) or not review["rationale"].strip():
+            raise ValueError("Each manual review needs a valid status and a nonempty rationale.")
+        if "reviewer" in review and (not isinstance(review["reviewer"], str) or not review["reviewer"].strip()):
+            raise ValueError("An optional reference-audit reviewer must be a nonempty name.")
+        score["automatic_status"] = score["status"]
+        score["automatic_points"] = score.get("points")
+        score["status"] = review["status"]
+        score["points"] = None if score["status"] == "manual_review" else int(score["status"] == "correct")
+        score["manual_review"] = review
+        if score.get("tool_correct") is not None:
+            score["tool_correct"] = score["status"] == "correct"
+        for key in ("unsupported_claim", "appropriate_uncertainty"):
+            if key in review:
+                if review[key] is not None and type(review[key]) is not bool:
+                    raise ValueError("Reference audit flags must be booleans or null for unresolved evidence.")
+                score[key] = review[key]
+    return score
+
+
+def summarize(records: list[dict], manifest: dict, metadata=None, reviews=None) -> dict:
+    """Score audited records without silently counting manual flags as passes."""
+    grouped = defaultdict(list)
+    reviews = reviews or {}
+    for record in records:
+        copied = deepcopy(record)
+        copied["score"] = _reviewed_score(record, reviews)
+        grouped[record["configuration_id"]].append(copied)
+    output = {"schema_version": 1, "dataset_sha256": manifest["dataset_sha256"],
+              "config_sha256": manifest["config_sha256"], "configurations": {},
+              "notes": manifest.get("notes", [])}
+    for identifier in manifest["selection"]["configuration_ids"]:
+        rows = grouped[identifier]
+        counts = Counter(row["score"]["status"] for row in rows)
+        turns = [turn for row in rows for turn in row["turns"]]
+        streams = [stream for turn in turns for stream in turn["streams"]]
+        category = {}
+        for name in sorted({row["category"] for row in rows}):
+            selected = [row for row in rows if row["category"] == name]
+            statuses = Counter(row["score"]["status"] for row in selected)
+            category[name] = {"total": len(selected), **{key: statuses[key] for key in ("correct", "incorrect", "manual_review", "error")}}
+        total_tokens = sum(_number(stream["metrics"].get("eval_count")) or 0 for stream in streams)
+        generation_seconds = sum(_seconds(stream["metrics"].get("eval_duration")) or 0 for stream in streams)
+        tool_rows = [row for row in rows if row["score"].get("tool_correct") is not None]
+        tool_category_rows = [row for row in rows if row["category"] == "tool"]
+        tool_turns = [turn for row in tool_category_rows for turn in row["turns"]]
+        unauthorized_calls = sum(row["score"].get("unauthorized_tool_calls", 0) for row in rows)
+        unauthorized_executions = sum(row["score"].get("unauthorized_executions", 0) for row in rows)
+        tool_unauthorized_calls = sum(row["score"].get("unauthorized_tool_calls", 0) for row in tool_category_rows)
+        tool_unauthorized_executions = sum(row["score"].get("unauthorized_executions", 0) for row in tool_category_rows)
+        output["configurations"][identifier] = {
+            "model": rows[0]["model"] if rows else None,
+            "settings": rows[0]["settings"] if rows else None,
+            "completed_cases": len(rows), "planned_cases": len(manifest["selection"]["case_ids"]),
+            **{key: counts[key] for key in ("correct", "incorrect", "manual_review", "error")},
+            "automatic_correct": sum(row["score"].get("automatic_status", row["score"]["status"]) == "correct" for row in rows),
+            "accuracy_all_completed": counts["correct"] / len(rows) if rows else None,
+            "accuracy_adjudicated": counts["correct"] / (counts["correct"] + counts["incorrect"]) if counts["correct"] + counts["incorrect"] else None,
+            "categories": category, "total_case_wall_seconds": sum(row["wall_seconds"] for row in rows),
+            "turn_latency_seconds": _distribution(turn["total_seconds"] for turn in turns),
+            "case_latency_seconds": _distribution(row["wall_seconds"] for row in rows),
+            "first_visible_answer_seconds": _distribution(turn["first_token_seconds"] for turn in turns),
+            "requests": sum(turn["requests"] for turn in turns), "completed_streams": sum(stream["complete"] for stream in streams),
+            "token_limit_streams": sum(stream.get("failure_kind") == "token_limit" for stream in streams),
+            "generated_tokens_including_thinking": total_tokens,
+            "generation_seconds": generation_seconds,
+            "generated_tokens_per_second": total_tokens / generation_seconds if generation_seconds else None,
+            "server_load_seconds": _distribution(_seconds(stream["metrics"].get("load_duration")) for stream in streams),
+            "server_prompt_seconds": sum(_seconds(stream["metrics"].get("prompt_eval_duration")) or 0 for stream in streams),
+            "prompt_tokens": sum(_number(stream["metrics"].get("prompt_eval_count")) or 0 for stream in streams),
+            "thinking_chunks": sum(_number(stream["metrics"].get("thinking_chunks")) or 0 for stream in streams),
+            "thinking_characters": sum(_number(stream["metrics"].get("thinking_characters")) or 0 for stream in streams),
+            "thinking_to_answer_seconds": _distribution(
+                stream["metrics"]["first_content_seconds"] - stream["metrics"]["first_thinking_seconds"]
+                for stream in streams if _number(stream["metrics"].get("first_content_seconds")) is not None
+                and _number(stream["metrics"].get("first_thinking_seconds")) is not None
+                and stream["metrics"]["first_content_seconds"] >= stream["metrics"]["first_thinking_seconds"]),
+            "unsupported_claims": sum(row["score"].get("unsupported_claim") is True for row in rows),
+            "unsupported_claims_unreviewed": sum(row["score"].get("unsupported_claim") is None for row in rows),
+            "appropriate_uncertainty": sum(row["score"].get("appropriate_uncertainty") is True for row in rows),
+            "tool_correct": sum(row["score"].get("tool_correct") is True for row in tool_rows), "tool_cases": len(tool_rows),
+            "unauthorized_tool_calls": unauthorized_calls,
+            "all_turn_count": len(turns), "tool_turn_count": len(tool_turns),
+            "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+            "unauthorized_tool_calls_in_tool_cases": tool_unauthorized_calls,
+            "unauthorized_tool_call_rate_per_tool_turn": tool_unauthorized_calls / len(tool_turns) if tool_turns else None,
+            "unauthorized_tool_call_rate_per_all_turns": unauthorized_calls / len(turns) if turns else None,
+            "unauthorized_executions": unauthorized_executions,
+            "unauthorized_executions_in_tool_cases": tool_unauthorized_executions,
+            "unauthorized_execution_rate_per_tool_turn": tool_unauthorized_executions / len(tool_turns) if tool_turns else None,
+            "unauthorized_execution_rate_per_all_turns": unauthorized_executions / len(turns) if turns else None,
+            "metadata": (metadata or {}).get(identifier, {}),
+            "failure_examples": [{"case_id": row["case_id"], "status": row["score"]["status"],
+                                  "answers": [turn["text"] for turn in row["turns"]], "criteria": row["score"].get("criteria", []),
+                                  "manual_review": row["score"].get("manual_review")} for row in rows if row["score"]["status"] != "correct"],
+        }
+    return output
+
+
+def write_report(directory: Path, manifest: dict, records: list[dict], metadata=None) -> dict:
+    review_path = directory / "reviews.json"
+    reviews = json.loads(review_path.read_text(encoding="utf-8")) if review_path.exists() else {}
+    summary = summarize(records, manifest, metadata, reviews)
+    _write_json(directory / "summary.json", summary)
+    lines = ["# Local model intelligence benchmark", "", f"Dataset SHA-256: `{manifest['dataset_sha256']}`", "",
+             "All executions were stubbed. No application was launched. Reasoning-channel text was not saved.", "",
+             "Manual-review cases are not counted as correct. Accuracy over all completed cases includes errors and pending review in its denominator.", "",
+             "| Config | Cases | Correct | Incorrect | Review | Errors | Accuracy | Median turn (s) | P90 turn (s) | Requests | Gen tok/s* |",
+             "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
+    def fmt(value):
+        return f"{value:.3f}" if value is not None else "n/a"
+    for identifier, row in summary["configurations"].items():
+        accuracy = f"{100 * row['accuracy_all_completed']:.1f}%" if row["accuracy_all_completed"] is not None else "n/a"
+        lines.append(f"| {identifier} | {row['completed_cases']}/{row['planned_cases']} | {row['correct']} | {row['incorrect']} | {row['manual_review']} | {row['error']} | {accuracy} | {fmt(row['turn_latency_seconds']['median'])} | {fmt(row['turn_latency_seconds']['p90'])} | {row['requests']} | {fmt(row['generated_tokens_per_second'])} |")
+    lines += ["", "*Generation tokens/second includes hidden thinking where reported, not answer-only tokens.",
+              "The observed thinking-to-answer interval is not an exact server thinking duration.",
+              "First-response load is observed through runtime residency and server statistics; models were not deliberately unloaded.", "",
+              "## Accuracy by category", "", "| Config | Category | Correct | Incorrect | Review | Errors | Total |", "| --- | --- | ---: | ---: | ---: | ---: | ---: |"]
+    for identifier, row in summary["configurations"].items():
+        for category, values in row["categories"].items():
+            lines.append(f"| {identifier} | {category} | {values['correct']} | {values['incorrect']} | {values['manual_review']} | {values['error']} | {values['total']} |")
+    lines += ["", "## Important failures and review candidates", ""]
+    for identifier, row in summary["configurations"].items():
+        for failure in row["failure_examples"]:
+            lines += [f"### {identifier} / {failure['case_id']} — {failure['status']}", ""]
+            for answer in failure["answers"]:
+                lines += ["> " + answer.replace("\n", "\n> "), ""]
+            lines += ["Criteria: " + json.dumps(failure["criteria"], ensure_ascii=False), ""]
+            if failure["manual_review"]:
+                review = failure["manual_review"]
+                reviewer = f" ({review['reviewer']})" if review.get("reviewer") else ""
+                lines += ["Reference audit" + reviewer + ": " + review["rationale"], ""]
+    (directory / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return summary
+
+
+def add_arguments(parser) -> None:
+    parser.add_argument("--live", action="store_true", help="explicitly run the fixed dataset against loopback Ollama; never launch applications")
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--dataset", type=Path)
+    parser.add_argument("--configs", nargs="+", metavar="ID", help="configuration IDs, in sequential execution order")
+    parser.add_argument("--cases", nargs="+", metavar="ID", help="case IDs; each case retains all its turns")
+    parser.add_argument("--pilot", action="store_true", help="one fixed representative case per category")
+    parser.add_argument("--output", type=Path, help="new/empty directory for auditable local results")
+    parser.add_argument("--resume", type=Path, help="resume a matching run, skipping completed cases")
+    parser.add_argument("--report-only", type=Path, help="regenerate summaries locally; optional reviews.json supplies explicit reference audits")
+    parser.add_argument("--rescore", action="store_true", help="with --report-only, score saved turns against the run's dataset snapshot into separate rescored outputs")
+
+
+def run(args) -> int:
+    if args.report_only is not None:
+        directory = args.report_only.resolve()
+        manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+        records = _resume_records(directory / "raw.jsonl")
+        metadata_path = directory / "configurations.json"
+        metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+        if args.rescore:
+            from .dataset import load_dataset
+            from .scoring import score_case
+            snapshot = load_dataset(directory / "dataset.json")
+            if _hash(snapshot) != manifest["dataset_sha256"]:
+                raise ValueError("Rescoring refused: the run's dataset snapshot differs from its frozen manifest.")
+            grading_path = args.dataset.resolve() if args.dataset is not None else directory / "dataset.json"
+            grading = load_dataset(grading_path)
+            def question_identity(case):
+                # Only grading checks/notes may change after collection. User
+                # inputs, reference facts and expected effects stay frozen.
+                copied = deepcopy(case)
+                copied.pop("grading_notes", None)
+                for turn in copied["turns"]:
+                    turn.pop("check", None)
+                return copied
+            if [question_identity(case) for case in grading["cases"]] != [question_identity(case) for case in snapshot["cases"]]:
+                raise ValueError("Rescoring refused: grading revisions may not change questions, references, or expected tool behavior.")
+            lookup = {case["id"]: case for case in grading["cases"]}
+            rescored = []
+            for original in records:
+                record = deepcopy(original)
+                record["original_score"] = deepcopy(record.get("original_score", record["score"]))
+                record["score"] = score_case(lookup[record["case_id"]], record["turns"])
+                rescored.append(record)
+            output = directory / "rescored.jsonl"
+            temporary = output.with_suffix(".jsonl.tmp")
+            with temporary.open("w", encoding="utf-8", newline="\n") as target:
+                for record in rescored:
+                    target.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+            temporary.replace(output)
+            report_directory = directory / "rescored"
+            report_directory.mkdir(exist_ok=True)
+            reviews_path = directory / "reviews.json"
+            _write_json(report_directory / "reviews.json", json.loads(reviews_path.read_text(encoding="utf-8")) if reviews_path.exists() else {})
+            _write_json(report_directory / "rescore_manifest.json", {
+                "created_at": datetime.now().astimezone().isoformat(),
+                "source_raw_sha256": _hash((directory / "raw.jsonl").read_bytes()),
+                "source_dataset_sha256": manifest["dataset_sha256"],
+                "grading_dataset_sha256": _hash(grading),
+                "grading_file_sha256": _hash(grading_path.read_bytes()),
+                "grading_revision": grading.get("grading_revision"),
+                "scoring_source_sha256": _hash(Path(__file__).with_name("scoring.py").read_bytes()),
+                "note": "Recomputed scores only; original raw records and collection scores were not changed.",
+            })
+            write_report(report_directory, manifest, rescored, metadata)
+            print(f"Rescored saved turns locally: {output}; report: {report_directory / 'report.md'}")
+        else:
+            write_report(directory, manifest, records, metadata)
+            print(f"Regenerated local report: {directory / 'report.md'}")
+        return 0
+    if args.rescore:
+        raise ValueError("--rescore requires --report-only; it never runs model inference.")
+    if not args.live:
+        print("No requests made. Add --live to run this local benchmark with application execution disabled.", file=sys.stderr)
+        return 2
+    from .dataset import load_dataset
+
+    config_path = args.config.resolve()
+    config = _read_config(config_path)
+    dataset_path = (args.dataset or (config_path.parent / config.get("dataset", "dataset.json"))).resolve()
+    dataset = load_dataset(dataset_path)
+    previous = None
+    if args.resume is not None:
+        if args.output is not None:
+            raise ValueError("Use either --output or --resume, not both.")
+        directory = args.resume.resolve()
+        previous = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+    else:
+        directory = (args.output or config_path.parent / "results" / datetime.now().strftime("%Y%m%d-%H%M%S-%f")).resolve()
+        if directory.exists() and any(directory.iterdir()):
+            raise ValueError("The output directory is not empty; use a new directory or --resume.")
+        directory.mkdir(parents=True, exist_ok=True)
+    configurations, cases = _select(config, dataset, args, previous)
+    manifest = _manifest(config, dataset, configurations, cases)
+    if previous is not None:
+        for key in ("config_sha256", "dataset_sha256", "source_sha256", "system_prompt_sha256", "tools_sha256", "selection"):
+            if manifest[key] != previous[key]:
+                raise ValueError(f"Resume refused: {key} differs from the original run. Start a separate run.")
+        manifest = previous
+    else:
+        _write_json(directory / "manifest.json", manifest)
+        _write_json(directory / "dataset.json", dataset)
+    records = _resume_records(directory / "raw.jsonl")
+    complete = {(record["configuration_id"], record["case_id"]) for record in records}
+    metadata_path = directory / "configurations.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    print(f"Benchmark output: {directory}", flush=True)
+    print(f"Frozen dataset {manifest['dataset_sha256']}; {len(cases)} cases x {len(configurations)} configurations; sequential models; execution disabled.", flush=True)
+    interrupted = False
+    try:
+        with patch.object(controller_module, "local_time_context", return_value=manifest["frozen_local_clock"]), \
+                patch.object(subprocess, "Popen", side_effect=AssertionError("Benchmarks must not launch processes.")):
+            for configuration in configurations:
+                identifier = configuration["id"]
+                remaining = [case for case in cases if (identifier, case["id"]) not in complete]
+                if not remaining:
+                    continue
+                client = OllamaClient(timeout=config.get("shared", {}).get("timeout", 600))
+                started = perf_counter()
+                try:
+                    info = client.check_model(configuration["model"])
+                    client.validate_thinking(configuration["model"], configuration.get("thinking", "auto"))
+                    info_record = asdict(info) if is_dataclass(info) else {name: getattr(info, name, None) for name in ("name", "version", "family", "thinking_control")}
+                    metadata[identifier] = {"model_info": info_record, "installed": _installed(client, configuration["model"]),
+                                            "runtime_before": _runtime(client), "preflight_seconds": perf_counter() - started}
+                except (OllamaError, ValueError) as exc:
+                    metadata[identifier] = {"preflight_error_category": type(exc).__name__, "preflight_error": str(exc)}
+                    _write_json(metadata_path, metadata)
+                    print(f"{identifier}: preflight failed ({type(exc).__name__}); no cases run.", flush=True)
+                    continue
+                _write_json(metadata_path, metadata)
+                for case in remaining:
+                    record = _run_case(client, configuration, config.get("shared", {}), case)
+                    record["runtime_after"] = _runtime(client)
+                    # A user cancellation is not a completed accuracy trial.
+                    # Preserve its partial observation separately and rerun
+                    # the whole isolated case on resume, without duplicate keys.
+                    destination = "interrupted_attempts.jsonl" if record["interrupted"] else "raw.jsonl"
+                    with (directory / destination).open("a", encoding="utf-8", newline="\n") as output:
+                        output.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+                        output.flush()
+                    if record["interrupted"]:
+                        raise KeyboardInterrupt
+                    records.append(record)
+                    complete.add((identifier, case["id"]))
+                    write_report(directory, manifest, records, metadata)
+                    print(f"{identifier} {case['id']}: {record['score']['status']}; {record['wall_seconds']:.3f}s; {sum(turn['requests'] for turn in record['turns'])} requests", flush=True)
+    except KeyboardInterrupt:
+        interrupted = True
+        print("Benchmark interrupted; completed raw case records are preserved for --resume.", file=sys.stderr)
+    finally:
+        write_report(directory, manifest, records, metadata)
+    expected = len(cases) * len(configurations)
+    print(f"Saved {len(records)}/{expected} case results. Report: {directory / 'report.md'}", flush=True)
+    print("Completion status is separate from accuracy; inspect the scored summary and review flags.", flush=True)
+    return 130 if interrupted else (0 if len(records) == expected else 1)
+
+
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    add_arguments(parser)
+    try:
+        return run(parser.parse_args(argv))
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"Benchmark setup/report error: {exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

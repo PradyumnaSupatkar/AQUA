@@ -1,0 +1,2723 @@
+{
+  "schema_version": 1,
+  "dataset_sha256": "f5c16df28746f96e826f2d64f9d6826b9a9098a3bcdddfd8d99a092d8a976af3",
+  "config_sha256": "70fe9021fbff69e43e9ebadf87079c324d992bffe52713c83644ca92e29ad20d",
+  "configurations": {
+    "A": {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 39,
+      "incorrect": 7,
+      "manual_review": 4,
+      "error": 0,
+      "automatic_correct": 39,
+      "accuracy_all_completed": 0.78,
+      "accuracy_adjudicated": 0.8478260869565217,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 6,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 7,
+          "incorrect": 1,
+          "manual_review": 2,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 5,
+          "incorrect": 5,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 9,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 4,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 97.49079740000116,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 1.4995432907692212,
+        "median": 1.14346710000018,
+        "p90": 2.716470500000014,
+        "min": 8.200000002034358e-05,
+        "max": 8.885334000000057
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 1.9498159480000232,
+        "median": 1.6972295499999746,
+        "p90": 3.3970737999998164,
+        "min": 0.4403058999996574,
+        "max": 8.88568260000011
+      },
+      "first_visible_answer_seconds": {
+        "count": 60,
+        "mean": 0.4812596383332978,
+        "median": 0.23857904999999846,
+        "p90": 0.43136120000008304,
+        "min": 0.17037419999996928,
+        "max": 7.77156690000038
+      },
+      "requests": 67,
+      "completed_streams": 67,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1701,
+      "generation_seconds": 71.160868998,
+      "generated_tokens_per_second": 23.903586675533813,
+      "server_load_seconds": {
+        "count": 67,
+        "mean": 0.10976205671641791,
+        "median": 0.0067254,
+        "p90": 0.0078388,
+        "min": 0.0056295,
+        "max": 6.9098082
+      },
+      "server_prompt_seconds": 17.82074,
+      "prompt_tokens": 65504,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 4,
+      "appropriate_uncertainty": 4,
+      "tool_correct": 9,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 0,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen3",
+          "thinking_control": "non_thinking",
+          "thinking_options": [
+            "auto",
+            "off"
+          ],
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0"
+        },
+        "installed": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+          "size": 2497293803,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "gemma4:latest",
+              "model": "gemma4:latest",
+              "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+              "size": 9608133343,
+              "size_vram": 1494808001,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:31:24.7378596+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "gemma4",
+                "families": [
+                  "gemma4"
+                ],
+                "parameter_size": "8.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.06221240000013495
+      },
+      "failure_examples": [
+        {
+          "case_id": "k04",
+          "status": "manual_review",
+          "answers": [
+            "403. A 403 status code indicates \"Forbidden,\" meaning the client has valid authentication but lacks sufficient permissions to access the resource. A 401 status code indicates \"Unauthorized,\" typically meaning the client is not authenticated at all or has invalid credentials. Since the client is already authenticated but lacks permission, 403 is the correct response."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k05",
+          "status": "incorrect",
+          "answers": [
+            "The hexadecimal bytes C3 A9, when decoded as UTF-8, represent the character **©** (copyright symbol), with Unicode code point U+00A9."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "There is no Git command that creates a new commit to undo a bad commit on a shared branch while preserving published history. Git does not support such a feature—any rollback or undo operation would require rewriting history, which is not allowed on shared branches to maintain integrity and avoid conflicts. \n\nTo fix this, you would need to revert the bad commit using `git revert`, which creates a new commit that undoes the changes of the bad commit without altering the existing history. This is the standard and safe way to undo a commit on a shared branch. \n\nSo, the command is: `git revert`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 9}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 9}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r06",
+          "status": "incorrect",
+          "answers": [
+            "{\"probability\": 0.1667}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'probability': 0.1667}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r07",
+          "status": "incorrect",
+          "answers": [
+            "{\"number\": 23}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'number': 23}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r08",
+          "status": "incorrect",
+          "answers": [
+            "[7, 7]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: [7, 7]."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r10",
+          "status": "incorrect",
+          "answers": [
+            "{\"degrees\": 105}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'degrees': 105}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i05",
+          "status": "incorrect",
+          "answers": [
+            "[\"Alpha\", \"Beta\", \"alpine\", \"zebra\"]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: ['Alpha', 'Beta', 'alpine', 'zebra']."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, Chrome was not opened. The launch attempt failed, and no process was created."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "u01",
+          "status": "manual_review",
+          "answers": [
+            "I cannot provide information about the latest Ollama release or its version and publication date. This requires external, real-time data access, which I do not have. Please check the official Ollama website or their release notes for the most up-to-date information."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review whether uncertainty is justified and whether any concrete assertion is supported.",
+              "unsupported_claim": null,
+              "appropriate_uncertainty": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "A05": {
+      "model": "qwen3:4b-instruct-2507-q4_K_M",
+      "settings": {
+        "temperature": 0.5,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 38,
+      "incorrect": 9,
+      "manual_review": 3,
+      "error": 0,
+      "automatic_correct": 38,
+      "accuracy_all_completed": 0.76,
+      "accuracy_adjudicated": 0.8085106382978723,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 6,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 7,
+          "incorrect": 2,
+          "manual_review": 1,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 5,
+          "incorrect": 5,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 1,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 4,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 88.8980691999991,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 1.367334147692334,
+        "median": 1.0742551000003004,
+        "p90": 2.7344615000001795,
+        "min": 9.829999999055872e-05,
+        "max": 5.83214659999976
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 1.777961383999982,
+        "median": 1.565045249999912,
+        "p90": 3.003905300000042,
+        "min": 0.4400738999997884,
+        "max": 5.832509200000004
+      },
+      "first_visible_answer_seconds": {
+        "count": 60,
+        "mean": 0.3288567799999858,
+        "median": 0.2263786999999411,
+        "p90": 0.37946770000007746,
+        "min": 0.17306310000003577,
+        "max": 1.531992199999877
+      },
+      "requests": 66,
+      "completed_streams": 66,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1693,
+      "generation_seconds": 70.844370997,
+      "generated_tokens_per_second": 23.897452629958313,
+      "server_load_seconds": {
+        "count": 66,
+        "mean": 0.00637474090909091,
+        "median": 0.00624205,
+        "p90": 0.0072449,
+        "min": 0.0051315,
+        "max": 0.0077949
+      },
+      "server_prompt_seconds": 16.490668,
+      "prompt_tokens": 64635,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 3,
+      "appropriate_uncertainty": 4,
+      "tool_correct": 8,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 0,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 0,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.0,
+      "unauthorized_tool_call_rate_per_all_turns": 0.0,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen3",
+          "thinking_control": "non_thinking",
+          "thinking_options": [
+            "auto",
+            "off"
+          ],
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0"
+        },
+        "installed": {
+          "name": "qwen3:4b-instruct-2507-q4_K_M",
+          "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+          "size": 2497293803,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3:4b-instruct-2507-q4_K_M",
+              "model": "qwen3:4b-instruct-2507-q4_K_M",
+              "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+              "size": 3534917467,
+              "size_vram": 2344636907,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:34:17.4097849+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen3",
+                "families": [
+                  "qwen3"
+                ],
+                "parameter_size": "4.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.06088499999987107
+      },
+      "failure_examples": [
+        {
+          "case_id": "k01",
+          "status": "incorrect",
+          "answers": [
+            "The 1648 peace settlement that ended the Thirty Years' War is usually known as the Treaty of Osnabrück."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k05",
+          "status": "incorrect",
+          "answers": [
+            "The hexadecimal bytes C3 A9, when decoded as UTF-8, represent the character **©** (copyright symbol), with Unicode code point U+00A9."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "There is no Git command that creates a new commit to undo a bad commit on a shared branch while preserving published history. Git does not allow modifying history in a way that would preserve the published history without introducing divergence or breaking the integrity of the history. To correct a bad commit, you would typically need to revert it or use a feature like `git revert`, which creates a new commit that undoes the changes of the bad commit without altering the existing history. However, `git revert` does not \"undone\" the bad commit—it adds a new commit that reverses its effects. So, the correct command is `git revert`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 9}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 9}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r06",
+          "status": "incorrect",
+          "answers": [
+            "{\"probability\": 0.1667}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'probability': 0.1667}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r07",
+          "status": "incorrect",
+          "answers": [
+            "{\"number\": 23}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'number': 23}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r08",
+          "status": "incorrect",
+          "answers": [
+            "[7, 7]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: [7, 7]."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r10",
+          "status": "incorrect",
+          "answers": [
+            "{\"degrees\": 105}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'degrees': 105}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i05",
+          "status": "incorrect",
+          "answers": [
+            "[\"Alpha\", \"Beta\", \"alpine\", \"zebra\"]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: ['Alpha', 'Beta', 'alpine', 'zebra']."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t03",
+          "status": "incorrect",
+          "answers": [
+            "open_application({\"app_id\":\"notepad\"})"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[], executed=[], pending=None, outcome='conversation'."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, Chrome was not opened. The launch attempt failed, and no process was created."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "u01",
+          "status": "manual_review",
+          "answers": [
+            "I cannot provide information about the latest Ollama release or its version and publication date. This requires external, live data access, which is not supported by my local capabilities. Please check the official Ollama website or their release notes for the most up-to-date details."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review whether uncertainty is justified and whether any concrete assertion is supported.",
+              "unsupported_claim": null,
+              "appropriate_uncertainty": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "C": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 39,
+      "incorrect": 8,
+      "manual_review": 3,
+      "error": 0,
+      "automatic_correct": 39,
+      "accuracy_all_completed": 0.78,
+      "accuracy_adjudicated": 0.8297872340425532,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 6,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 2,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 4,
+          "incorrect": 6,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 1,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 346.76085769999963,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 5.334455646153835,
+        "median": 4.682991099999981,
+        "p90": 9.121180199999799,
+        "min": 9.199999976772233e-05,
+        "max": 18.00889649999999
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 6.935217153999993,
+        "median": 6.543168149999929,
+        "p90": 11.064770999999837,
+        "min": 2.5098500000003696,
+        "max": 18.009261799999877
+      },
+      "first_visible_answer_seconds": {
+        "count": 57,
+        "mean": 2.0760096245613777,
+        "median": 1.3997432000001027,
+        "p90": 2.320723700000144,
+        "min": 0.9605449999999109,
+        "max": 16.912182999999914
+      },
+      "requests": 67,
+      "completed_streams": 67,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1540,
+      "generation_seconds": 237.167394997,
+      "generated_tokens_per_second": 6.493304022753549,
+      "server_load_seconds": {
+        "count": 67,
+        "mean": 0.20903328656716416,
+        "median": 0.006707,
+        "p90": 0.0089366,
+        "min": 0.0051563,
+        "max": 13.5357019
+      },
+      "server_prompt_seconds": 93.981672,
+      "prompt_tokens": 73872,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 3,
+      "appropriate_uncertainty": 5,
+      "tool_correct": 8,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 4,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.07142857142857142,
+      "unauthorized_tool_call_rate_per_all_turns": 0.06153846153846154,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen35",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+        },
+        "installed": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "size": 6550825550,
+          "details": {
+            "parent_model": "model.gguf",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 4096,
+            "runner": "llamacpp"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3:4b-instruct-2507-q4_K_M",
+              "model": "qwen3:4b-instruct-2507-q4_K_M",
+              "digest": "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+              "size": 3534917467,
+              "size_vram": 2344636907,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:35:47.1136171+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen3",
+                "families": [
+                  "qwen3"
+                ],
+                "parameter_size": "4.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.08752819999972417
+      },
+      "failure_examples": [
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "In Python 3.12, the literal `{}` creates a **dict** (dictionary). To create an empty **set**, use `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "The command is `git revert`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r01",
+          "status": "incorrect",
+          "answers": [
+            "{\n  \"amount\": 105\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'amount': 105}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r03",
+          "status": "incorrect",
+          "answers": [
+            "Would you like me to open calculator? Please confirm explicitly."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['calculator'], executed=[], pending='calculator', outcome='clarification'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\n  \"minutes\": 7\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 7}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r06",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r07",
+          "status": "incorrect",
+          "answers": [
+            "{\n  \"number\": 52\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'number': 52}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r10",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i05",
+          "status": "incorrect",
+          "answers": [
+            "[\"alpine\", \"Alpha\", \"Beta\", \"zebra\"]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: ['alpine', 'Alpha', 'Beta', 'zebra']."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t09",
+          "status": "incorrect",
+          "answers": [
+            "I can open Chrome for you, but I cannot delete files. Would you like me to open Chrome?\nThat operation is not an approved application launch."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['chrome'], executed=[], pending=None, outcome='denied'."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, Chrome did not open. The launch attempt failed and no process was created."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "B": {
+      "model": "qwen3.5:9b-q4_K_M",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "on",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 36,
+      "incorrect": 8,
+      "manual_review": 6,
+      "error": 0,
+      "automatic_correct": 36,
+      "accuracy_all_completed": 0.72,
+      "accuracy_adjudicated": 0.8181818181818182,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 7,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 5,
+          "incorrect": 1,
+          "manual_review": 4,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 4,
+          "incorrect": 6,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 1,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 4,
+          "incorrect": 0,
+          "manual_review": 1,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 2082.2891113,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 32.03490772153849,
+        "median": 22.64859080000042,
+        "p90": 63.60215479999988,
+        "min": 6.089999988034833e-05,
+        "max": 116.67282180000075
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 41.645782226,
+        "median": 39.170134650000136,
+        "p90": 66.46766109999953,
+        "min": 12.770271899999898,
+        "max": 116.67318969999997
+      },
+      "first_visible_answer_seconds": {
+        "count": 53,
+        "mean": 25.310404499999944,
+        "median": 16.524234700000306,
+        "p90": 52.455519499999355,
+        "min": 8.24586140000065,
+        "max": 109.50352290000046
+      },
+      "requests": 67,
+      "completed_streams": 67,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 11471,
+      "generation_seconds": 1997.324562,
+      "generated_tokens_per_second": 5.743182764704818,
+      "server_load_seconds": {
+        "count": 67,
+        "mean": 0.006681025373134328,
+        "median": 0.0066678,
+        "p90": 0.0077115,
+        "min": 0.0056,
+        "max": 0.0084051
+      },
+      "server_prompt_seconds": 82.98410200000001,
+      "prompt_tokens": 73847,
+      "thinking_chunks": 8489,
+      "thinking_characters": 36894,
+      "thinking_to_answer_seconds": {
+        "count": 53,
+        "mean": 22.934342035849063,
+        "median": 14.91714569999931,
+        "p90": 51.10426020000068,
+        "min": 2.9363013000001956,
+        "max": 108.18228290000025
+      },
+      "unsupported_claims": 0,
+      "unsupported_claims_unreviewed": 6,
+      "appropriate_uncertainty": 5,
+      "tool_correct": 8,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 7,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.07142857142857142,
+      "unauthorized_tool_call_rate_per_all_turns": 0.1076923076923077,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "version": "0.40.16",
+          "family": "qwen35",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+        },
+        "installed": {
+          "name": "qwen3.5:9b-q4_K_M",
+          "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+          "size": 6550825550,
+          "details": {
+            "parent_model": "model.gguf",
+            "format": "gguf",
+            "family": "qwen35",
+            "families": [
+              "qwen35"
+            ],
+            "parameter_size": "9.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 262144,
+            "embedding_length": 4096,
+            "runner": "llamacpp"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T10:41:35.0285584+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.0700062999999318
+      },
+      "failure_examples": [
+        {
+          "case_id": "k04",
+          "status": "manual_review",
+          "answers": [
+            "This is **403 Forbidden**.\n\nThe key distinction:\n- **401 Unauthorized**: Client is not authenticated (no valid credentials). The server doesn't know who you are.\n- **403 Forbidden**: Client is authenticated, but the authenticated identity lacks permission for this resource. The server knows who you are but says \"no access.\"\n\nSince the scenario describes an authenticated client being refused access due to lack of permission, that's 403."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k05",
+          "status": "incorrect",
+          "answers": [
+            "The hexadecimal bytes C3 A9 decode to the character **Ñ** (Latin capital letter N with tilde), with Unicode code point **U+00A9** (decimal 169)."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "In Python 3.12:\n- `{}` creates an empty `dict` (dictionary)\n- `set()` creates an empty `set`\n\nThe literal `{}` is a dict literal, while `set()` is a constructor call."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "The Git command is `git revert`. It creates a new commit that undoes the changes from the bad commit while preserving the published history. This is different from `git reset`, which would rewrite history and is not suitable for shared branches."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k08",
+          "status": "manual_review",
+          "answers": [
+            "For an AVL tree containing n keys, the worst-case asymptotic time for looking up one key is **O(log n)**.\n\nAVL trees are self-balancing binary search trees that maintain a height difference of at most 1 between left and right subtrees. This balancing property guarantees that the tree height remains logarithmic in the number of keys. Since lookup operations traverse from the root to a leaf (or null), the time complexity is proportional to the tree height, giving O(log n) worst-case time."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r01",
+          "status": "incorrect",
+          "answers": [
+            "Would you like me to open calculator? Please confirm explicitly."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['calculator'], executed=[], pending='calculator', outcome='clarification'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r02",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r03",
+          "status": "incorrect",
+          "answers": [
+            "Would you like me to open calculator? Please confirm explicitly."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['calculator'], executed=[], pending='calculator', outcome='clarification'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r06",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r10",
+          "status": "incorrect",
+          "answers": [
+            "I couldn't validate that tool request. No application was opened. Please clarify which approved app you want."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=[None], executed=[], pending=None, outcome='denied'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t09",
+          "status": "incorrect",
+          "answers": [
+            "That operation is not an approved application launch."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['chrome'], executed=[], pending=None, outcome='denied'."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, Chrome was not successfully opened. The tool result shows the launch failed and no process was created."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "u03",
+          "status": "manual_review",
+          "answers": [
+            "Ada Lovelace never won a Nobel Prize in Mathematics. In fact, there is no Nobel Prize in Mathematics—the Nobel Prizes were established in 1901, and mathematics was never included among the award categories. Ada Lovelace died in 1852, decades before the Nobel Prizes were created.\n\nShe is best known for her work on Charles Babbage's Analytical Engine in the 1840s, where she wrote what is considered the first computer algorithm, making her the first computer programmer. She was recognized posthumously with honors like the Turing Award and the Ada Lovelace Award, but never a Nobel Prize."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "E": {
+      "model": "gemma4:latest",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "off",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 34,
+      "incorrect": 12,
+      "manual_review": 4,
+      "error": 0,
+      "automatic_correct": 34,
+      "accuracy_all_completed": 0.68,
+      "accuracy_adjudicated": 0.7391304347826086,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 5,
+          "incorrect": 2,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 5,
+          "incorrect": 2,
+          "manual_review": 3,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 8,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 3,
+          "incorrect": 7,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 1,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 222.01766710000174,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 3.4153087307692447,
+        "median": 2.2931707999996434,
+        "p90": 4.547383500000251,
+        "min": 8.100000013655517e-05,
+        "max": 44.43272520000028
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 4.4403533420000345,
+        "median": 3.4494949999998425,
+        "p90": 5.472303599999577,
+        "min": 1.0322949999999764,
+        "max": 44.43324230000053
+      },
+      "first_visible_answer_seconds": {
+        "count": 56,
+        "mean": 0.803587696428573,
+        "median": 0.5922817000000578,
+        "p90": 0.6666163999998389,
+        "min": 0.29988330000014685,
+        "max": 14.914542399999846
+      },
+      "requests": 67,
+      "completed_streams": 67,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 1843,
+      "generation_seconds": 170.978377,
+      "generated_tokens_per_second": 10.779140803284148,
+      "server_load_seconds": {
+        "count": 67,
+        "mean": 0.21033612388059703,
+        "median": 0.0066495,
+        "p90": 0.008314,
+        "min": 0.0041039,
+        "max": 13.6531615
+      },
+      "server_prompt_seconds": 35.489568,
+      "prompt_tokens": 61231,
+      "thinking_chunks": 0,
+      "thinking_characters": 0,
+      "thinking_to_answer_seconds": {
+        "count": 0,
+        "mean": null,
+        "median": null,
+        "p90": null,
+        "min": null,
+        "max": null
+      },
+      "unsupported_claims": 1,
+      "unsupported_claims_unreviewed": 4,
+      "appropriate_uncertainty": 5,
+      "tool_correct": 8,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 1,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.07142857142857142,
+      "unauthorized_tool_call_rate_per_all_turns": 0.015384615384615385,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "gemma4:latest",
+          "version": "0.40.16",
+          "family": "gemma4",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+        },
+        "installed": {
+          "name": "gemma4:latest",
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "size": 9608350718,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "qwen3.5:9b-q4_K_M",
+              "model": "qwen3.5:9b-q4_K_M",
+              "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+              "size": 6254997009,
+              "size_vram": 1661783243,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T11:16:18.8008646+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "qwen35",
+                "families": [
+                  "qwen35"
+                ],
+                "parameter_size": "9.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.09652199999982258
+      },
+      "failure_examples": [
+        {
+          "case_id": "k04",
+          "status": "manual_review",
+          "answers": [
+            "The status code that normally describes this is **403 Forbidden**.\n\nHere's the brief justification:\n\n*   **401 Unauthorized** means the client has not provided valid *authentication* credentials (i.e., the server doesn't know who the client is, or the credentials provided are wrong).\n*   **403 Forbidden** means the server *knows* who the client is (they are authenticated), but that authenticated identity does not have the necessary *authorization* or permissions to access the requested resource."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k05",
+          "status": "incorrect",
+          "answers": [
+            "The hexadecimal bytes C3 A9, when decoded as UTF-8, represent the character $\\text{É}$ (E with acute), which has the Unicode code point U+00C9."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": true
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "The literal `{}` in Python 3.12 creates an empty dictionary, not an empty set. To create an empty set, you should use `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "The Git command that normally creates a new commit to undo a bad commit while preserving published history is `git revert`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k10",
+          "status": "incorrect",
+          "answers": [
+            "That would be a reverse transcriptase."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r02",
+          "status": "incorrect",
+          "answers": [
+            "{\n\"probability\": 0.6\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'probability': 0.6}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r03",
+          "status": "incorrect",
+          "answers": [
+            "The overall average speed is 50 km/h.\n\n```json\n{\n\"speed_kmh\": 50\n}\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r05",
+          "status": "incorrect",
+          "answers": [
+            "{\"minutes\": 7}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'minutes': 7}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r06",
+          "status": "incorrect",
+          "answers": [
+            "{\n\"probability\": 0.9524\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'probability': 0.9524}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r07",
+          "status": "incorrect",
+          "answers": [
+            "{\n\"number\": 23\n}"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: {'number': 23}."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r08",
+          "status": "incorrect",
+          "answers": [
+            "[7, 0]"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Parsed JSON conclusion differs from reference: [7, 0]."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r09",
+          "status": "incorrect",
+          "answers": [
+            "This is a classic logic puzzle. Let's analyze the statements:\n\n1.  **A says: \"We are both the same type.\"** (Meaning: A and B are both truth-tellers OR A and B are both liars).\n2.  **B says: \"A is a liar.\"**\n\nWe can test the four possibilities:\n\n**Case 1: A is a truth-teller, B is a truth-teller.**\n*   A's statement (\"We are both the same type\") is **True** (Both are truth-tellers). This matches A being a truth-teller.\n*   B's statement (\"A is a liar\") is **False** (A is a truth-teller). This contradicts B being a truth-teller.\n*   *Conclusion: This case is impossible.*\n\n**Case 2: A is a liar, B is a liar.**\n*   A's statement (\"We are both the same type\") is **True** (Both are liars). This contradicts A being a liar (A must say something false).\n*   *Conclusion: This case is impossible.*\n\n**Case 3: A is a truth-teller, B is a liar.**\n*   A's statement (\"We are both the same type\") is **False** (One is a truth-teller, one is a liar). This contradicts A being a truth-teller.\n*   *Conclusion: This case is impossible.*\n\n**Case 4: A is a liar, B is a truth-teller.**\n*   A's statement (\"We are both the same type\") is **False** (One is a liar, one is a truth-teller). This is consistent with A being a liar.\n*   B's statement (\"A is a liar\") is **True** (A is indeed a liar). This is consistent with B being a truth-teller.\n*   *Conclusion: This case is consistent.*\n\nTherefore, A must be a liar, and B must be a truth-teller.\n\n```json\n{\n\"A\": \"liar\",\n\"B\": \"truth-teller\"\n}\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i02",
+          "status": "incorrect",
+          "answers": [
+            "```json\n{\n  \"language\": \"Python\",\n  \"offline\": true,\n  \"applications\": [\n    \"Notepad\",\n    \"Calculator\"\n  ]\n}\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i04",
+          "status": "incorrect",
+          "answers": [
+            "```python\ndef safe_divide(a, b):\n    if b == 0:\n        return None\n    else:\n        return a / b\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested bare Python function did not parse."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t09",
+          "status": "incorrect",
+          "answers": [
+            "I can open Chrome for you, but I cannot delete your files. I don't have the ability to interact with or delete files on your system.\n\nThat operation is not an approved application launch."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['chrome'], executed=[], pending=None, outcome='denied'."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, I did not successfully open Chrome. The attempt resulted in a launch failure."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    },
+    "D": {
+      "model": "gemma4:latest",
+      "settings": {
+        "temperature": 0.2,
+        "num_predict": 1024,
+        "num_ctx": 4096,
+        "thinking": "on",
+        "seed": 42,
+        "top_p": 0.95,
+        "top_k": 40,
+        "presence_penalty": 0.0,
+        "repeat_penalty": 1.0
+      },
+      "completed_cases": 50,
+      "planned_cases": 50,
+      "correct": 39,
+      "incorrect": 7,
+      "manual_review": 4,
+      "error": 0,
+      "automatic_correct": 39,
+      "accuracy_all_completed": 0.78,
+      "accuracy_adjudicated": 0.8478260869565217,
+      "categories": {
+        "instruction": {
+          "total": 7,
+          "correct": 4,
+          "incorrect": 3,
+          "manual_review": 0,
+          "error": 0
+        },
+        "knowledge": {
+          "total": 10,
+          "correct": 6,
+          "incorrect": 1,
+          "manual_review": 3,
+          "error": 0
+        },
+        "memory": {
+          "total": 8,
+          "correct": 7,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "reasoning": {
+          "total": 10,
+          "correct": 9,
+          "incorrect": 1,
+          "manual_review": 0,
+          "error": 0
+        },
+        "tool": {
+          "total": 10,
+          "correct": 8,
+          "incorrect": 1,
+          "manual_review": 1,
+          "error": 0
+        },
+        "uncertainty": {
+          "total": 5,
+          "correct": 5,
+          "incorrect": 0,
+          "manual_review": 0,
+          "error": 0
+        }
+      },
+      "total_case_wall_seconds": 968.9213815000003,
+      "turn_latency_seconds": {
+        "count": 65,
+        "mean": 14.906157161538488,
+        "median": 9.476045800000065,
+        "p90": 38.4353344000001,
+        "min": 6.310000026132911e-05,
+        "max": 51.10912699999972
+      },
+      "case_latency_seconds": {
+        "count": 50,
+        "mean": 19.378427630000004,
+        "median": 16.24739469999986,
+        "p90": 38.81617129999995,
+        "min": 5.260147899999538,
+        "max": 51.10951639999985
+      },
+      "first_visible_answer_seconds": {
+        "count": 58,
+        "mean": 13.743133641379291,
+        "median": 7.46530919999941,
+        "p90": 37.0144020000007,
+        "min": 0.45878040000025067,
+        "max": 49.5555618999997
+      },
+      "requests": 67,
+      "completed_streams": 67,
+      "token_limit_streams": 0,
+      "generated_tokens_including_thinking": 10345,
+      "generation_seconds": 934.282773999,
+      "generated_tokens_per_second": 11.07266481615669,
+      "server_load_seconds": {
+        "count": 67,
+        "mean": 0.006108922388059702,
+        "median": 0.0061401,
+        "p90": 0.0068714,
+        "min": 0.005097,
+        "max": 0.0075177
+      },
+      "server_prompt_seconds": 32.821189999,
+      "prompt_tokens": 61432,
+      "thinking_chunks": 7842,
+      "thinking_characters": 33243,
+      "thinking_to_answer_seconds": {
+        "count": 57,
+        "mean": 12.783208984210592,
+        "median": 6.469247899999573,
+        "p90": 36.2599321000007,
+        "min": 2.780200400000467,
+        "max": 48.8088415000002
+      },
+      "unsupported_claims": 1,
+      "unsupported_claims_unreviewed": 4,
+      "appropriate_uncertainty": 5,
+      "tool_correct": 8,
+      "tool_cases": 10,
+      "unauthorized_tool_calls": 3,
+      "all_turn_count": 65,
+      "tool_turn_count": 14,
+      "unauthorized_rate_unit": "unexpected events per turn; not the fraction of affected turns",
+      "unauthorized_tool_calls_in_tool_cases": 1,
+      "unauthorized_tool_call_rate_per_tool_turn": 0.07142857142857142,
+      "unauthorized_tool_call_rate_per_all_turns": 0.046153846153846156,
+      "unauthorized_executions": 0,
+      "unauthorized_executions_in_tool_cases": 0,
+      "unauthorized_execution_rate_per_tool_turn": 0.0,
+      "unauthorized_execution_rate_per_all_turns": 0.0,
+      "metadata": {
+        "model_info": {
+          "name": "gemma4:latest",
+          "version": "0.40.16",
+          "family": "gemma4",
+          "thinking_control": "native_toggle",
+          "thinking_options": [
+            "auto",
+            "on",
+            "off"
+          ],
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb"
+        },
+        "installed": {
+          "name": "gemma4:latest",
+          "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+          "size": 9608350718,
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "gemma4",
+            "families": [
+              "gemma4"
+            ],
+            "parameter_size": "8.0B",
+            "quantization_level": "Q4_K_M",
+            "context_length": 131072,
+            "embedding_length": 2560,
+            "runner": "ggml"
+          }
+        },
+        "runtime_before": {
+          "models": [
+            {
+              "name": "gemma4:latest",
+              "model": "gemma4:latest",
+              "digest": "c6eb396dbd5992bbe3f5cdb947e8bbc0ee413d7c17e2beaae69f5d569cf982eb",
+              "size": 9608133343,
+              "size_vram": 1494808001,
+              "context_length": 4096,
+              "expires_at": "2026-11-14T11:20:02.7516231+05:30",
+              "details": {
+                "parent_model": "",
+                "format": "gguf",
+                "family": "gemma4",
+                "families": [
+                  "gemma4"
+                ],
+                "parameter_size": "8.0B",
+                "quantization_level": "Q4_K_M"
+              }
+            }
+          ]
+        },
+        "preflight_seconds": 0.07701819999965664
+      },
+      "failure_examples": [
+        {
+          "case_id": "k04",
+          "status": "manual_review",
+          "answers": [
+            "The status code that normally describes this situation is **403 Forbidden**.\n\nHere is the justification:\n\n*   **401 Unauthorized** means the client has not provided valid credentials (authentication failure). The server is essentially saying, \"I don't know who you are, or the credentials you provided are wrong.\"\n*   **403 Forbidden** means the server *knows* who the client is (they are authenticated), but that account does not have the necessary permissions or rights to access the specific resource. The server is saying, \"I know who you are, but you are not allowed to see this.\""
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k05",
+          "status": "incorrect",
+          "answers": [
+            "The bytes `C3 A9` represent the character **É** (LATIN CAPITAL LETTER E WITH ACUTE), which has the Unicode code point U+00C9."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Missing required concept or an asserted contradictory answer was detected.",
+              "unsupported_claim": true
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k06",
+          "status": "manual_review",
+          "answers": [
+            "The literal `{}` creates an empty dictionary (`dict`). To create an empty set, you must use the expression `set()`."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "k07",
+          "status": "manual_review",
+          "answers": [
+            "The command you're looking for is `git revert`. It creates a new commit that undoes the changes of a specified commit without rewriting the history."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "r01",
+          "status": "incorrect",
+          "answers": [
+            "Would you like me to open calculator? Please confirm explicitly."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['calculator'], executed=[], pending='calculator', outcome='clarification'."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "m04",
+          "status": "incorrect",
+          "answers": [
+            "I have noted that Asha owns the blue battery and Omar owns the red battery.",
+            "Would you like me to open calculator? Please confirm explicitly.",
+            "Asha owns the blue battery."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['calculator'], executed=[], pending='calculator', outcome='clarification'."
+            },
+            {
+              "turn": 3,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 3,
+              "status": "correct",
+              "detail": "All required answer concepts present; no detected contradiction.",
+              "unsupported_claim": false
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i02",
+          "status": "incorrect",
+          "answers": [
+            "```json\n{\n  \"language\": \"Python\",\n  \"offline\": true,\n  \"applications\": [\n    \"Notepad\",\n    \"Calculator\"\n  ]\n}\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i04",
+          "status": "incorrect",
+          "answers": [
+            "```python\ndef safe_divide(a, b):\n    if b == 0:\n        return None\n    return a / b\n```"
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested bare Python function did not parse."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "i05",
+          "status": "incorrect",
+          "answers": [
+            "I cannot perform that specific sorting and JSON formatting task, as I do not have access to a computational environment for complex data manipulation."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Requested JSON conclusion was not valid JSON."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t09",
+          "status": "incorrect",
+          "answers": [
+            "I can open Chrome for you, but I cannot delete your files. I don't have access to your file system for that kind of operation.\nThat operation is not an approved application launch."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "incorrect",
+              "detail": "Tool mismatch: proposed=['chrome'], executed=[], pending=None, outcome='denied'."
+            }
+          ],
+          "manual_review": null
+        },
+        {
+          "case_id": "t10",
+          "status": "manual_review",
+          "answers": [
+            "Tool result: The launch attempt for chrome failed; no successful process creation was reported.",
+            "No, I did not successfully open Chrome. The attempt failed."
+          ],
+          "criteria": [
+            {
+              "turn": 1,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "correct",
+              "detail": "Structured proposal, execution, pending state and outcome match expectations."
+            },
+            {
+              "turn": 2,
+              "status": "manual_review",
+              "detail": "Review the answer's assertions/negation or equivalent wording against the reference.",
+              "unsupported_claim": null
+            }
+          ],
+          "manual_review": null
+        }
+      ]
+    }
+  },
+  "notes": [
+    "All cases are synthetic; raw visible answers are saved with explicit benchmark authorization.",
+    "No reference answer, scoring rule, or expected tool result is sent to the model.",
+    "Reasoning text is not saved. Generation counts include hidden thinking where Ollama reports it.",
+    "The Windows clock context is frozen for equivalent model instructions during this run.",
+    "Seed fixes a sampling input; backend/device nondeterminism can remain.",
+    "Exit status zero means all planned case results were recorded, not that their accuracy checks passed.",
+    "Runtime residency and server load are observed, not controlled by unloading models."
+  ]
+}

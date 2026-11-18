@@ -22,7 +22,9 @@ class ModelSelectionTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        root = Path(temporary.name)
+        # Resolve so Windows 8.3 short temp paths (e.g. RUNNER~1 on CI) match
+        # the long-form paths that validate_model reports.
+        root = Path(temporary.name).resolve()
         self.base = root / "faster-whisper-base"
         self.small = root / "faster-whisper-small"
 

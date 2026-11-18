@@ -30,6 +30,8 @@ from aqua.wake.models import WakeError
 FOLLOW_UP_SECONDS = 3.0
 FOLLOW_UP_TAIL_SECONDS = .25
 FOLLOW_UP_TAIL_FRAMES = ceil(FOLLOW_UP_TAIL_SECONDS * SAMPLE_RATE / FRAME_SAMPLES)
+# Spoken commands arrive minutes apart; keep the model loaded between them.
+HANDSFREE_KEEP_ALIVE = "30m"
 
 
 def command_text(text: str) -> str:
@@ -154,6 +156,7 @@ def run_handsfree(
     speak: bool = False, tts_engine: str = "kokoro", voice: str | None = None,
     voice_model_dir: Path | None = None, speech_rate: float = 1.0,
     follow_up: float = FOLLOW_UP_SECONDS,
+    keep_alive: str = HANDSFREE_KEEP_ALIVE,
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
 
@@ -301,7 +304,7 @@ def run_handsfree(
                     if client is None:
                         session = chat._start(
                             model=model, timeout=timeout, max_turns=max_turns,
-                            max_chars=max_chars, settings=generation,
+                            max_chars=max_chars, settings=generation, keep_alive=keep_alive,
                         )
                         if session is None:
                             state.clear()

@@ -13,7 +13,10 @@ from aqua.audio.devices import list_devices
 from aqua.audio.diagnostics import analyze_audio
 from aqua.audio.levels import AudioLevels
 from aqua.audio.recording import RECORD_SECONDS, Recording, record_test
-from aqua.brain.ollama import DEFAULT_CHAT_MODEL, DEFAULT_CONTEXT_SIZE, DEFAULT_TEMPERATURE, GenerationSettings
+from aqua.brain.ollama import (
+    DEFAULT_CHAT_MODEL, DEFAULT_CONTEXT_SIZE, DEFAULT_KEEP_ALIVE, DEFAULT_TEMPERATURE, GenerationSettings,
+    parse_keep_alive,
+)
 from aqua.speech.comparison import compare_recording, load_models
 from aqua.speech.models import BASE_MODEL_DIR, DEFAULT_MODEL, MODEL_DIRS, SpeechError, resolve_model_dir, setup_model
 from aqua.speech.recognizer import OfflineRecognizer, Transcript
@@ -75,6 +78,10 @@ def _finite_range(minimum: float, maximum: float, *, include_minimum: bool = Tru
     return parse
 
 
+# Mirrors aqua.handsfree.HANDSFREE_KEEP_ALIVE (tested); not imported so parsing stays lightweight.
+HANDSFREE_KEEP_ALIVE = "30m"
+
+
 def _follow_up_seconds(value: str) -> float:
     seconds = float(value)
     if not isfinite(seconds) or not (seconds == 0 or .5 <= seconds <= 10):
@@ -100,7 +107,14 @@ def setup_wake_model(model_dir: Path | None = None, *, download: bool = False) -
     return setup(model_dir=model_dir, download=download)
 
 
-def _chat_options(parser: argparse.ArgumentParser) -> None:
+def _keep_alive(value: str) -> str:
+    try:
+        return parse_keep_alive(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from exc
+
+
+def _chat_options(parser: argparse.ArgumentParser, *, keep_alive: str = DEFAULT_KEEP_ALIVE) -> None:
     parser.add_argument("--allow-text-entry", action="append", choices=("notepad",), default=[],
                         help="explicitly enable guarded blank Edit text-entry proposals for the Stage 2B.1 application")
     parser.add_argument("--model", default=DEFAULT_CHAT_MODEL, help=f"installed Ollama model tag; default: {DEFAULT_CHAT_MODEL}")
@@ -117,6 +131,8 @@ def _chat_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--history-chars", type=_positive_integer, default=12000, help="conversation character budget including system prompt; default: 12000")
     parser.add_argument("--timeout", type=_timeout_seconds, default=120.0, help="local request timeout in seconds; default: 120")
     parser.add_argument("--diagnostics", action="store_true", help="show response and voice-stage latency measurements")
+    parser.add_argument("--keep-alive", type=_keep_alive, default=keep_alive, metavar="DURATION",
+                        help=f"how long Ollama keeps the model loaded after each request, e.g. 5m, 30m, 1h, or 0; default: {keep_alive}")
 
 
 def _voice_options(parser: argparse.ArgumentParser, *, speak_default: bool) -> None:
@@ -209,7 +225,7 @@ def _parser() -> argparse.ArgumentParser:
     _speech_options(voice)
     _voice_options(voice, speak_default=False)
     handsfree = commands.add_parser("handsfree", help='listen locally for "Hey Aqua", then capture speech until silence')
-    _chat_options(handsfree)
+    _chat_options(handsfree, keep_alive=HANDSFREE_KEEP_ALIVE)
     _speech_options(handsfree)
     _voice_options(handsfree, speak_default=True)
     handsfree.add_argument("--wake-model-dir", type=Path, metavar="PATH", help="complete local sherpa keyword-spotting directory")
@@ -345,6 +361,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "diagnostics": args.diagnostics,
                 "speak": args.speak, "tts_engine": args.tts_engine, "voice": args.voice,
                 "voice_model_dir": args.voice_model_dir, "speech_rate": args.speech_rate,
+                "keep_alive": args.keep_alive,
             }
             if args.allow_text_entry:
                 common["text_entry_apps"] = tuple(dict.fromkeys(args.allow_text_entry))

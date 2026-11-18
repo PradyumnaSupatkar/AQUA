@@ -185,7 +185,7 @@ class SessionTests(_SessionHarness):
         self.client.check_model.return_value = ModelInfo("other:local", "test")
         status, _output, _errors = self.invoke(["Hello", "/quit"], model="other:local", settings=settings, timeout=7)
         self.assertEqual(status, 0)
-        self.factory.assert_called_once_with(timeout=7)
+        self.factory.assert_called_once_with(timeout=7, keep_alive="5m")
         self.client.check_model.assert_called_once_with("other:local")
         self.assertEqual(self.client.stream_chat.call_args.kwargs, {"model": "other:local", "settings": settings, "tools": tool_definitions()})
 
@@ -202,7 +202,7 @@ class SessionTests(_SessionHarness):
         status, output, errors = self.invoke(["/quit"], model="qwen3:4b")
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
-        self.factory.assert_called_once_with(timeout=120.0)
+        self.factory.assert_called_once_with(timeout=120.0, keep_alive="5m")
         self.assertIn("uses hidden thinking", output)
         self.assertIn("first visible reply may take longer", output)
         self.client.check_model.assert_called_once_with("qwen3:4b")

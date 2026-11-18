@@ -17,7 +17,7 @@ from aqua.audio.recording import RECORD_SECONDS, Recording, record_test
 from aqua.brain.conversation import Conversation
 from aqua.brain.controller import ConversationController
 from aqua.brain.ollama import (
-    DEFAULT_CHAT_MODEL, ChatEvent, GenerationSettings,
+    DEFAULT_CHAT_MODEL, DEFAULT_KEEP_ALIVE, ChatEvent, GenerationSettings,
     OllamaClient, OllamaError,
 )
 from aqua.speech.models import SpeechError
@@ -198,6 +198,9 @@ def _respond_result(
             if latest and latest[0].get("authorization_reason"):
                 print(f"Entry authorization: {latest[0]['authorization_reason']}")
         print(f"Sampling: temperature {settings.temperature:g}; thinking {settings.thinking}; seed {settings.seed if settings.seed is not None else 'unset'}; context {settings.num_ctx}; output limit {settings.num_predict}")
+        keep_alive = getattr(client, "keep_alive", None)
+        if isinstance(keep_alive, str):
+            print(f"Ollama keep-alive: {keep_alive} (model stays loaded this long after each request)")
         overrides = [f"{name}={getattr(settings, name):g}" for name in ("top_p", "top_k", "presence_penalty", "repeat_penalty") if getattr(settings, name) is not None]
         if overrides:
             print("Sampling overrides: " + "; ".join(overrides))
@@ -223,12 +226,12 @@ def _close_speaker(speaker) -> None:
 
 def _start(
     *, model: str, timeout: float, max_turns: int, max_chars: int,
-    settings: GenerationSettings | None,
+    settings: GenerationSettings | None, keep_alive: str = DEFAULT_KEEP_ALIVE,
 ) -> tuple[OllamaClient, Conversation, GenerationSettings] | None:
     try:
         generation = settings if settings is not None else GenerationSettings()
         conversation = Conversation(max_turns=max_turns, max_chars=max_chars)
-        client = OllamaClient(timeout=timeout)
+        client = OllamaClient(timeout=timeout, keep_alive=keep_alive)
         info = client.check_model(model)
         client.validate_thinking(model, generation.thinking)
     except (OllamaError, ValueError) as exc:
@@ -254,13 +257,14 @@ def run_text_chat(
     voice: str | None = None,
     voice_model_dir: Path | None = None,
     speech_rate: float = 1.0,
+    keep_alive: str = DEFAULT_KEEP_ALIVE,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
-            max_chars=max_chars, settings=settings,
+            max_chars=max_chars, settings=settings, keep_alive=keep_alive,
         )
         if session is None:
             return 1
@@ -377,13 +381,14 @@ def run_voice_chat(
     voice: str | None = None,
     voice_model_dir: Path | None = None,
     speech_rate: float = 1.0,
+    keep_alive: str = DEFAULT_KEEP_ALIVE,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
-            max_chars=max_chars, settings=settings,
+            max_chars=max_chars, settings=settings, keep_alive=keep_alive,
         )
         if session is None:
             return 1

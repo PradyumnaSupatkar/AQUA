@@ -86,6 +86,16 @@ class _UnsupportedThinking(OllamaError):
     """Internal signal for one compatible retry on an older local API."""
 
 
+_KEEP_ALIVE = re.compile(r"0|[0-9]{1,6}[smh]")
+
+
+def parse_keep_alive(value: object) -> str:
+    """Accept only an Ollama duration such as 5m, 30m, 1h, 90s, or 0 (unload now)."""
+    if type(value) is not str or not _KEEP_ALIVE.fullmatch(value):
+        raise ValueError("Keep-alive must be digits followed by s, m or h (for example 5m, 30m, 1h), or 0.")
+    return value
+
+
 @dataclass(frozen=True, slots=True)
 class GenerationSettings:
     temperature: float = DEFAULT_TEMPERATURE
@@ -393,10 +403,11 @@ def _supports_disabled_thinking(template: object) -> bool:
 class OllamaClient:
     """Stream chat only from http://127.0.0.1:11434, with bounded responses."""
 
-    def __init__(self, *, timeout: float = 120.0) -> None:
+    def __init__(self, *, timeout: float = 120.0, keep_alive: str = DEFAULT_KEEP_ALIVE) -> None:
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not isfinite(timeout) or not 0 < timeout <= 600:
             raise ValueError("Ollama timeout must be finite, positive, and at most 600 seconds.")
         self.timeout = float(timeout)
+        self.keep_alive = parse_keep_alive(keep_alive)
         self._thinking_controls: dict[str, str] = {}
         self._thinking_options: dict[str, tuple[str, ...]] = {}
         self.chat_request_count = 0
@@ -578,7 +589,7 @@ class OllamaClient:
             "messages": copied,
             "stream": streaming,
             "options": {"temperature": settings.temperature, "num_predict": settings.num_predict, "num_ctx": settings.num_ctx},
-            "keep_alive": DEFAULT_KEEP_ALIVE,
+            "keep_alive": self.keep_alive,
         }
         for option in ("seed", "top_p", "top_k", "presence_penalty", "repeat_penalty"):
             value = getattr(settings, option)

@@ -16,10 +16,7 @@ def main():
         request = json.loads(raw.decode("utf-8"))
         # Library diagnostic output must not become protocol/UI observation data.
         with redirect_stdout(sys.stderr):
-            if type(request) is dict and request.get("operation") == "append_control_text":
-                from .append import dispatch_append
-                result = dispatch_append(request)
-            elif type(request) is dict and request.get("operation") == "set_control_text":
+            if type(request) is dict and request.get("operation") == "set_control_text":
                 from .interaction import dispatch_interaction
                 result = dispatch_interaction(request)
             else:

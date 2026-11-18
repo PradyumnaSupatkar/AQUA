@@ -26,9 +26,6 @@ class Offline(unittest.TestCase):
             self.addCleanup(manager.stop)
         self.client = Mock()
         self.client.check_model.return_value = ModelInfo(DEFAULT_CHAT_MODEL, "local-test", "qwen3", "non_thinking")
-        manager = patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("No classifier"))
-        manager.start()
-        self.addCleanup(manager.stop)
 
     def respond(self, speaker, chunks, *, diagnostics=False):
         self.client.stream_chat.side_effect = lambda *_a, **_k: reply(*chunks)

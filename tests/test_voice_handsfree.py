@@ -123,9 +123,6 @@ class HandsfreeVoiceTests(unittest.TestCase):
             manager = patch(target, return_value=value)
             manager.start()
             self.addCleanup(manager.stop)
-        manager = patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("No classifier"))
-        manager.start()
-        self.addCleanup(manager.stop)
 
     def make_speaker(self, *, gate=True):
         self.engine, self.player = FakeEngine(), FakePlayer(gate=gate)

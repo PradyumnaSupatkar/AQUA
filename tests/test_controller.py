@@ -69,9 +69,8 @@ class ControllerTests(unittest.TestCase):
 
     def test_ordinary_conversation_uses_one_interaction_and_retains_context(self):
         engine = self.engine(answer("Formula One is motorsport."), answer("Your drivers are Sainz and Verstappen."))
-        with patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("Retired classifier must never run")):
-            self.assertEqual(engine.respond("What is Formula One?").requests, 1)
-            self.assertEqual(engine.respond("My favorite drivers are Carlos Sainz and Max Verstappen.").requests, 1)
+        self.assertEqual(engine.respond("What is Formula One?").requests, 1)
+        self.assertEqual(engine.respond("My favorite drivers are Carlos Sainz and Max Verstappen.").requests, 1)
         messages = self.client.requests[-1][0]
         self.assertEqual([row["role"] for row in messages], ["system", "user", "assistant", "user"])
         self.assertEqual(messages[-2]["content"], "Formula One is motorsport.")

@@ -2,40 +2,14 @@
 import unittest
 from unittest.mock import patch
 
-from aqua.actions.intents import parse_launch_request
 from aqua.actions.launcher import (
     ALLOWED_APPS,
     APP_ALIASES,
     open_application,
 )
-from aqua.actions.router import route_launch_request
 
 
 class TestApplicationAliases(unittest.TestCase):
-
-    def test_vs_code_intent(self):
-        self.assertEqual(
-            parse_launch_request("Hey Aqua, open VS Code"),
-            "vs code",
-        )
-
-    def test_visual_studio_code_intent(self):
-        self.assertEqual(
-            parse_launch_request("Open Visual Studio Code"),
-            "vs code",
-        )
-
-    def test_chrome_intent(self):
-        self.assertEqual(
-            parse_launch_request("Aqua, launch Chrome"),
-            "chrome",
-        )
-
-    def test_google_chrome_intent(self):
-        self.assertEqual(
-            parse_launch_request("Open Google Chrome"),
-            "chrome",
-        )
 
     @patch("aqua.actions.launcher.subprocess.Popen")
     def test_launch_vs_code(self, mock_popen):
@@ -74,15 +48,6 @@ class TestApplicationAliases(unittest.TestCase):
     def test_alias_registry_cannot_redirect_an_alias(self):
         with self.assertRaises(TypeError):
             APP_ALIASES["google chrome"] = "powershell"
-
-    @patch("aqua.actions.router.open_application")
-    def test_reject_compound_command(self, mock_launch):
-        result = route_launch_request(
-            "Open Chrome and delete my files"
-        )
-
-        self.assertFalse(result.success)
-        mock_launch.assert_not_called()
 
 
 if __name__ == "__main__":

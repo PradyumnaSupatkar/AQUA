@@ -51,7 +51,6 @@ class VoiceSemanticIntegrationTests(unittest.TestCase):
             "capture": patch("aqua.chat.record_test", return_value=self.recording),
             "reliability": patch("aqua.chat.transcript_rejection_reason", return_value=None),
             "conversation_factory": patch("aqua.chat.Conversation", side_effect=conversation),
-            "interpret": patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("No retired classifier")),
             "launch": patch("aqua.actions.tools.open_application", return_value=ActionResult(True, "Opening vs code.")),
             "network": patch("socket.create_connection", side_effect=AssertionError("Tests must not access Ollama")),
             "process": patch("aqua.actions.launcher.subprocess.Popen", side_effect=AssertionError("Tests must not launch applications")),
@@ -91,7 +90,6 @@ class VoiceSemanticIntegrationTests(unittest.TestCase):
         self.assertIsNone(self.state.pending_app)
         self.assertEqual(self.client.stream_chat.call_count, 2)
         self.assertEqual(self.conversations[-1].verified_results[-1]["app_id"], "vs code")
-        self.interpret.assert_not_called()
 
     def test_affirmative_conversational_followups_retain_context(self):
         utterances = ["What is Formula One?", "Yeah, Carlos Sainz is my favorite driver.", "Yes, tell me more about him."]
@@ -186,13 +184,11 @@ class VoiceSemanticIntegrationTests(unittest.TestCase):
         self.client.stream_chat.assert_called_once()
         self.assertEqual(self.client.stream_chat.call_args.kwargs["model"], DEFAULT_CHAT_MODEL)
         self.assertEqual(self.client.stream_chat.call_args.kwargs["settings"].num_ctx, 4096)
-        self.interpret.assert_not_called()
 
     def test_voice_diagnostics_reports_shared_controller_and_single_request(self):
         status, output, errors = self.invoke(["What is Formula One?"], diagnostics=True)
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
-        self.interpret.assert_not_called()
         self.assertIn("Conversation: chat requests 1; outcome conversation; stage model_request", output)
         self.client.stream_chat.assert_called_once()
         self.launch.assert_not_called()
@@ -201,7 +197,6 @@ class VoiceSemanticIntegrationTests(unittest.TestCase):
         status, output, errors = self.invoke(["What is Formula One?"])
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
-        self.interpret.assert_not_called()
         self.assertNotIn("diagnostics", self.client.stream_chat.call_args.kwargs)
         self.assertNotIn("Semantic classifier:", output)
         self.assertNotIn("Semantic safety:", output)

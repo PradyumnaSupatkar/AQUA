@@ -61,10 +61,6 @@ class _SessionHarness(unittest.TestCase):
         self.factory = client_patch.start()
         self.addCleanup(client_patch.stop)
         # One native conversational model response handles ordinary turns.
-        # The retired standalone classifier must never be used by a session.
-        semantic_patch = patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("No separate classifier request"))
-        self.semantic = semantic_patch.start()
-        self.addCleanup(semantic_patch.stop)
 
     def invoke(self, inputs, *, voice=False, **options):
         output, errors = StringIO(), StringIO()
@@ -256,7 +252,6 @@ class VoiceSessionTests(_SessionHarness):
         self.assertEqual(errors, "")
         self.assertEqual(self.client.stream_chat.call_count, 3)
         self.assertEqual([call.args[0][-1]["content"] for call in self.client.stream_chat.call_args_list], requests)
-        self.semantic.assert_not_called()
         messages = self.client.stream_chat.call_args.args[0]
         self.assertEqual([message["content"] for message in messages if message["role"] == "user"], requests)
         self.assertEqual(len(messages), 6)

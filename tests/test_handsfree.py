@@ -231,7 +231,6 @@ class HandsfreeSessionTests(NoExternalEffects):
             "console_factory": patch("aqua.handsfree.ConsoleCommands", return_value=self.console),
             "client_factory": patch("aqua.chat.OllamaClient", return_value=self.client),
             "state_factory": patch("aqua.handsfree.ActionState", return_value=self.state),
-            "interpret": patch("aqua.actions.semantic.interpret_request", side_effect=AssertionError("No retired classifier calls")),
         }
         for name, manager in patches.items():
             setattr(self, name, manager.start())
@@ -264,7 +263,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertIn('Listening for "Hey Aqua"', output)
         self.recognizer.transcribe.assert_not_called()
         self.client_factory.assert_not_called()
-        self.interpret.assert_not_called()
         self.assertEqual(self.vad.calls, 0)
         self.assertTrue(self.microphone.closed)
 
@@ -303,7 +301,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertEqual(self.client.stream_chat.call_args.args[0][-1]["role"], "tool")
         self.assertEqual(self.client.stream_chat.call_args.kwargs["tools"], [])
         self.assertEqual(self.client.stream_chat.call_count, 2)
-        self.interpret.assert_not_called()
 
     def test_unapproved_and_compound_requests_never_launch_even_on_misclassification(self):
         self.responses.extend(native_proposal("chrome") for _ in range(5))
@@ -315,7 +312,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
         self.assertEqual(self.client.stream_chat.call_count, 5)
-        self.interpret.assert_not_called()
         self.assertIsNone(self.state.pending_app)
 
     def test_one_wake_turn_performs_authorized_sequential_operations(self):
@@ -339,7 +335,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertEqual(self.client.stream_chat.call_args.kwargs["tools"], [])
         self.assertIn("2 successful launch attempt(s)", output)
         self.assertNotIn("All applications are ready!", output)
-        self.interpret.assert_not_called()
 
     def test_clarification_confirms_only_once_across_separate_wake_turns(self):
         self.responses.extend((native_proposal("vs code"), native_reply("The launch attempt succeeded.")))
@@ -348,7 +343,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
         self.assertIn("Would you like me to open vs code?", output)
-        self.interpret.assert_not_called()
         self.assertEqual(self.client.stream_chat.call_count, 2)
         launch.assert_called_once_with(list(ALLOWED_APPS["vs code"]), shell=False)
         self.assertIsNone(self.state.pending_app)
@@ -418,7 +412,6 @@ class HandsfreeSessionTests(NoExternalEffects):
                 self.assertIn(label, output)
                 self.recognizer.transcribe.assert_not_called()
                 self.client_factory.assert_not_called()
-                self.interpret.assert_not_called()
                 self.assertIsNone(self.state.pending_app)
 
     def test_empty_wake_only_transcript_never_reaches_ollama(self):
@@ -428,7 +421,6 @@ class HandsfreeSessionTests(NoExternalEffects):
         self.assertEqual(errors, "")
         self.assertIn("Skipped:", output)
         self.client_factory.assert_not_called()
-        self.interpret.assert_not_called()
         self.assertIsNone(self.state.pending_app)
 
     def test_transcription_and_native_model_errors_clear_pending_safely(self):

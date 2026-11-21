@@ -106,8 +106,8 @@ class SpeechOutput:
                 if self._turn is None:
                     self._turn = _Turn(self._clock())
                     self._last_turn = self._turn
-                for sentence in self._splitter.feed(chunk):
-                    self._speak_sentence(sentence)
+                for piece in self._splitter.feed_chunks(chunk):
+                    self._speak_chunk(piece)
         except Exception as exc:  # Never let speech affect the printed reply.
             self._fail(exc)
 
@@ -116,8 +116,8 @@ class SpeechOutput:
             return
         try:
             with self._lock:
-                for sentence in self._splitter.flush():
-                    self._speak_sentence(sentence)
+                for piece in self._splitter.flush_chunks():
+                    self._speak_chunk(piece)
                 for text in self._budget.finish():
                     self._enqueue(text)
                 self._turn = None
@@ -185,8 +185,8 @@ class SpeechOutput:
         self.close()
 
     # ----- internals ----------------------------------------------------
-    def _speak_sentence(self, sentence: str) -> None:
-        for text in self._budget.push(speakable(sentence)):
+    def _speak_chunk(self, piece) -> None:
+        for text in self._budget.push(speakable(piece.text), end=piece.sentence_end):
             self._enqueue(text)
 
     def _enqueue(self, text: str) -> None:

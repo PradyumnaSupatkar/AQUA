@@ -1,9 +1,12 @@
-"""Turn streamed reply text into short, speakable sentences.
+"""Turn streamed reply text into short, speakable sentences and chunks.
 
 Pure text processing: no audio, models or threads. The splitter is fed the
 same chunks that are printed, so speech can start before the reply finishes.
+Long sentences are also cut into chunks at natural breaks while they stream,
+so synthesis never waits for a whole 40-word sentence.
 """
 
+from dataclasses import dataclass
 import re
 
 MAX_SENTENCE_CHARS = 220
@@ -21,6 +24,35 @@ _ABBREVIATIONS = frozenset({
 })
 _DOTTED = re.compile(r"(?:[A-Za-z]\.){2,}")          # e.g. i.e. U.S.
 _LIST_NUMBER = re.compile(r"\d{1,3}\.")              # "1." at a sentence start
+
+# Chunking inside long sentences. A chunk ends at a natural break (a word
+# ending in , ; : or a dash) once it has CHUNK_MIN_WORDS, or at a space at the
+# hard cap. The first chunks of a reply are kept smaller so speech starts and
+# keeps flowing while the model is still generating.
+CHUNK_MIN_WORDS = 6
+CHUNK_EARLY_MAX_WORDS = 10
+CHUNK_EARLY_COUNT = 2
+CHUNK_MAX_WORDS = 16
+FRAGMENT_MIN_WORDS = 3
+_DASHES = frozenset({"-", "--", "\u2013", "\u2014"})
+_COMPLETE_WORD = re.compile(r"\S+(?=\s)")
+_WORD = re.compile(r"\S+")
+
+
+@dataclass(frozen=True, slots=True)
+class Chunk:
+    text: str
+    sentence_end: bool
+
+
+def _is_break(word: str) -> bool:
+    return word in _DASHES or word.endswith((",", ";", ":", "\u2013", "\u2014"))
+
+
+def _is_hey(word: str) -> bool:
+    # Never separate "Hey" from "Aqua": speakable() removes the phrase only
+    # when both words are in the same chunk.
+    return word.strip(",.;:!?\"'\u2013\u2014-").casefold() == "hey"
 
 
 def _token_before(text: str, end: int) -> str:
@@ -44,9 +76,84 @@ class SentenceSplitter:
             raise ValueError("max_chars must be an integer of at least 20.")
         self.max_chars = max_chars
         self._buffer = ""
+        self._chunks = 0
 
     def reset(self) -> None:
         self._buffer = ""
+        self._chunks = 0
+
+    # ----- chunk API (speech): sentences, and long sentences cut while streaming -----
+    def feed_chunks(self, text: str) -> list[Chunk]:
+        if not isinstance(text, str) or not text:
+            return []
+        self._buffer += text
+        return self._drain_chunks(final=False)
+
+    def flush_chunks(self) -> list[Chunk]:
+        chunks = self._drain_chunks(final=True)
+        tail = self._buffer.strip()
+        self._buffer = ""
+        return chunks + (self._split_sentence(tail) if tail else [])
+
+    def _drain_chunks(self, *, final: bool) -> list[Chunk]:
+        chunks = []
+        while (cut := self._boundary(final=final, char_cap=False)) is not None:
+            sentence, self._buffer = self._buffer[:cut].strip(), self._buffer[cut:]
+            if sentence:
+                chunks += self._split_sentence(sentence)
+        while (cut := self._streaming_cut()) is not None:
+            piece, self._buffer = self._buffer[:cut].strip(), self._buffer[cut:]
+            chunks.append(self._emit(piece, False))
+        return chunks
+
+    def _emit(self, text: str, sentence_end: bool) -> Chunk:
+        self._chunks += 1
+        return Chunk(text, sentence_end)
+
+    def _word_cap(self) -> int:
+        return CHUNK_EARLY_MAX_WORDS if self._chunks < CHUNK_EARLY_COUNT else CHUNK_MAX_WORDS
+
+    def _cut_after(self, words: list, total: int | None = None) -> int | None:
+        """Index of the word to cut after, or None. ``total`` (complete
+        sentences only) forbids leaving fewer than FRAGMENT_MIN_WORDS behind."""
+        cap = self._word_cap()
+        for index, match in enumerate(words):
+            count = index + 1
+            if count > cap or (total is not None and total - count < FRAGMENT_MIN_WORDS):
+                return None
+            word = match.group()
+            if count >= CHUNK_MIN_WORDS and _is_break(word) and not _is_hey(word):
+                return index
+            if count == cap:
+                if not _is_hey(word):
+                    return index
+                return index - 1 if count - 1 >= FRAGMENT_MIN_WORDS else None
+        return None
+
+    def _streaming_cut(self) -> int | None:
+        """Cut an unfinished long sentence at a natural break or the cap."""
+        if self._buffer.lstrip().startswith(_FENCE):
+            return None  # Code blocks stay whole.
+        words = list(_COMPLETE_WORD.finditer(self._buffer))
+        # Require FRAGMENT_MIN_WORDS complete words after the cut, so no tiny
+        # tail is left behind and streamed input chunks exactly like whole text.
+        index = self._cut_after(words, total=len(words))
+        return None if index is None else words[index].end()
+
+    def _split_sentence(self, sentence: str) -> list[Chunk]:
+        if sentence.startswith(_FENCE):
+            return [self._emit(sentence, True)]
+        chunks = []
+        rest = sentence
+        while True:
+            words = list(_WORD.finditer(rest))
+            index = self._cut_after(words, total=len(words))
+            if index is None:
+                chunks.append(self._emit(rest, True))
+                return chunks
+            cut = words[index].end()
+            chunks.append(self._emit(rest[:cut].strip(), False))
+            rest = rest[cut:].strip()
 
     def feed(self, chunk: str) -> list[str]:
         if not isinstance(chunk, str) or not chunk:
@@ -71,8 +178,12 @@ class SentenceSplitter:
                 sentences.append(sentence)
         return sentences
 
-    def _boundary(self, *, final: bool) -> int | None:
-        """Index just past the next complete sentence, or None to wait."""
+    def _boundary(self, *, final: bool, char_cap: bool = True) -> int | None:
+        """Index just past the next complete sentence, or None to wait.
+
+        ``char_cap`` (sentence API) cuts over-long text at max_chars; the chunk
+        API bounds length by words instead, so a cap never fakes a sentence end.
+        """
         text = self._buffer
         stripped = text.lstrip()
         offset = len(text) - len(stripped)
@@ -85,7 +196,7 @@ class SentenceSplitter:
         limit = len(text) if fence < 0 else fence
         index = offset
         while index < limit:
-            if index - offset >= self.max_chars:
+            if char_cap and index - offset >= self.max_chars:
                 return offset + self._cap(text[offset:index])
             character = text[index]
             if character == "\n":
@@ -108,7 +219,7 @@ class SentenceSplitter:
         if fence >= 0 and fence > offset:
             return fence  # Text before a code fence is its own unit.
         pending = text[offset:limit]
-        if len(pending) > self.max_chars:
+        if char_cap and len(pending) > self.max_chars:
             return offset + self._cap(pending)
         return None
 
@@ -178,9 +289,11 @@ def is_question(sentence: str) -> bool:
 class SpokenBudget:
     """Speak at most the first N sentences, then a short notice.
 
-    Sentences after the limit are held, not spoken, until the reply ends. If
-    the reply's final sentence is a question it is always spoken, so the user
-    hears what Aqua is asking.
+    Pieces are pushed as they stream; ``end`` marks the last piece of a
+    sentence (a sentence may arrive as several chunks, and the limit counts
+    sentences, not chunks). Sentences after the limit are held, not spoken,
+    until the reply ends. If the reply's final sentence is a question it is
+    always spoken, so the user hears what Aqua is asking.
     """
 
     def __init__(self, limit: int = MAX_SPOKEN_SENTENCES):
@@ -192,22 +305,36 @@ class SpokenBudget:
     def reset(self) -> None:
         self._spoken = 0
         self._held = 0
-        self._last_held = None
+        self._last_held: list[str] | None = None
+        self._current: list[str] = []
+        self._current_spoken: bool | None = None
 
-    def push(self, sentence: str) -> list[str]:
-        if not sentence:
-            return []
-        if self._spoken < self.limit:
+    def _end_sentence(self) -> None:
+        if self._current_spoken is True:
             self._spoken += 1
-            return [sentence]
-        self._held += 1
-        self._last_held = sentence
-        return []
+        elif self._current_spoken is False:
+            self._held += 1
+            self._last_held = self._current
+        self._current, self._current_spoken = [], None
+
+    def push(self, sentence: str, *, end: bool = True) -> list[str]:
+        result = []
+        if sentence:
+            if self._current_spoken is None:
+                self._current_spoken = self._spoken < self.limit
+            if self._current_spoken:
+                result = [sentence]
+            else:
+                self._current = self._current + [sentence]
+        if end:
+            self._end_sentence()
+        return result
 
     def finish(self) -> list[str]:
-        question = self._last_held if self._last_held is not None and is_question(self._last_held) else None
+        self._end_sentence()
+        question = self._last_held if self._last_held and is_question(self._last_held[-1]) else None
         omitted = self._held - (1 if question else 0)
-        result = ([REST_NOTICE] if omitted else []) + ([question] if question else [])
+        result = ([REST_NOTICE] if omitted else []) + (list(question) if question else [])
         self.reset()
         return result
 

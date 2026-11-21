@@ -1,0 +1,22 @@
+{
+"archive": "vits-piper-en_US-ryan-medium.tar.bz2",
+"archive_sha256": "c546af78b6395b4e7c4ce1ed899438b64426a362f5d4ec5fecd090ded9ad7505",
+"files": {
+"MODEL_CARD": [
+306,
+"3a24ae5f7aa856199f338ad9af784cda796734f397f7e1b4a1bd3c07d06945b1"
+],
+"en_US-ryan-medium.onnx": [
+63149198,
+"7194c57359c49aaa1abb9c66d6d30d376475859f4ffdfd9c0415be8e032565f9"
+],
+"en_US-ryan-medium.onnx.json": [
+4883,
+"44034c056cb15681b2ad494307c7f3f2e4499d1253c700c711fa0a4607ffe78d"
+],
+"tokens.txt": [
+921,
+"87c8ef66eae5473ed0cc0366b3964c736ca6c5f676c979522ea31234e47430b9"
+]
+}
+}

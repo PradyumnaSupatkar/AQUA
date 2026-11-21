@@ -101,6 +101,13 @@ def run_level_probe(**options) -> int:
     return run(**options)
 
 
+def setup_voice(engine: str, voice: str | None = None, *, download: bool = False,
+                model_dir: Path | None = None, archive: Path | None = None) -> list[Path]:
+    """Verify or explicitly install pinned text-to-speech voices."""
+    from aqua.voice.setup import setup_voice as setup
+    return setup(engine, voice, download=download, model_dir=model_dir, archive=archive)
+
+
 def setup_wake_model(model_dir: Path | None = None, *, download: bool = False) -> Path:
     """Keep optional wake-model setup separate from all existing commands."""
     from aqua.wake.models import setup_model as setup
@@ -219,6 +226,13 @@ def _parser() -> argparse.ArgumentParser:
     wake_setup = commands.add_parser("setup-wake", help="verify local Hey Aqua assets; download only with --download")
     wake_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="local sherpa keyword-spotting model directory")
     wake_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the configured wake assets")
+    voice_setup = commands.add_parser("setup-voice", help="verify local text-to-speech voices; download only with --download")
+    voice_setup.add_argument("--engine", required=True, choices=("kokoro", "kokoro-int8", "piper", "kitten"),
+                             help="voice engine to verify or install")
+    voice_setup.add_argument("--voice", metavar="NAME", help="piper: lessac or ryan (default: both); other engines: optional check of a voice name")
+    voice_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="install or verify a single voice in this directory instead of the default")
+    voice_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the pinned voice archive(s) from the sherpa-onnx release")
+    voice_setup.add_argument("--from-archive", type=Path, metavar="FILE", help="install from an already downloaded copy of the pinned archive (size and SHA-256 are checked); no network")
     chat = commands.add_parser("chat", help="interactive text chat with the local Ollama service")
     _chat_options(chat)
     _voice_options(chat, speak_default=False)
@@ -385,6 +399,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 pre_roll=args.pre_roll, vad_threshold=args.vad_threshold,
                 follow_up=args.follow_up,
             )
+        if args.command == "setup-voice":
+            from aqua.voice.engines import VoiceError
+            try:
+                paths = setup_voice(args.engine, args.voice, download=args.download, model_dir=args.model_dir,
+                                    archive=args.from_archive)
+            except VoiceError as exc:
+                print(f"Voice setup error: {exc}", file=sys.stderr)
+                return 1
+            for path in paths:
+                print(f"Offline voice ready: {path}")
+            return 0
         if args.command == "setup-wake":
             from aqua.wake.models import WakeError
             try:

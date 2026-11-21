@@ -1,5 +1,6 @@
 """Audio playback for spoken replies. Tests use FakePlayer; never a real device."""
 
+from collections import deque
 from threading import Event, Lock
 from typing import Callable, Protocol, runtime_checkable
 
@@ -15,51 +16,108 @@ class Player(Protocol):
         """Stop current playback promptly; safe to call from any thread."""
 
 
+class _Clip:
+    __slots__ = ("audio", "position", "done")
+
+    def __init__(self, audio):
+        self.audio, self.position, self.done = audio, 0, Event()
+
+
+def _sounddevice_stream(**options):
+    import sounddevice
+    return sounddevice.OutputStream(**options)
+
+
 class SoundDevicePlayer:
-    """Play through the default Windows output with a callback stream.
+    """One output stream for the whole session, fed from a queue of clips.
+
+    Opening a stream per sentence cost about 55 ms plus ~180 ms of output
+    latency on the target laptop, an audible gap between sentences. Here the
+    stream stays open (silence while idle) and each sentence is appended to
+    the queue, so consecutive sentences play back to back.
+
+    play() returns once its samples have been handed to the device; the
+    pipeline then waits ``tail_seconds`` (the stream's output latency) after
+    the last sentence before reporting that speech ended. stop() empties the
+    queue and aborts the stream, discarding audio already buffered, so speech
+    stops at once; the next play() opens a fresh stream.
 
     sounddevice is imported only when audio is actually played, so creating
-    a player (or running tests) never opens an audio device.
+    a player (or running tests) never opens an audio device. Tests pass a
+    fake ``stream_factory``.
     """
 
-    def __init__(self, *, device: int | None = None):
+    def __init__(self, *, device: int | None = None, stream_factory=None):
         self.device = device
-        self._stop = Event()
+        self._factory = stream_factory or _sounddevice_stream
+        self._lock = Lock()
+        self._queue: deque[_Clip] = deque()
+        self._stream = None
+        self._rate = None
+
+    @property
+    def tail_seconds(self) -> float:
+        stream = self._stream
+        latency = getattr(stream, "latency", None) if stream is not None else None
+        return float(latency) if isinstance(latency, (int, float)) and 0 <= latency < 2 else .2
+
+    def _open(self, sample_rate: int) -> None:
+        """Called with the lock held."""
+        if self._stream is not None and self._rate == sample_rate:
+            return
+        old, self._stream, self._rate = self._stream, None, None
+        if old is not None:
+            old.abort()
+            old.close()
+        stream = self._factory(samplerate=sample_rate, channels=1, dtype="float32", device=self.device,
+                               callback=self._callback)
+        stream.start()
+        self._stream, self._rate = stream, sample_rate
+
+    def _callback(self, output, frames, _time, _status) -> None:
+        filled = 0
+        with self._lock:
+            while filled < frames and self._queue:
+                clip = self._queue[0]
+                chunk = clip.audio[clip.position:clip.position + frames - filled]
+                output[filled:filled + len(chunk), 0] = chunk
+                filled += len(chunk)
+                clip.position += len(chunk)
+                if clip.position >= len(clip.audio):
+                    self._queue.popleft()
+                    clip.done.set()
+        output[filled:, 0] = 0  # Silence while idle.
 
     def play(self, samples, sample_rate: int, *, cancelled=None) -> None:
         import numpy as np
-        import sounddevice
 
         audio = np.asarray(samples, dtype=np.float32).reshape(-1)
         if not audio.size:
             return
-        self._stop.clear()
-        position = 0
-        lock = Lock()
-        finished = Event()
-
-        def callback(output, frames, _time, _status):
-            nonlocal position
-            with lock:
-                chunk = audio[position:position + frames]
-                position += frames
-            output[:len(chunk), 0] = chunk
-            if len(chunk) < frames:
-                output[len(chunk):, 0] = 0
-                raise sounddevice.CallbackStop
-
-        stream = sounddevice.OutputStream(
-            samplerate=int(sample_rate), channels=1, dtype="float32", device=self.device,
-            callback=callback, finished_callback=finished.set,
-        )
-        with stream:
-            while not finished.wait(POLL_SECONDS):
-                if self._stop.is_set() or (cancelled is not None and cancelled()):
-                    stream.abort()
-                    break
+        clip = _Clip(audio)
+        with self._lock:
+            self._open(int(sample_rate))
+            self._queue.append(clip)
+        while not clip.done.wait(POLL_SECONDS):
+            if cancelled is not None and cancelled():
+                self.stop()
+                return
 
     def stop(self) -> None:
-        self._stop.set()
+        """Empty the queue and silence the device immediately; safe from any thread."""
+        with self._lock:
+            clips = list(self._queue)
+            self._queue.clear()
+            stream, self._stream, self._rate = self._stream, None, None
+        for clip in clips:
+            clip.done.set()
+        if stream is not None:
+            # Outside the lock: abort waits for a running callback, which takes the lock.
+            stream.abort()
+            stream.close()
+
+    def close(self) -> None:
+        self.stop()
 
 
 class FakePlayer:

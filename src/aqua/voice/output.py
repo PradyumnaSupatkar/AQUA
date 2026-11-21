@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from queue import Empty, Full, Queue
 import sys
 from threading import Condition, Lock, Thread, current_thread
-from time import perf_counter
+from time import perf_counter, sleep
 
 from .engines import VoiceError
 from .text import MAX_SPOKEN_SENTENCES, SentenceSplitter, SpokenBudget, speakable
@@ -164,6 +164,12 @@ class SpeechOutput:
             return
         self.stop()
         self._closed = True
+        closer = getattr(self.player, "close", None)
+        if callable(closer):
+            try:
+                closer()  # Release a persistent output stream.
+            except Exception:
+                pass
         for queue in (self._synth_queue, self._audio_queue):
             try:
                 queue.put(_CLOSE, timeout=1)
@@ -267,14 +273,25 @@ class SpeechOutput:
                 turn.first_audio = self._clock() - turn.started
             try:
                 self.player.play(samples, sample_rate, cancelled=lambda: self._stale(generation))
-            except Exception as exc:
-                self._fail(exc)
-            else:
                 if turn is not None and not self._stale(generation):
                     turn.audio += len(samples) / sample_rate
                     turn.sentences += 1
+                self._drain_tail(generation)
+            except Exception as exc:
+                self._fail(exc)
             finally:
                 self._done()
+
+    def _drain_tail(self, generation: int) -> None:
+        """A persistent stream is still sounding after play() returns. Stay
+        "speaking" for its output latency, unless the next sentence arrives
+        first (it is then queued straight behind, with no gap)."""
+        tail = getattr(self.player, "tail_seconds", 0.0)
+        if not isinstance(tail, (int, float)) or tail <= 0:
+            return
+        deadline = self._clock() + min(float(tail), 1.0)
+        while self._audio_queue.empty() and not self._stale(generation) and self._clock() < deadline:
+            sleep(.005)
 
 
 def open_speaker(*, engine: str = "kokoro", voice=None, model_dir=None, rate: float = 1.0,

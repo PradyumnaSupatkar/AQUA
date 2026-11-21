@@ -1,0 +1,139 @@
+{
+ "started_at": "2026-11-21T17:12:55+00:00",
+ "hardware": "AMD Ryzen 7 4800H with Radeon Graphics, 16 logical CPUs, 15.4 GB RAM, Windows-11-10.0.26200-SP0",
+ "sherpa_onnx": "2.0.1",
+ "temperature": 0.2,
+ "seed": 42,
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "voice": "af_heart",
+ "name": "caps-6-8",
+ "early_caps": [
+  6,
+  8
+ ],
+ "max_words": 16,
+ "cells": [
+  {
+   "kokoro_threads": 4,
+   "ollama_threads": 4,
+   "summary": {
+    "first_audio_seconds": 2.8036021666672846,
+    "longest_gap_seconds": 0.015716033336502733,
+    "mean_longest_gap_seconds": 0.00933699444491746,
+    "total_gap_seconds": 0.03249892777845768,
+    "llm_tokens_per_second": 14.952184445909728,
+    "reply_complete_seconds": 6.054198933332979,
+    "speech_end_seconds": 15.010747316666917
+   },
+   "runs": [
+    {
+     "ok": true,
+     "reply_chars": 333,
+     "reply": "A turbocharger uses exhaust gases to spin a turbine, which then drives a compressor to force more air into the engine's combustion chamber. This increased air intake allows the engine to burn more fuel, producing more power. As a result, the engine becomes more powerful and efficient without increasing its size or fuel consumption.",
+     "first_token_seconds": 0.7280876000004355,
+     "first_audio_seconds": 2.899150400000508,
+     "longest_gap_seconds": 0.01107620000038878,
+     "total_gap_seconds": 0.04150623333407566,
+     "chunks": 6,
+     "audio_seconds": 18.97508333333333,
+     "synthesis_seconds": 9.536216000000422,
+     "llm_tokens_per_second": 12.97215023479592,
+     "reply_complete_seconds": 5.584855499997502,
+     "speech_end_seconds": 21.92996839999978,
+     "prompt": "explanation",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 327,
+     "reply": "A turbocharger uses exhaust gases to spin a turbine, which then drives a compressor to force more air into the engine's combustion chamber. This increased air intake allows the engine to burn more fuel, resulting in greater power output. It improves efficiency by utilizing energy that would otherwise be wasted in the exhaust.",
+     "first_token_seconds": 0.9055798000008508,
+     "first_audio_seconds": 3.451640800001769,
+     "longest_gap_seconds": 0.013861666666343808,
+     "total_gap_seconds": 0.04490533333228086,
+     "chunks": 6,
+     "audio_seconds": 18.6765,
+     "synthesis_seconds": 9.670160699995904,
+     "llm_tokens_per_second": 11.786385102163807,
+     "reply_complete_seconds": 6.082043200000044,
+     "speech_end_seconds": 22.186461500001315,
+     "prompt": "explanation",
+     "repeat": 2
+    },
+    {
+     "ok": true,
+     "reply_chars": 37,
+     "reply": "The capital of Australia is Canberra.",
+     "first_token_seconds": 0.8199124999991909,
+     "first_audio_seconds": 2.1232772000003024,
+     "longest_gap_seconds": 0.0,
+     "total_gap_seconds": 0.0,
+     "chunks": 1,
+     "audio_seconds": 2.1511666666666667,
+     "synthesis_seconds": 0.9084937000006903,
+     "llm_tokens_per_second": 20.279296612596994,
+     "reply_complete_seconds": 1.2146040000006906,
+     "speech_end_seconds": 4.280894499999704,
+     "prompt": "short",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 37,
+     "reply": "The capital of Australia is Canberra.",
+     "first_token_seconds": 0.7245266999998421,
+     "first_audio_seconds": 2.052300799998193,
+     "longest_gap_seconds": 0.0,
+     "total_gap_seconds": 0.0,
+     "chunks": 1,
+     "audio_seconds": 2.151125,
+     "synthesis_seconds": 0.9316978000024392,
+     "llm_tokens_per_second": 20.214986380152926,
+     "reply_complete_seconds": 1.1203916000013123,
+     "speech_end_seconds": 4.204749900000024,
+     "prompt": "short",
+     "repeat": 2
+    },
+    {
+     "ok": true,
+     "reply_chars": 604,
+     "reply": "1. Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. After four cycles, take a longer break to rest.  \n2. Eliminate distractions: Turn off notifications, close unnecessary tabs, and keep your workspace clean and organized.  \n3. Set specific goals: Break your study session into small, achievable tasks to maintain momentum and reduce overwhelm.  \n4. Stay hydrated and eat well: Keep water nearby and snack on healthy foods to maintain energy and concentration.  \n5. Create a routine: Study at the same time each day to build a consistent habit that trains your brain to focus.",
+     "first_token_seconds": 0.8734967000018514,
+     "first_audio_seconds": 3.1787930999998935,
+     "longest_gap_seconds": 0.015716033336502733,
+     "total_gap_seconds": 0.051473233335855184,
+     "chunks": 6,
+     "audio_seconds": 15.516666666666666,
+     "synthesis_seconds": 9.739865100000316,
+     "llm_tokens_per_second": 12.295981738871458,
+     "reply_complete_seconds": 11.52720380000028,
+     "speech_end_seconds": 18.75663550000172,
+     "prompt": "list",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 543,
+     "reply": "1. Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. After four cycles, take a longer break to rest.  \n2. Eliminate distractions: Turn off notifications, close unnecessary tabs, and keep your workspace clean and organized.  \n3. Set specific goals: Break your study session into small, achievable tasks to maintain momentum.  \n4. Stay hydrated and eat well: Keep water nearby and snack on healthy foods to maintain energy levels.  \n5. Create a routine: Study at the same time each day to build consistency and habit.",
+     "first_token_seconds": 0.8490722999995342,
+     "first_audio_seconds": 3.1164507000030426,
+     "longest_gap_seconds": 0.015368066666269442,
+     "total_gap_seconds": 0.05710876666853437,
+     "chunks": 6,
+     "audio_seconds": 15.517874999999998,
+     "synthesis_seconds": 9.56334589999824,
+     "llm_tokens_per_second": 12.164306606877258,
+     "reply_complete_seconds": 10.796095499998046,
+     "speech_end_seconds": 18.705774099998962,
+     "prompt": "list",
+     "repeat": 2
+    }
+   ]
+  }
+ ],
+ "ollama_version": "0.40.16",
+ "recommended": {
+  "kokoro_threads": 4,
+  "ollama_threads": 4
+ }
+}

@@ -28,10 +28,10 @@ _LIST_NUMBER = re.compile(r"\d{1,3}\.")              # "1." at a sentence start
 # Chunking inside long sentences. A chunk ends at a natural break (a word
 # ending in , ; : or a dash) once it has CHUNK_MIN_WORDS, or at a space at the
 # hard cap. The first chunks of a reply are kept smaller so speech starts and
-# keeps flowing while the model is still generating.
+# keeps flowing while the model is still generating: CHUNK_EARLY_MAX_WORDS
+# holds the caps of the first, second, ... chunks, then CHUNK_MAX_WORDS.
 CHUNK_MIN_WORDS = 6
-CHUNK_EARLY_MAX_WORDS = 10
-CHUNK_EARLY_COUNT = 2
+CHUNK_EARLY_MAX_WORDS = (6, 8)
 CHUNK_MAX_WORDS = 16
 FRAGMENT_MIN_WORDS = 3
 _DASHES = frozenset({"-", "--", "\u2013", "\u2014"})
@@ -111,7 +111,9 @@ class SentenceSplitter:
         return Chunk(text, sentence_end)
 
     def _word_cap(self) -> int:
-        return CHUNK_EARLY_MAX_WORDS if self._chunks < CHUNK_EARLY_COUNT else CHUNK_MAX_WORDS
+        if self._chunks < len(CHUNK_EARLY_MAX_WORDS):
+            return CHUNK_EARLY_MAX_WORDS[self._chunks]
+        return CHUNK_MAX_WORDS
 
     def _cut_after(self, words: list, total: int | None = None) -> int | None:
         """Index of the word to cut after, or None. ``total`` (complete

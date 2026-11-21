@@ -8,6 +8,8 @@ without a device. Grid: Kokoro threads x Ollama num_thread.
 
     .\\.venv\\Scripts\\python.exe tools\\benchmark_speech_pipeline.py            # full grid -> benchmarks/speech-pipeline-v1/
     .\\.venv\\Scripts\\python.exe tools\\benchmark_speech_pipeline.py --quick    # one cell, printed only
+    .\\.venv\\Scripts\\python.exe tools\\benchmark_speech_pipeline.py --kokoro-threads 4 --llm-threads auto \\
+        --early-caps 6,8 --output benchmarks/speech-pipeline-v2/caps-6-8   # one cell, chosen chunk caps
 
 Ollama is reached only on 127.0.0.1:11434; nothing is pulled.
 """
@@ -142,10 +144,11 @@ def recommend(cells):
 
 
 def report(data):
-    lines = ["# Speech pipeline benchmark v1 (Qwen streaming into Kokoro)", "",
+    lines = [f"# Speech pipeline benchmark {data['name']} (Qwen streaming into Kokoro)", "",
              f"Run {data['started_at']} on {data['hardware']}. Ollama {data['ollama_version']} with `{MODEL}` "
              f"(temperature {data['temperature']}, seed {data['seed']}, context 4096, keep-alive 30m); Kokoro v1.0 fp32 "
-             f"`{VOICE}`, sherpa-onnx {data['sherpa_onnx']}.", "",
+             f"`{VOICE}`, sherpa-onnx {data['sherpa_onnx']}. Chunk word caps: "
+             f"{', '.join(map(str, data['early_caps']))}, then {data['max_words']}.", "",
              "Each prompt goes through Aqua's ConversationController (real system prompt and tools); the streamed "
              "reply feeds SpeechOutput (sentence chunking, spoken-length limit) with real Kokoro synthesis. A "
              "timing-only player waits for each chunk's real duration without a sound device. "
@@ -175,6 +178,11 @@ def report(data):
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--quick", action="store_true", help="one cell (Kokoro 4, Ollama default), one run per prompt")
+    parser.add_argument("--kokoro-threads", type=int, nargs="+", help=f"Kokoro threads to test; default: {KOKORO_THREADS}")
+    parser.add_argument("--llm-threads", nargs="+", metavar="N|auto|default",
+                        help="Ollama num_thread values; auto = Aqua's speaking default, default = Ollama's own")
+    parser.add_argument("--early-caps", help="word caps of the first chunks, e.g. 6,10 (default: Aqua's)")
+    parser.add_argument("--output", type=Path, default=OUTPUT, help=f"results folder; default: {OUTPUT}")
     args = parser.parse_args(argv)
 
     import sherpa_onnx
@@ -182,9 +190,16 @@ def main(argv=None) -> int:
     from aqua.voice.engines import load_engine
     from benchmark_tts import hardware
 
+    from aqua.cli import SPEAKING_LLM_THREADS
+    from aqua.voice import text
+
+    if args.early_caps:
+        text.CHUNK_EARLY_MAX_WORDS = tuple(int(cap) for cap in args.early_caps.split(","))
     settings = GenerationSettings(seed=42)
-    kokoro_threads = (4,) if args.quick else KOKORO_THREADS
-    ollama_threads = (None,) if args.quick else OLLAMA_THREADS
+    kokoro_threads = tuple(args.kokoro_threads or ((4,) if args.quick else KOKORO_THREADS))
+    named = {"auto": SPEAKING_LLM_THREADS, "default": None}
+    ollama_threads = (tuple(named[v] if v in named else int(v) for v in args.llm_threads) if args.llm_threads
+                      else (None,) if args.quick else OLLAMA_THREADS)
     repeats = 1 if args.quick else REPEATS
     engines = {threads: load_engine("kokoro", voice=VOICE, num_threads=threads) for threads in kokoro_threads}
     for engine in engines.values():
@@ -194,7 +209,8 @@ def main(argv=None) -> int:
             "hardware": f"{info.get('cpu_name', info['processor'])}, {info['logical_cpus']} logical CPUs, "
                         f"{info['ram_gb']} GB RAM, {info['platform']}",
             "sherpa_onnx": sherpa_onnx.__version__, "temperature": settings.temperature, "seed": settings.seed,
-            "model": MODEL, "voice": VOICE, "cells": []}
+            "model": MODEL, "voice": VOICE, "name": args.output.name,
+            "early_caps": list(text.CHUNK_EARLY_MAX_WORDS), "max_words": text.CHUNK_MAX_WORDS, "cells": []}
     for num_thread in ollama_threads:
         client = threaded_client(num_thread)
         data["ollama_version"] = client.check_model(MODEL).version
@@ -217,10 +233,11 @@ def main(argv=None) -> int:
     if args.quick:
         print(report(data))
         return 0
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    (OUTPUT / "results.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
-    (OUTPUT / "report.md").write_text(report(data), encoding="utf-8")
-    print(f"Wrote {OUTPUT / 'results.json'} and report.md")
+    output = args.output
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "results.json").write_text(json.dumps(data, indent=1), encoding="utf-8")
+    (output / "report.md").write_text(report(data), encoding="utf-8")
+    print(f"Wrote {output / 'results.json'} and report.md")
     return 0
 
 

@@ -31,8 +31,9 @@ class ChunkingTests(unittest.TestCase):
     def test_long_sentence_is_cut_with_small_early_chunks_and_no_text_lost(self):
         out = chunks(LONG)
         self.assertEqual(" ".join(c.text for c in out), LONG)
-        self.assertEqual([c.sentence_end for c in out], [True, False, False, True, True])
-        self.assertLessEqual(max(words(c) for c in out[:2]), CHUNK_EARLY_MAX_WORDS)
+        self.assertEqual([c.sentence_end for c in out], [True, False, False, False, True, True])
+        for chunk, cap in zip(out, CHUNK_EARLY_MAX_WORDS):
+            self.assertLessEqual(words(chunk), cap)
         self.assertLessEqual(max(words(c) for c in out), CHUNK_MAX_WORDS)
 
     def test_streamed_chunks_match_whole_text_for_any_boundary(self):
@@ -41,11 +42,31 @@ class ChunkingTests(unittest.TestCase):
             with self.subTest(size=size):
                 self.assertEqual(chunks(LONG, size=size), expected)
 
+    def test_early_caps_are_6_then_8_then_16_words(self):
+        self.assertEqual(CHUNK_EARLY_MAX_WORDS, (6, 8))
+        self.assertEqual(CHUNK_MAX_WORDS, 16)
+        text = " ".join(f"w{i}" for i in range(1, 41)) + "."
+        self.assertEqual([words(c) for c in chunks(text)], [6, 8, 16, 10])
+        for size in (1, 4, 7):
+            with self.subTest(size=size):
+                self.assertEqual(chunks(text, size=size), chunks(text))
+
+    def test_long_opening_sentence_starts_with_six_words(self):
+        text = ("A turbocharger uses the exhaust gases leaving the engine to spin a turbine, "
+                "which drives a compressor that pushes more air into the cylinders.")
+        splitter = SentenceSplitter()
+        head = text[:text.index("to spin")]  # nine complete words streamed
+        first = splitter.feed_chunks(head)
+        self.assertEqual([c.text for c in first], ["A turbocharger uses the exhaust gases"])
+        out = first + splitter.feed_chunks(text[len(head):]) + splitter.flush_chunks()
+        self.assertEqual(" ".join(c.text for c in out), text)
+
     def test_natural_breaks_after_six_words(self):
-        text = ("Python is popular for data work and scripting, it has a huge library ecosystem; "
+        text = ("Okay. Python is popular for data work and scripting, it has a huge library ecosystem; "
                 "beginners find it readable: the syntax is clean \u2014 and it runs almost everywhere today.")
         out = chunks(text)
-        self.assertEqual([c.text for c in out[:2]], [
+        self.assertEqual([c.text for c in out[:3]], [
+            "Okay.",
             "Python is popular for data work and scripting,",
             "it has a huge library ecosystem;",
         ])
@@ -57,9 +78,10 @@ class ChunkingTests(unittest.TestCase):
         self.assertEqual([c.text for c in out], ["Yes, okay, sure, that works for me today."])
 
     def test_no_fragment_under_three_words_except_at_sentence_end(self):
-        text = " ".join(f"word{i}" for i in range(1, 12)) + "."  # 11 words: cap 10 would leave 1
-        out = chunks(text)
-        self.assertEqual(len(out), 1)
+        text = " ".join(f"word{i}" for i in range(1, 9)) + "."  # 8 words: cap 6 would leave 2
+        self.assertEqual(len(chunks(text)), 1)
+        text = "Okay. " + " ".join(f"word{i}" for i in range(1, 10)) + "."  # 9 words: cap 8 would leave 1
+        self.assertEqual(len(chunks(text)), 2)
         self.assertTrue(all(words(c) >= 3 for c in chunks(LONG) if not c.sentence_end))
         self.assertEqual([c.text for c in chunks("Done. Ok.")], ["Done.", "Ok."])  # short sentences stay
 
@@ -78,7 +100,7 @@ class ChunkingTests(unittest.TestCase):
 
     def test_numbers_and_times_are_not_breaks(self):
         text = "At 10:30 we had 1,000 people and many more guests."  # 10 words, no real break
-        self.assertEqual([c.text for c in chunks(text)], [text])
+        self.assertEqual([c.text for c in chunks("Okay. Sure. " + text)], ["Okay.", "Sure.", text])
 
     def test_hey_aqua_is_never_split_across_chunks(self):
         text = "one two three four five six seven eight nine hey Aqua is my name and that is all."
@@ -86,6 +108,10 @@ class ChunkingTests(unittest.TestCase):
         self.assertFalse(any(c.text.casefold().endswith("hey") for c in out))
         text = "one two three four five six seven, eight nine, hey, Aqua is listening now."
         self.assertFalse(any(c.text.casefold().rstrip(",").endswith("hey") for c in chunks(text)))
+        text = "one two three four five hey Aqua is my name and that is all for now."  # hey at the 6-word cap
+        out = chunks(text)
+        self.assertEqual(out[0].text, "one two three four five")
+        self.assertFalse(any(c.text.casefold().endswith("hey") for c in out))
 
     def test_code_fence_is_one_chunk(self):
         fence = "```python\n" + " ".join(f"x{i} = {i}," for i in range(30)) + "\n```"
@@ -134,7 +160,7 @@ class PipelineChunkTests(unittest.TestCase):
         speaker.finish_turn()
         self.assertTrue(speaker.wait(5))
         self.assertEqual(engine.texts[0], "Sure!")
-        self.assertEqual(engine.texts[1], "Formula One is the highest class of international open-wheel single-seater")
+        self.assertEqual(engine.texts[1], "Formula One is the highest class of international")
         self.assertIn("Second.", engine.texts)
         self.assertNotIn("Third.", engine.texts)  # Sure!, the long sentence, Second. = 3 sentences
         self.assertEqual(engine.texts[-1], REST_NOTICE)

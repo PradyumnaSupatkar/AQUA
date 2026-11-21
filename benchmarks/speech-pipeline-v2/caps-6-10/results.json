@@ -1,0 +1,139 @@
+{
+ "started_at": "2026-11-21T17:11:01+00:00",
+ "hardware": "AMD Ryzen 7 4800H with Radeon Graphics, 16 logical CPUs, 15.4 GB RAM, Windows-11-10.0.26200-SP0",
+ "sherpa_onnx": "2.0.1",
+ "temperature": 0.2,
+ "seed": 42,
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "voice": "af_heart",
+ "name": "caps-6-10",
+ "early_caps": [
+  6,
+  10
+ ],
+ "max_words": 16,
+ "cells": [
+  {
+   "kokoro_threads": 4,
+   "ollama_threads": 4,
+   "summary": {
+    "first_audio_seconds": 2.7181241166666346,
+    "longest_gap_seconds": 1.4138951000022644,
+    "mean_longest_gap_seconds": 0.24174313333423925,
+    "total_gap_seconds": 0.2563571722227304,
+    "llm_tokens_per_second": 14.72805146691644,
+    "reply_complete_seconds": 6.207187383331984,
+    "speech_end_seconds": 14.744830483333013
+   },
+   "runs": [
+    {
+     "ok": true,
+     "reply_chars": 311,
+     "reply": "A turbocharger uses exhaust gases to spin a turbine, which drives a compressor that forces more air into the engine's combustion chamber. This increased air intake allows more fuel to be burned, resulting in greater power output. It improves engine efficiency without increasing engine size or fuel consumption.",
+     "first_token_seconds": 0.7449698000018543,
+     "first_audio_seconds": 2.8919524000011734,
+     "longest_gap_seconds": 0.011981900002865586,
+     "total_gap_seconds": 0.026154099999985192,
+     "chunks": 6,
+     "audio_seconds": 17.896125,
+     "synthesis_seconds": 8.878746900005353,
+     "llm_tokens_per_second": 12.928128838038248,
+     "reply_complete_seconds": 5.077658499998506,
+     "speech_end_seconds": 20.824830099998508,
+     "prompt": "explanation",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 323,
+     "reply": "A turbocharger uses exhaust gases to spin a turbine, which drives a shaft connected to a compressor. This compressor forces more air into the engine's combustion chamber, allowing more fuel to be burned and producing more power. As a result, the engine becomes more powerful without increasing its size or fuel consumption.",
+     "first_token_seconds": 0.827624300000025,
+     "first_audio_seconds": 2.9683355999986816,
+     "longest_gap_seconds": 0.011590133333811536,
+     "total_gap_seconds": 0.03545286666849279,
+     "chunks": 5,
+     "audio_seconds": 18.234875,
+     "synthesis_seconds": 8.90076140000383,
+     "llm_tokens_per_second": 12.900273274313525,
+     "reply_complete_seconds": 5.556658599998627,
+     "speech_end_seconds": 21.247861299998476,
+     "prompt": "explanation",
+     "repeat": 2
+    },
+    {
+     "ok": true,
+     "reply_chars": 37,
+     "reply": "The capital of Australia is Canberra.",
+     "first_token_seconds": 0.8123316999990493,
+     "first_audio_seconds": 2.1322673999966355,
+     "longest_gap_seconds": 0.0,
+     "total_gap_seconds": 0.0,
+     "chunks": 1,
+     "audio_seconds": 2.151125,
+     "synthesis_seconds": 0.9140412999986438,
+     "llm_tokens_per_second": 19.742362173634074,
+     "reply_complete_seconds": 1.2179297000002407,
+     "speech_end_seconds": 4.285168700000213,
+     "prompt": "short",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 37,
+     "reply": "The capital of Australia is Canberra.",
+     "first_token_seconds": 0.8230427000016789,
+     "first_audio_seconds": 2.17250480000439,
+     "longest_gap_seconds": 0.0,
+     "total_gap_seconds": 0.0,
+     "chunks": 1,
+     "audio_seconds": 2.151125,
+     "synthesis_seconds": 0.9508351999975275,
+     "llm_tokens_per_second": 20.115867396202123,
+     "reply_complete_seconds": 1.2214028999987931,
+     "speech_end_seconds": 4.331787800001621,
+     "prompt": "short",
+     "repeat": 2
+    },
+    {
+     "ok": true,
+     "reply_chars": 522,
+     "reply": "1. Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. After four cycles, take a longer break to rest.  \n2. Eliminate distractions: Turn off notifications, close unnecessary tabs, and keep your workspace clean.  \n3. Set specific goals: Break your study session into small, achievable tasks to maintain momentum.  \n4. Stay hydrated and eat well: Keep water nearby and snack on healthy foods to maintain energy.  \n5. Create a routine: Study at the same time each day to build consistency and habit.",
+     "first_token_seconds": 0.728645699997287,
+     "first_audio_seconds": 3.0309712999987823,
+     "longest_gap_seconds": 0.012991666666493984,
+     "total_gap_seconds": 0.03587280000283499,
+     "chunks": 6,
+     "audio_seconds": 14.619375,
+     "synthesis_seconds": 9.003237500004616,
+     "llm_tokens_per_second": 12.493833816551767,
+     "reply_complete_seconds": 10.173243599998386,
+     "speech_end_seconds": 17.695069699999294,
+     "prompt": "list",
+     "repeat": 1
+    },
+    {
+     "ok": true,
+     "reply_chars": 607,
+     "reply": "1. Use the Pomodoro Technique: Study for 25 minutes, then take a 5-minute break. After four cycles, take a longer break to rest.  \n2. Eliminate distractions: Turn off notifications, close unnecessary tabs, and keep your workspace clean and organized.  \n3. Set specific goals: Break your study session into small, achievable tasks to maintain momentum and reduce overwhelm.  \n4. Stay hydrated and eat well: Keep water nearby and snack on healthy foods to maintain energy and concentration.  \n5. Create a routine: Study at the same time each day to build a habit and signal your brain that it\u2019s time to focus.",
+     "first_token_seconds": 0.8428683999991335,
+     "first_audio_seconds": 3.112713200000144,
+     "longest_gap_seconds": 1.4138951000022644,
+     "total_gap_seconds": 1.4406632666650694,
+     "chunks": 6,
+     "audio_seconds": 15.522375000000002,
+     "synthesis_seconds": 12.404604799998197,
+     "llm_tokens_per_second": 10.187843302758905,
+     "reply_complete_seconds": 13.996230999997351,
+     "speech_end_seconds": 20.08426529999997,
+     "prompt": "list",
+     "repeat": 2
+    }
+   ]
+  }
+ ],
+ "ollama_version": "0.40.16",
+ "recommended": {
+  "kokoro_threads": 4,
+  "ollama_threads": 4
+ }
+}

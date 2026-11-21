@@ -1,6 +1,7 @@
 """Write one listening sample per installed English voice, for choosing by ear.
 
     .\\.venv\\Scripts\\python.exe tools\\tts_samples.py
+    .\\.venv\\Scripts\\python.exe tools\\tts_samples.py --text "..." --voices kokoro:af_heart kokoro:am_puck --out DIR
 
 Writes D:\\Aqua\\.cache\\tts-samples\\<engine>\\<voice>.wav (16-bit mono, the
 engine's native rate) and an index.md. Synthesis goes through Aqua's own
@@ -44,7 +45,64 @@ def write_wav(path: Path, samples, rate: int) -> None:
         output.writeframes(pcm)
 
 
+def custom(text: str, voices: list[str], output: Path) -> int:
+    """Selected voices, one WAV each, through Aqua's own splitter and speakable()."""
+    import numpy as np
+    from aqua.voice.engines import load_engine
+    from aqua.voice.phonemes import _TOKEN
+    from aqua.voice.text import SentenceSplitter, speakable
+
+    splitter = SentenceSplitter()
+    sentences = [spoken for part in splitter.feed(text) + splitter.flush() if (spoken := speakable(part))]
+    lines = ["# Aqua fallback samples", "", f"Text: “{text}”", "",
+             "Each file is the sentences Aqua would speak, synthesized one by one and joined back to back "
+             "(as the persistent output stream plays them). Default thread counts.", "",
+             "| Engine | Voice | File | Audio s | RTF |", "| --- | --- | --- | --- | --- |"]
+    details = []
+    for item in voices:
+        engine, _, voice = item.partition(":")
+        loaded = load_engine(engine, voice=voice or None)
+        loaded.synthesize("Warm up.")
+        started = time.perf_counter()
+        audio = np.concatenate([loaded.synthesize(sentence) for sentence in sentences])
+        seconds = time.perf_counter() - started
+        path = output / f"{voice or engine}.wav"
+        write_wav(path, audio, loaded.sample_rate)
+        length = len(audio) / loaded.sample_rate
+        lines.append(f"| {engine} | {voice} | [{path.name}]({path.name}) | {length:.2f} | {seconds / length:.3f} |")
+        phonemizer = loaded.phonemizer
+        if hasattr(phonemizer, "lexicon"):
+            for sentence in sentences:
+                def source(part):
+                    return "lexicon" if part.lower() in phonemizer.lexicon else "espeak"
+
+                sources = ", ".join(
+                    f"{token} ({' + '.join(source(part) for part in token.split('.'))})" if "." in token and token[0].isalpha()
+                    else f"{token} ({source(token)})"
+                    for token in _TOKEN.findall(sentence) if token[0].isalnum())
+                details += [f"- **{voice}** “{sentence}”", f"  - words: {sources}",
+                            f"  - phonemes: `{phonemizer.phonemes(sentence)}`"]
+        print(f"{engine}/{voice}: {length:.2f}s audio, RTF {seconds / length:.3f} -> {path}", flush=True)
+    lines += ["", "Sentences spoken: " + " | ".join(f"“{s}”" for s in sentences), ""]
+    lines += ["## Phonemes (lexicon first, espeak-ng fallback)", ""] + details + [""]
+    output.mkdir(parents=True, exist_ok=True)
+    (output / "index.md").write_text("\n".join(lines), encoding="utf-8")
+    print(f"Wrote {output / 'index.md'}")
+    return 0
+
+
 def main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--text", help="custom text (requires --voices)")
+    parser.add_argument("--voices", nargs="+", metavar="ENGINE:VOICE", help="for example kokoro:af_heart kokoro:am_puck")
+    parser.add_argument("--out", type=Path, default=OUTPUT / "custom", help="output directory for --text samples")
+    args = parser.parse_args()
+    if args.text or args.voices:
+        if not (args.text and args.voices):
+            parser.error("--text and --voices go together")
+        return custom(args.text, args.voices, args.out)
     from aqua.voice.engines import load_engine
 
     rows, engines = [], {}

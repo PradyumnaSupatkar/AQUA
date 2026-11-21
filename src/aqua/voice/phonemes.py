@@ -18,7 +18,11 @@ import re
 from .engines import VoiceError
 
 PUNCTUATION = frozenset(';:,.!?—…"()“”')
-_TOKEN = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)*|\d+(?:[.,]\d+)*|\S")
+# File names such as index.js or chat.py are read "index dot j s": every part
+# starts with a letter and the last has 2+ characters, so e.g., U.S. and v0.8
+# are not affected.
+_DOTTED = r"[A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z][A-Za-z0-9]*)*\.[A-Za-z][A-Za-z0-9]+"
+_TOKEN = re.compile(_DOTTED + r"|[A-Za-z]+(?:['’][A-Za-z]+)*|\d+(?:[.,]\d+)*|\S")
 # espeak-ng IPA -> misaki (longest first). US and GB differ only in the "oʊ"/"əʊ" vowel.
 _E2M = (("aɪ", "I"), ("aʊ", "W"), ("eɪ", "A"), ("ɔɪ", "Y"), ("oʊ", "O"), ("əʊ", "Q"),
         ("dʒ", "ʤ"), ("tʃ", "ʧ"), ("ɚ", "əɹ"), ("ɝ", "ɜɹ"), ("ɐ", "ə"), ("r", "ɹ"), ("g", "ɡ"),
@@ -101,8 +105,12 @@ class KokoroPhonemizer:
                 continue
             if not token[0].isalnum():
                 continue  # Symbols such as - / & are not spoken.
-            word = token.replace("’", "'").lower()
-            pieces.append(self.lexicon.get(word) or self.fallback(word))
+            words = token.split(".") if "." in token and token[0].isalpha() else [token]
+            for index, part in enumerate(words):
+                if index:
+                    pieces.append(self.lexicon.get("dot") or self.fallback("dot"))
+                word = part.replace("’", "'").lower()
+                pieces.append(self.lexicon.get(word) or self.fallback(word))
         spoken = " ".join(piece for piece in pieces if piece)
         return "".join(character for character in spoken if character in self.tokens)
 

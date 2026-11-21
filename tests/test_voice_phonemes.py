@@ -48,6 +48,14 @@ class PhonemeTests(unittest.TestCase):
         kokoro.phonemes("Sainz again")  # cached: espeak is not asked twice for the same word
         self.assertEqual(self.calls.count(("sainz", "en-us")), 1)
 
+    def test_file_names_read_their_dots_but_abbreviations_and_versions_do_not(self):
+        kokoro = KokoroPhonemizer(self.us, self.tokens, "en-us")
+        kokoro.lexicon.update({"index": "ˈɪndɛks", "dot": "dˈɑt", "chat": "ʧˈæt", "e": "ˈi", "g": "ʤˈi"})
+        self.assertEqual(kokoro.phonemes("Open index.js now."), "ˈOpᵊn ˈɪndɛks dˈɑt js nOw.")
+        self.assertEqual(kokoro.phonemes("chat.md"), "ʧˈæt dˈɑt md")
+        self.assertEqual(kokoro.phonemes("e.g. this"), "ˈi. ʤˈi. this")   # not "e dot g"
+        self.assertNotIn("dˈɑt", kokoro.phonemes("v0.8 and 3.5"))
+
     def test_numbers_symbols_and_unknown_characters(self):
         kokoro = KokoroPhonemizer(self.us, self.tokens, "en-us")
         self.assertEqual(kokoro.phonemes("3.5 - open & #"), "θɹˈi pYnt fˈIv ˈOpᵊn")

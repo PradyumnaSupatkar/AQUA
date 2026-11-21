@@ -17,11 +17,10 @@ VOICE_ROOT = Path(r"D:\Aqua\models")
 # Directories that `aqua setup-voice` installs into (one per Piper voice).
 ENGINE_DIRS = {
     "kokoro": VOICE_ROOT / "tts-kokoro",
-    "kokoro-int8": VOICE_ROOT / "tts-kokoro-int8",
     "piper": VOICE_ROOT / "tts-piper",   # prefix only; each Piper voice is tts-piper-<voice>
     "kitten": VOICE_ROOT / "tts-kitten",
 }
-ENGINE_NAMES = ("kokoro", "kokoro-int8", "piper", "kitten", "none")
+ENGINE_NAMES = ("kokoro", "piper", "kitten", "none")
 DEFAULT_ENGINE = "kokoro"
 
 # English speakers of sherpa-onnx kokoro-multi-lang-v1_0, as listed in the
@@ -49,8 +48,14 @@ KITTEN_VOICES = {
 }
 # Piper ships one single-speaker model per voice, each in its own directory.
 PIPER_VOICES = {"lessac": ("female", "American"), "ryan": ("male", "American")}
-# Provisional until a default is chosen by ear; Piper has none (pass --voice).
-DEFAULT_VOICES = {"kokoro": "af_heart", "kokoro-int8": "af_heart", "piper": None, "kitten": "expr-voice-2-f"}
+# Chosen by ear: Kokoro Heart (af_heart) is the default voice; Kokoro Puck
+# (am_puck) is the documented male option. Piper voices are optional
+# downloads with non-commercial/restricted data licences and never a default.
+DEFAULT_VOICES = {"kokoro": "af_heart", "piper": None, "kitten": "expr-voice-2-f"}
+MALE_VOICE = "am_puck"
+# From benchmarks/tts-v1: Kokoro needs 4 threads to stay faster than real time
+# while Qwen is generating; Piper and Kitten are fast enough on 2.
+DEFAULT_THREADS = {"kokoro": 4, "piper": 2, "kitten": 2}
 
 
 def engine_dir(engine: str, voice: str | None = None) -> Path:
@@ -154,9 +159,10 @@ class _SherpaEngine:
     voices: dict[str, int] = {}
 
     def __init__(self, model_dir: str | Path | None = None, *, voice: str | int | None = None,
-                 speed: float = 1.0, num_threads: int = 2):
+                 speed: float = 1.0, num_threads: int | None = None):
         self.speed = _speed(speed)
-        threads = _threads(num_threads)
+        threads = _threads(DEFAULT_THREADS[self.engine] if num_threads is None else num_threads)
+        self.num_threads = threads
         chosen = DEFAULT_VOICES[self.engine] if voice is None else voice
         self.voice = None if chosen is None else str(chosen)
         self.speaker_id = self.resolve_voice(self.voice) if self.voice is not None else 0
@@ -257,10 +263,6 @@ class KokoroEngine(_SherpaEngine):
         )
 
 
-class KokoroInt8Engine(KokoroEngine):
-    engine = "kokoro-int8"
-    preferred = ("model.int8.onnx",)
-
 
 class PiperEngine(_SherpaEngine):
     """Piper voices exported for sherpa-onnx's VITS runtime.
@@ -338,12 +340,11 @@ class FakeEngine:
         return np.full(max(1, len(text)) * self.samples_per_char, .1, dtype=np.float32)
 
 
-ENGINE_CLASSES = {"kokoro": KokoroEngine, "kokoro-int8": KokoroInt8Engine, "piper": PiperEngine,
-                  "kitten": KittenEngine}
+ENGINE_CLASSES = {"kokoro": KokoroEngine, "piper": PiperEngine, "kitten": KittenEngine}
 
 
 def load_engine(name: str = DEFAULT_ENGINE, *, model_dir=None, voice=None, speed: float = 1.0,
-                num_threads: int = 2) -> SpeechEngine:
+                num_threads: int | None = None) -> SpeechEngine:
     if name == "none":
         return NullEngine()
     if name not in ENGINE_CLASSES:

@@ -20,7 +20,6 @@ sys.path.insert(0, str(ROOT / "src"))
 # espeak-ng-data is not kept: sherpa-onnx 2.x ignores it and piper_phonemize bundles its own.
 KEEP = {
     "kokoro": r"model\.onnx|voices\.bin|tokens\.txt|lexicon-(us|gb)-en\.txt|LICENSE|README\.md",
-    "kokoro-int8": r"model\.int8\.onnx|voices\.bin|tokens\.txt|lexicon-(us|gb)-en\.txt|LICENSE|README\.md",
     "piper-lessac": r"en_US-lessac-medium\.onnx(\.json)?|tokens\.txt|MODEL_CARD",
     "piper-ryan": r"en_US-ryan-medium\.onnx(\.json)?|tokens\.txt|MODEL_CARD",
     "kitten": r"model\.fp16\.onnx|voices\.bin|tokens\.txt|LICENSE|README\.md",

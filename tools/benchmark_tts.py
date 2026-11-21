@@ -52,7 +52,6 @@ SENTENCES = [
 # (label, engine, model directory, voice) — voices are fixed measurement voices, not defaults.
 CONFIGS = [
     ("kokoro-fp32", "kokoro", ROOT / "models" / "tts-kokoro", "af_heart"),
-    ("kokoro-int8", "kokoro-int8", ROOT / "models" / "tts-kokoro-int8", "af_heart"),
     ("piper-lessac", "piper", ROOT / "models" / "tts-piper-lessac", "lessac"),
     ("piper-ryan", "piper", ROOT / "models" / "tts-piper-ryan", "ryan"),
     ("kitten-nano", "kitten", ROOT / "models" / "tts-kitten", "expr-voice-2-f"),

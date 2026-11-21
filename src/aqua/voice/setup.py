@@ -36,6 +36,7 @@ class VoiceAsset:
     size: int
     sha256: str
     root: str           # top-level folder inside the archive
+    notice: str | None = None  # licence note shown whenever setup-voice handles this voice
 
     @property
     def url(self) -> str:
@@ -49,16 +50,18 @@ class VoiceAsset:
 ASSETS = {asset.key: asset for asset in (
     VoiceAsset("kokoro", "kokoro", None, "kokoro-multi-lang-v1_0.tar.bz2", 349_886_476,
                "60703707bc05ccd48d60e1eb723f38b07d6e474795a0b6a588d7220400e0f7a4", "kokoro-multi-lang-v1_0"),
-    VoiceAsset("kokoro-int8", "kokoro-int8", None, "kokoro-int8-multi-lang-v1_0.tar.bz2", 132_353_410,
-               "72c347230107ef8a31098ec4d468a605244beef5f1ed00db97efa13518800653", "kokoro-int8-multi-lang-v1_0"),
     VoiceAsset("piper-lessac", "piper", "lessac", "vits-piper-en_US-lessac-medium.tar.bz2", 67_230_653,
-               "9e3febfacf0abf4270172d2958bcec246032b7e88efc2720840cc80c93de334e", "vits-piper-en_US-lessac-medium"),
+               "9e3febfacf0abf4270172d2958bcec246032b7e88efc2720840cc80c93de334e", "vits-piper-en_US-lessac-medium",
+               "Piper lessac is an optional voice, never a default: its training data is under the Blizzard "
+               "Challenge 2013 Lessac licence (see THIRD_PARTY_NOTICES.md); check it before any reuse."),
     VoiceAsset("piper-ryan", "piper", "ryan", "vits-piper-en_US-ryan-medium.tar.bz2", 67_213_100,
-               "c546af78b6395b4e7c4ce1ed899438b64426a362f5d4ec5fecd090ded9ad7505", "vits-piper-en_US-ryan-medium"),
+               "c546af78b6395b4e7c4ce1ed899438b64426a362f5d4ec5fecd090ded9ad7505", "vits-piper-en_US-ryan-medium",
+               "Piper ryan is an optional voice, never a default: its training data is CC BY-NC-SA 4.0 "
+               "(non-commercial, share-alike; see THIRD_PARTY_NOTICES.md)."),
     VoiceAsset("kitten", "kitten", None, "kitten-nano-en-v0_2-fp16.tar.bz2", 26_586_708,
                "0345a8a2f4a710cb8f7912c9a731ded8b3e1e69b33a871efa95c2e64651518fe", "kitten-nano-en-v0_2-fp16"),
 )}
-SETUP_ENGINES = ("kokoro", "kokoro-int8", "piper", "kitten")
+SETUP_ENGINES = ("kokoro", "piper", "kitten")
 
 
 def manifest(asset: VoiceAsset) -> dict[str, tuple[int, str]]:
@@ -85,6 +88,11 @@ def select_assets(engine: str, voice: str | None = None) -> list[VoiceAsset]:
         raise VoiceError(f"Unknown {engine} voice {voice!r}; choose one of: "
                          f"{', '.join(asset.voice for asset in candidates)}.")
     return chosen
+
+
+def notices(engine: str, voice: str | None = None) -> list[str]:
+    """Licence notes for the selected voices (shown on success and on failure)."""
+    return [asset.notice for asset in select_assets(engine, voice) if asset.notice]
 
 
 def _digest(path: Path) -> str:

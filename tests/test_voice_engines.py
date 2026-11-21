@@ -110,7 +110,7 @@ class EngineTests(unittest.TestCase):
         self.runtime.assert_called_once()
         tts = FakeTts.instances[-1]
         model = tts.config.model
-        self.assertEqual((model.num_threads, model.provider, model.debug), (2, "cpu", False))
+        self.assertEqual((model.num_threads, model.provider, model.debug), (4, "cpu", False))  # Kokoro default
         self.assertEqual(model.kokoro.kind, "kokoro")
         self.assertEqual(model.kokoro.model, str(path / "model.onnx"))
         self.assertEqual(model.kokoro.voices, str(path / "voices.bin"))
@@ -164,7 +164,6 @@ class EngineTests(unittest.TestCase):
     def test_directories_match_setup_voice(self):
         from aqua.voice.setup import ASSETS
         self.assertEqual(engines.engine_dir("kokoro"), ASSETS["kokoro"].directory)
-        self.assertEqual(engines.engine_dir("kokoro-int8"), ASSETS["kokoro-int8"].directory)
         self.assertEqual(engines.engine_dir("kitten"), ASSETS["kitten"].directory)
         for voice in engines.PIPER_VOICES:
             self.assertEqual(engines.engine_dir("piper", voice), ASSETS[f"piper-{voice}"].directory)
@@ -187,18 +186,43 @@ class EngineTests(unittest.TestCase):
         with self.assertRaises(VoiceError):
             engine.resolve_voice("amy")
 
-    def test_kokoro_lexicon_follows_voice_accent_and_int8_uses_its_model(self):
-        files = ["model.onnx", "model.int8.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"]
+    def test_kokoro_lexicon_follows_voice_accent(self):
+        files = ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"]
         path = self.install("kokoro-both", files)
         for voice, lexicon in (("bm_george", "lexicon-gb-en.txt"), ("bf_emma", "lexicon-gb-en.txt"),
                                ("21", "lexicon-gb-en.txt"), ("am_adam", "lexicon-us-en.txt"), ("af_heart", "lexicon-us-en.txt")):
             with self.subTest(voice=voice):
                 KokoroEngine(path, voice=voice)
                 self.assertEqual(FakeTts.instances[-1].config.model.kokoro.lexicon, str(path / lexicon))
-        engine = load_engine("kokoro-int8", model_dir=path, voice="bm_lewis")
-        self.assertEqual(engine.engine, "kokoro-int8")
-        self.assertEqual(FakeTts.instances[-1].config.model.kokoro.model, str(path / "model.int8.onnx"))
+        engine = load_engine("kokoro", model_dir=path, voice="bm_lewis")
+        self.assertEqual(FakeTts.instances[-1].config.model.kokoro.model, str(path / "model.onnx"))
         self.assertEqual(engine.speaker_id, 27)
+
+    def test_int8_kokoro_engine_was_removed(self):
+        self.assertNotIn("kokoro-int8", engines.ENGINE_NAMES)
+        self.assertNotIn("kokoro-int8", engines.ENGINE_CLASSES)
+        with self.assertRaises(VoiceError):
+            load_engine("kokoro-int8")
+
+    def test_thread_defaults_per_engine_and_override(self):
+        self.assertEqual(engines.DEFAULT_THREADS, {"kokoro": 4, "piper": 2, "kitten": 2})
+        kokoro = self.install("k", ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"])
+        piper = self.install("p", ["en_US-lessac-medium.onnx", "tokens.txt"])
+        kitten = self.install("c", ["model.fp16.onnx", "voices.bin", "tokens.txt"])
+        for engine, path, expected in (("kokoro", kokoro, 4), ("piper", piper, 2), ("kitten", kitten, 2)):
+            with self.subTest(engine=engine):
+                voice = "lessac" if engine == "piper" else None
+                loaded = load_engine(engine, model_dir=path, voice=voice)
+                self.assertEqual((loaded.num_threads, FakeTts.instances[-1].config.model.num_threads), (expected, expected))
+                load_engine(engine, model_dir=path, voice=voice, num_threads=3)
+                self.assertEqual(FakeTts.instances[-1].config.model.num_threads, 3)
+
+    def test_default_and_documented_voices(self):
+        self.assertEqual(engines.DEFAULT_ENGINE, "kokoro")
+        self.assertEqual(engines.DEFAULT_VOICES["kokoro"], "af_heart")
+        self.assertEqual(engines.MALE_VOICE, "am_puck")
+        self.assertEqual(engines.KOKORO_ENGLISH_VOICES["am_puck"], ("male", "American"))
+        self.assertIsNone(engines.DEFAULT_VOICES["piper"])  # Piper is never a default
 
     def test_voice_tables_match_the_sherpa_onnx_docs(self):
         self.assertEqual(len(engines.KOKORO_VOICES), 28)

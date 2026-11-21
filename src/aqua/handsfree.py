@@ -157,6 +157,7 @@ def run_handsfree(
     voice_model_dir: Path | None = None, speech_rate: float = 1.0,
     follow_up: float = FOLLOW_UP_SECONDS,
     keep_alive: str = HANDSFREE_KEEP_ALIVE,
+    tts_threads: int | None = None,
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
 
@@ -185,7 +186,8 @@ def run_handsfree(
         if diagnostics:
             print(f"Speech model loading: {perf_counter() - started:.3f}s (once per session; CPU INT8)")
         speaker = chat._open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
-                                     voice_model_dir=voice_model_dir, speech_rate=speech_rate)
+                                     voice_model_dir=voice_model_dir, speech_rate=speech_rate,
+                                     tts_threads=tts_threads)
         commands = ConsoleCommands()
         # No Ollama request, including metadata, is made until a valid awakened
         # command survives recognition. A silent idle session stays acoustic-only.

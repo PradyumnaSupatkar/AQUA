@@ -278,11 +278,11 @@ class SpeechOutput:
 
 
 def open_speaker(*, engine: str = "kokoro", voice=None, model_dir=None, rate: float = 1.0,
-                 player=None, out=print) -> SpeechOutput | None:
+                 threads: int | None = None, player=None, out=print) -> SpeechOutput | None:
     """Load the engine once for a session; a missing voice means text-only, not an error."""
     from .engines import load_engine
     try:
-        loaded = load_engine(engine, model_dir=model_dir, voice=voice, speed=rate)
+        loaded = load_engine(engine, model_dir=model_dir, voice=voice, speed=rate, num_threads=threads)
     except VoiceError as exc:
         out(f"Note: speech output unavailable. {exc} Continuing with text only.")
         return None

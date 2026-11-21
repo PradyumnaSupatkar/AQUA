@@ -101,7 +101,7 @@ class SessionSpeakerTests(Offline):
             status, _out, _err = self.run_chat(["Hi", "Again", "/quit"], speak=True, tts_engine="piper",
                                                voice="0", voice_model_dir=Path("D:/v"), speech_rate=1.25)
         self.assertEqual(status, 0)
-        opener.assert_called_once_with(engine="piper", voice="0", model_dir=Path("D:/v"), rate=1.25)
+        opener.assert_called_once_with(engine="piper", voice="0", model_dir=Path("D:/v"), rate=1.25, threads=None)
         self.assertEqual(speaker.finish_turn.call_count, 2)
         speaker.close.assert_called_once()
 
@@ -134,6 +134,7 @@ class VoiceCliTests(unittest.TestCase):
                 self.assertIsNone(options["voice"])
                 self.assertIsNone(options["voice_model_dir"])
                 self.assertEqual(options["speech_rate"], 1.0)
+                self.assertIsNone(options["tts_threads"])  # per-engine default applies
 
     def test_speak_flags_and_voice_options_forward(self):
         self.assertTrue(self.invoke(["chat", "--speak"], "run_text_chat")["speak"])
@@ -144,6 +145,15 @@ class VoiceCliTests(unittest.TestCase):
         self.assertEqual((options["tts_engine"], options["voice"], options["speech_rate"]),
                          ("kitten", "expr-voice-2-m", 1.5))
         self.assertEqual(options["voice_model_dir"], Path("D:/voices/k"))
+
+    def test_tts_threads_option_forwards_and_validates(self):
+        self.assertEqual(self.invoke(["handsfree", "--tts-threads", "6"], "run_handsfree")["tts_threads"], 6)
+        self.assertEqual(self.invoke(["chat", "--speak", "--tts-threads", "1"], "run_text_chat")["tts_threads"], 1)
+        for value in ("0", "9", "two"):
+            with self.subTest(value=value), patch("aqua.cli.run_text_chat") as run, \
+                    redirect_stdout(StringIO()), redirect_stderr(StringIO()), self.assertRaises(SystemExit):
+                cli.main(["chat", "--tts-threads", value])
+            run.assert_not_called()
 
     def test_invalid_voice_options_fail_before_runner(self):
         for arguments in (["chat", "--tts-engine", "espeak"], ["chat", "--speech-rate", "3"],

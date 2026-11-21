@@ -23,9 +23,8 @@ def voices():
     """(engine folder, engine, model dir, voice, gender, accent) for every English voice installed."""
     from aqua.voice.engines import KITTEN_VOICES, KOKORO_ENGLISH_VOICES, PIPER_VOICES, engine_dir
 
-    for folder, engine in (("kokoro-fp32", "kokoro"), ("kokoro-int8", "kokoro-int8")):
-        for name, (gender, accent) in KOKORO_ENGLISH_VOICES.items():
-            yield folder, engine, engine_dir(engine), name, gender, accent
+    for name, (gender, accent) in KOKORO_ENGLISH_VOICES.items():
+        yield "kokoro-fp32", "kokoro", engine_dir("kokoro"), name, gender, accent
     for name, (gender, accent) in PIPER_VOICES.items():
         yield "piper", "piper", engine_dir("piper", name), name, gender, accent
     for name in KITTEN_VOICES:

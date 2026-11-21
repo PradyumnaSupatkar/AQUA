@@ -213,6 +213,7 @@ class RealPinsTests(unittest.TestCase):
                 self.assertFalse(any(name.startswith("espeak-ng-data/") for name in files))
 
     def test_selection(self):
+        self.assertNotIn("kokoro-int8", ASSETS)
         self.assertEqual([a.key for a in select_assets("piper")], ["piper-lessac", "piper-ryan"])
         self.assertEqual([a.key for a in select_assets("piper", "Ryan")], ["piper-ryan"])
         self.assertEqual([a.key for a in select_assets("kokoro", "af_heart")], ["kokoro"])
@@ -231,6 +232,24 @@ class SetupVoiceCliTests(unittest.TestCase):
             status = cli.main(arguments)
         return status, run, output.getvalue(), errors.getvalue()
 
+    def test_piper_voices_always_show_their_licence_notice(self):
+        for arguments, expected in ((["--voice", "ryan"], ["CC BY-NC-SA 4.0"]),
+                                    (["--voice", "lessac"], ["Blizzard Challenge 2013"]),
+                                    ([], ["Blizzard Challenge 2013", "CC BY-NC-SA 4.0"])):
+            with self.subTest(arguments=arguments):
+                _status, _run, output, _errors = self.invoke(["setup-voice", "--engine", "piper", *arguments],
+                                                             return_value=[])
+                for text in expected:
+                    self.assertIn(text, output)
+                self.assertIn("never a default", output)
+                # Also when verification fails.
+                _status, _run, output, errors = self.invoke(["setup-voice", "--engine", "piper", *arguments],
+                                                            side_effect=VoiceError("missing"))
+                self.assertIn("never a default", output)
+                self.assertIn("Voice setup error", errors)
+        _status, _run, output, _errors = self.invoke(["setup-voice", "--engine", "kokoro"], return_value=[])
+        self.assertNotIn("Licence:", output)
+
     def test_verify_only_by_default(self):
         status, run, output, _errors = self.invoke(["setup-voice", "--engine", "piper", "--voice", "ryan"],
                                                    return_value=[Path("D:/Aqua/models/tts-piper-ryan")])
@@ -239,15 +258,16 @@ class SetupVoiceCliTests(unittest.TestCase):
         self.assertIn("tts-piper-ryan", output)
 
     def test_download_flag_and_errors(self):
-        _status, run, _out, _err = self.invoke(["setup-voice", "--engine", "kokoro-int8", "--download"], return_value=[])
-        run.assert_called_once_with("kokoro-int8", None, download=True, model_dir=None, archive=None)
+        _status, run, _out, _err = self.invoke(["setup-voice", "--engine", "kokoro", "--download"], return_value=[])
+        run.assert_called_once_with("kokoro", None, download=True, model_dir=None, archive=None)
         status, _run, _out, errors = self.invoke(["setup-voice", "--engine", "kitten"],
                                                  side_effect=VoiceError("missing; No download was attempted."))
         self.assertEqual(status, 1)
         self.assertIn("Voice setup error", errors)
 
     def test_engine_is_required_and_validated(self):
-        for arguments in (["setup-voice"], ["setup-voice", "--engine", "espeak"]):
+        for arguments in (["setup-voice"], ["setup-voice", "--engine", "espeak"],
+                          ["setup-voice", "--engine", "kokoro-int8"]):
             with self.subTest(arguments=arguments), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()), \
                     self.assertRaises(SystemExit) as exited:
                 cli.main(arguments)

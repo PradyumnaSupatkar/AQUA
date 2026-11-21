@@ -211,12 +211,14 @@ def _respond_result(
     return result
 
 
-def _open_speaker(*, speak: bool, tts_engine: str, voice, voice_model_dir, speech_rate: float):
+def _open_speaker(*, speak: bool, tts_engine: str, voice, voice_model_dir, speech_rate: float,
+                  tts_threads: int | None = None):
     """Load the voice once per session; missing voices mean text-only, not an error."""
     if not speak:
         return None
     from aqua.voice.output import open_speaker
-    return open_speaker(engine=tts_engine, voice=voice, model_dir=voice_model_dir, rate=speech_rate)
+    return open_speaker(engine=tts_engine, voice=voice, model_dir=voice_model_dir, rate=speech_rate,
+                        threads=tts_threads)
 
 
 def _close_speaker(speaker) -> None:
@@ -258,6 +260,7 @@ def run_text_chat(
     voice_model_dir: Path | None = None,
     speech_rate: float = 1.0,
     keep_alive: str = DEFAULT_KEEP_ALIVE,
+    tts_threads: int | None = None,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
@@ -271,7 +274,8 @@ def run_text_chat(
         client, conversation, generation = session
         conversation.text_entry_apps = text_entry_apps
         speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
-                                voice_model_dir=voice_model_dir, speech_rate=speech_rate)
+                                voice_model_dir=voice_model_dir, speech_rate=speech_rate,
+                                tts_threads=tts_threads)
         _help(voice=False)
         while True:
             try:
@@ -382,6 +386,7 @@ def run_voice_chat(
     voice_model_dir: Path | None = None,
     speech_rate: float = 1.0,
     keep_alive: str = DEFAULT_KEEP_ALIVE,
+    tts_threads: int | None = None,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
@@ -404,7 +409,8 @@ def run_voice_chat(
         if diagnostics:
             print(f"Speech model loading: {load_seconds:.3f}s (once per session; CPU INT8)")
         speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
-                                voice_model_dir=voice_model_dir, speech_rate=speech_rate)
+                                voice_model_dir=voice_model_dir, speech_rate=speech_rate,
+                                tts_threads=tts_threads)
         _help(voice=True)
         action_state = conversation.action_state
         while True:

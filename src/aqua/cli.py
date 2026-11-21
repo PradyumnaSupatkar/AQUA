@@ -142,6 +142,13 @@ def _chat_options(parser: argparse.ArgumentParser, *, keep_alive: str = DEFAULT_
                         help=f"how long Ollama keeps the model loaded after each request, e.g. 5m, 30m, 1h, or 0; default: {keep_alive}")
 
 
+def _tts_threads(value: str) -> int:
+    number = int(value)
+    if not 1 <= number <= 8:
+        raise argparse.ArgumentTypeError("must be an integer from 1 to 8")
+    return number
+
+
 def _voice_options(parser: argparse.ArgumentParser, *, speak_default: bool) -> None:
     """Spoken-reply (text-to-speech) options shared by chat, voice-chat and handsfree."""
     from aqua.voice.engines import DEFAULT_ENGINE, ENGINE_NAMES
@@ -153,7 +160,10 @@ def _voice_options(parser: argparse.ArgumentParser, *, speak_default: bool) -> N
     parser.set_defaults(speak=speak_default)
     parser.add_argument("--tts-engine", choices=ENGINE_NAMES, default=DEFAULT_ENGINE,
                         help=f"local text-to-speech engine; default: {DEFAULT_ENGINE}")
-    parser.add_argument("--voice", metavar="NAME", help="voice name or speaker id; default: the engine's default voice")
+    parser.add_argument("--voice", metavar="NAME",
+                        help="voice name; default for kokoro: af_heart (Heart); male option: am_puck (Puck)")
+    parser.add_argument("--tts-threads", type=_tts_threads, metavar="N",
+                        help="CPU threads for speech synthesis, 1 to 8; default: kokoro 4, piper 2, kitten 2")
     parser.add_argument("--voice-model-dir", type=Path, metavar="PATH", help="local voice model directory instead of the default")
     parser.add_argument("--speech-rate", type=_finite_range(.5, 2), default=1.0, metavar="RATE",
                         help="speaking speed, 0.5 to 2; default: 1")
@@ -227,9 +237,9 @@ def _parser() -> argparse.ArgumentParser:
     wake_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="local sherpa keyword-spotting model directory")
     wake_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the configured wake assets")
     voice_setup = commands.add_parser("setup-voice", help="verify local text-to-speech voices; download only with --download")
-    voice_setup.add_argument("--engine", required=True, choices=("kokoro", "kokoro-int8", "piper", "kitten"),
+    voice_setup.add_argument("--engine", required=True, choices=("kokoro", "piper", "kitten"),
                              help="voice engine to verify or install")
-    voice_setup.add_argument("--voice", metavar="NAME", help="piper: lessac or ryan (default: both); other engines: optional check of a voice name")
+    voice_setup.add_argument("--voice", metavar="NAME", help="piper: lessac or ryan (default: both; optional voices, see THIRD_PARTY_NOTICES.md)")
     voice_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="install or verify a single voice in this directory instead of the default")
     voice_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the pinned voice archive(s) from the sherpa-onnx release")
     voice_setup.add_argument("--from-archive", type=Path, metavar="FILE", help="install from an already downloaded copy of the pinned archive (size and SHA-256 are checked); no network")
@@ -377,6 +387,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "diagnostics": args.diagnostics,
                 "speak": args.speak, "tts_engine": args.tts_engine, "voice": args.voice,
                 "voice_model_dir": args.voice_model_dir, "speech_rate": args.speech_rate,
+                "tts_threads": args.tts_threads,
                 "keep_alive": args.keep_alive,
             }
             if args.allow_text_entry:
@@ -401,7 +412,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if args.command == "setup-voice":
             from aqua.voice.engines import VoiceError
+            from aqua.voice.setup import notices
             try:
+                for note in notices(args.engine, args.voice):
+                    print(f"Licence: {note}")
                 paths = setup_voice(args.engine, args.voice, download=args.download, model_dir=args.model_dir,
                                     archive=args.from_archive)
             except VoiceError as exc:

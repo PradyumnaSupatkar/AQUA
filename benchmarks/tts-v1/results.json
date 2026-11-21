@@ -1,0 +1,1925 @@
+{
+ "started_at": "2026-11-21T15:58:35+00:00",
+ "hardware": {
+  "machine": "AMD64",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "processor": "AMD64 Family 23 Model 96 Stepping 1, AuthenticAMD",
+  "logical_cpus": 16,
+  "python": "3.12.6",
+  "cpu_name": "AMD Ryzen 7 4800H with Radeon Graphics",
+  "ram_gb": 15.4
+ },
+ "versions": {
+  "sherpa_onnx": "2.0.1",
+  "numpy": "2.5.4",
+  "piper_phonemize": "1.5.9",
+  "ollama": "0.40.16"
+ },
+ "chat_model": "qwen3:4b-instruct-2507-q4_K_M",
+ "sentences": [
+  "Done.",
+  "Opening Notepad now.",
+  "The launch attempt succeeded.",
+  "I couldn't find that window.",
+  "Would you like me to open Visual Studio Code?",
+  "Calculator is open and ready.",
+  "It's twenty past three in the afternoon.",
+  "Okay, I've cancelled that request.",
+  "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+  "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+  "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+  "The rest is on screen."
+ ],
+ "results": [
+  {
+   "label": "kokoro-fp32",
+   "engine": "kokoro",
+   "voice": "af_heart",
+   "threads": 2,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.2509826999994402,
+    "baseline_mb": 24.65234375,
+    "peak_rss_mb": 711.375,
+    "model_rss_mb": 686.72265625,
+    "first_audio_seconds": 0.4777267999998003,
+    "question_first_audio_seconds": 1.2498059000008652,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.4777267999998003,
+      "audio_seconds": 0.5914166666666667,
+      "rtf": 0.8077668874168807
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.8069964999995136,
+      "audio_seconds": 1.3064583333333333,
+      "rtf": 0.6176978472329239
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.8675055999992765,
+      "audio_seconds": 1.5049166666666667,
+      "rtf": 0.5764475995343772
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.8668612000001303,
+      "audio_seconds": 1.476625,
+      "rtf": 0.5870557521375639
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 1.209450199999992,
+      "audio_seconds": 2.3322083333333334,
+      "rtf": 0.5185858324549302
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 1.1107385999985127,
+      "audio_seconds": 1.9449166666666666,
+      "rtf": 0.5710982989837676
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.0775245999993786,
+      "audio_seconds": 2.062291666666667,
+      "rtf": 0.5224889463579167
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.068406500000492,
+      "audio_seconds": 2.0094166666666666,
+      "rtf": 0.5316998299674824
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 3.025587899999664,
+      "audio_seconds": 6.200083333333334,
+      "rtf": 0.4879914893616479
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 3.294691500001136,
+      "audio_seconds": 6.508291666666667,
+      "rtf": 0.5062298478225037
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 2.8958946999991895,
+      "audio_seconds": 5.6193333333333335,
+      "rtf": 0.515344886700532
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.8050272999989829,
+      "audio_seconds": 1.299125,
+      "rtf": 0.6196688540355877
+     }
+    ],
+    "total_synthesis_seconds": 17.506411399996068,
+    "total_audio_seconds": 32.85508333333333,
+    "cpu_percent_of_one_core": 198.76506002607692,
+    "cpu_percent_of_machine": 12.422816251629808
+   }
+  },
+  {
+   "label": "kokoro-fp32",
+   "engine": "kokoro",
+   "voice": "af_heart",
+   "threads": 4,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.3127714000002015,
+    "baseline_mb": 24.6875,
+    "peak_rss_mb": 711.5625,
+    "model_rss_mb": 686.875,
+    "first_audio_seconds": 0.3397972999991907,
+    "question_first_audio_seconds": 0.8688728999986779,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.3397972999991907,
+      "audio_seconds": 0.5913333333333334,
+      "rtf": 0.5746290304383157
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.5416830000012851,
+      "audio_seconds": 1.2918333333333334,
+      "rtf": 0.41931337891984394
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.6207009999998263,
+      "audio_seconds": 1.5049583333333334,
+      "rtf": 0.4124373321519375
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.63367130000006,
+      "audio_seconds": 1.4765833333333334,
+      "rtf": 0.4291469947514374
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.9475096999995003,
+      "audio_seconds": 2.3321666666666667,
+      "rtf": 0.40627872507660984
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.7539148000014393,
+      "audio_seconds": 1.9398333333333333,
+      "rtf": 0.3886492654015496
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.7610084999996616,
+      "audio_seconds": 2.062333333333333,
+      "rtf": 0.3690036366573436
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.7547653000001446,
+      "audio_seconds": 2.0029166666666667,
+      "rtf": 0.37683310172672085
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 2.175309799999013,
+      "audio_seconds": 6.200541666666667,
+      "rtf": 0.35082576925387104
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 2.2322807000000466,
+      "audio_seconds": 6.504166666666666,
+      "rtf": 0.34320779500321025
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 1.9515780000001541,
+      "audio_seconds": 5.619416666666667,
+      "rtf": 0.34729191938667786
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.5621721000006801,
+      "audio_seconds": 1.2991666666666666,
+      "rtf": 0.43271745991072236
+     }
+    ],
+    "total_synthesis_seconds": 12.274391500001002,
+    "total_audio_seconds": 32.82525,
+    "cpu_percent_of_one_core": 397.2919335324024,
+    "cpu_percent_of_machine": 24.83074584577515
+   }
+  },
+  {
+   "label": "kokoro-int8",
+   "engine": "kokoro-int8",
+   "voice": "af_heart",
+   "threads": 2,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.509184999998979,
+    "baseline_mb": 24.58984375,
+    "peak_rss_mb": 531.08203125,
+    "model_rss_mb": 506.4921875,
+    "first_audio_seconds": 1.3657424000011815,
+    "question_first_audio_seconds": 3.3145055000004504,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 1.3657424000011815,
+      "audio_seconds": 0.5784166666666667,
+      "rtf": 2.361174009510759
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 2.0565442999995867,
+      "audio_seconds": 1.281625,
+      "rtf": 1.604638096166653
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 2.2795146999997087,
+      "audio_seconds": 1.45975,
+      "rtf": 1.5615788319915798
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 2.2343989000000875,
+      "audio_seconds": 1.4515,
+      "rtf": 1.5393723045126335
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 3.2802128000002995,
+      "audio_seconds": 2.3522916666666664,
+      "rtf": 1.3944753733063004
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 2.767638799999986,
+      "audio_seconds": 1.9375416666666667,
+      "rtf": 1.4284280166017862
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 2.929063400000814,
+      "audio_seconds": 2.0632083333333333,
+      "rtf": 1.4196643900078667
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 2.8158700999993016,
+      "audio_seconds": 2.0029583333333334,
+      "rtf": 1.4058555553240673
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 7.842338099999324,
+      "audio_seconds": 6.0155,
+      "rtf": 1.303688488072367
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 8.388366799999858,
+      "audio_seconds": 6.487666666666667,
+      "rtf": 1.2929712993885616
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 7.45659169999999,
+      "audio_seconds": 5.641958333333333,
+      "rtf": 1.3216318270104186
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 2.0602480999987165,
+      "audio_seconds": 1.3079583333333333,
+      "rtf": 1.5751634035223216
+     }
+    ],
+    "total_synthesis_seconds": 45.476530099998854,
+    "total_audio_seconds": 32.580375000000004,
+    "cpu_percent_of_one_core": 169.97057226471028,
+    "cpu_percent_of_machine": 10.623160766544393
+   }
+  },
+  {
+   "label": "kokoro-int8",
+   "engine": "kokoro-int8",
+   "voice": "af_heart",
+   "threads": 4,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.3905408999999054,
+    "baseline_mb": 24.5859375,
+    "peak_rss_mb": 531.3984375,
+    "model_rss_mb": 506.8125,
+    "first_audio_seconds": 1.2031795000002603,
+    "question_first_audio_seconds": 3.012395200001265,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 1.2031795000002603,
+      "audio_seconds": 0.5774166666666667,
+      "rtf": 2.0837283879352175
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 1.8653718000005028,
+      "audio_seconds": 1.281625,
+      "rtf": 1.455473949088464
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 2.0528730999994877,
+      "audio_seconds": 1.45975,
+      "rtf": 1.4063182736766484
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 2.046020400000998,
+      "audio_seconds": 1.451625,
+      "rtf": 1.4094689744259008
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 2.962760700000217,
+      "audio_seconds": 2.3521666666666667,
+      "rtf": 1.259587911854411
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 2.539441500000976,
+      "audio_seconds": 1.937,
+      "rtf": 1.3110178110485162
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 2.706105100000059,
+      "audio_seconds": 2.0624166666666666,
+      "rtf": 1.3121039718776801
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 2.5332017000000633,
+      "audio_seconds": 2.0012916666666665,
+      "rtf": 1.265783364910194
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 7.423265999999785,
+      "audio_seconds": 6.016,
+      "rtf": 1.2339205452127302
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 7.980975699998453,
+      "audio_seconds": 6.485166666666666,
+      "rtf": 1.2306508236743008
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 6.7956991999999445,
+      "audio_seconds": 5.639,
+      "rtf": 1.2051248802979153
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 2.0000193000014406,
+      "audio_seconds": 1.2990833333333334,
+      "rtf": 1.53956197318733
+     }
+    ],
+    "total_synthesis_seconds": 42.10891400000219,
+    "total_audio_seconds": 32.56254166666667,
+    "cpu_percent_of_one_core": 300.1881614127014,
+    "cpu_percent_of_machine": 18.761760088293837
+   }
+  },
+  {
+   "label": "piper-lessac",
+   "engine": "piper",
+   "voice": "lessac",
+   "threads": 2,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 1.1515027999994345,
+    "baseline_mb": 24.60546875,
+    "peak_rss_mb": 301.91796875,
+    "model_rss_mb": 277.3125,
+    "first_audio_seconds": 0.0311122000002797,
+    "question_first_audio_seconds": 0.15438950000134355,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.0311122000002797,
+      "audio_seconds": 0.4527891156462585,
+      "rtf": 0.06871234074581004
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.08302369999910297,
+      "audio_seconds": 1.3583673469387756,
+      "rtf": 0.06112021183828193
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.09890169999926002,
+      "audio_seconds": 1.5789569160997732,
+      "rtf": 0.06263736457329054
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.09788289999960398,
+      "audio_seconds": 1.6486167800453515,
+      "rtf": 0.05937274276494464
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.16283970000040426,
+      "audio_seconds": 2.5273015873015874,
+      "rtf": 0.06443223904048152
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.10662469999988389,
+      "audio_seconds": 1.799546485260771,
+      "rtf": 0.05925087285779838
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.12870999999904598,
+      "audio_seconds": 2.2175056689342405,
+      "rtf": 0.058042692653365584
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.1278216999999131,
+      "audio_seconds": 2.147845804988662,
+      "rtf": 0.05951158118661495
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.37161009999908856,
+      "audio_seconds": 5.5049433106575965,
+      "rtf": 0.06750480050896249
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.40793979999943986,
+      "audio_seconds": 6.189523809523809,
+      "rtf": 0.06590810740104815
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.3645525000010821,
+      "audio_seconds": 5.378231292517007,
+      "rtf": 0.0677829717937757
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.08691539999927045,
+      "audio_seconds": 1.3931972789115645,
+      "rtf": 0.062385565429163854
+     }
+    ],
+    "total_synthesis_seconds": 2.067934399996375,
+    "total_audio_seconds": 32.196825396825396,
+    "cpu_percent_of_one_core": 197.95357468255642,
+    "cpu_percent_of_machine": 12.372098417659776
+   }
+  },
+  {
+   "label": "piper-lessac",
+   "engine": "piper",
+   "voice": "lessac",
+   "threads": 4,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 1.0800304000003962,
+    "baseline_mb": 24.55859375,
+    "peak_rss_mb": 303.97265625,
+    "model_rss_mb": 279.4140625,
+    "first_audio_seconds": 0.021958299999823794,
+    "question_first_audio_seconds": 0.1284455999993952,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.021958299999823794,
+      "audio_seconds": 0.4179591836734694,
+      "rtf": 0.05253694824176591
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.06276040000011562,
+      "audio_seconds": 1.4164172335600906,
+      "rtf": 0.044309260374057045
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.071760799999538,
+      "audio_seconds": 1.5325170068027212,
+      "rtf": 0.04682545099401671
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.07055469999977504,
+      "audio_seconds": 1.5673469387755101,
+      "rtf": 0.04501536848943981
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.11016149999886693,
+      "audio_seconds": 2.380045351473923,
+      "rtf": 0.04628546255668856
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.07915130000037607,
+      "audio_seconds": 1.7647165532879818,
+      "rtf": 0.044852132118839746
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.09332569999969564,
+      "audio_seconds": 2.020136054421769,
+      "rtf": 0.04619772999715537
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.10609629999999015,
+      "audio_seconds": 2.2407256235827666,
+      "rtf": 0.04734908142405648
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.2631774999990739,
+      "audio_seconds": 5.462086167800454,
+      "rtf": 0.04818259762186318
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.2945507999993424,
+      "audio_seconds": 6.38671201814059,
+      "rtf": 0.04611931760234543
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.24765669999942475,
+      "audio_seconds": 5.34766439909297,
+      "rtf": 0.04631118961792561
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.06377690000044822,
+      "audio_seconds": 1.4512471655328798,
+      "rtf": 0.04394627015655885
+     }
+    ],
+    "total_synthesis_seconds": 1.4849308999964705,
+    "total_audio_seconds": 31.987573696145123,
+    "cpu_percent_of_one_core": 387.1967567592159,
+    "cpu_percent_of_machine": 24.199797297450992
+   }
+  },
+  {
+   "label": "piper-ryan",
+   "engine": "piper",
+   "voice": "ryan",
+   "threads": 2,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 1.0955754999995406,
+    "baseline_mb": 24.57421875,
+    "peak_rss_mb": 298.39453125,
+    "model_rss_mb": 273.8203125,
+    "first_audio_seconds": 0.025322900000901427,
+    "question_first_audio_seconds": 0.14735699999982899,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.025322900000901427,
+      "audio_seconds": 0.37151927437641724,
+      "rtf": 0.06816039367918414
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.07359150000047521,
+      "audio_seconds": 1.18421768707483,
+      "rtf": 0.062143557560143926
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.08215109999946435,
+      "audio_seconds": 1.3351473922902495,
+      "rtf": 0.06152961124280533
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.07422680000127002,
+      "audio_seconds": 1.18421768707483,
+      "rtf": 0.06268002987239599
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.13136730000042007,
+      "audio_seconds": 1.9969160997732427,
+      "rtf": 0.06578508732306647
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.12106260000109614,
+      "audio_seconds": 1.7763265306122449,
+      "rtf": 0.0681533478866465
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.1236016999991989,
+      "audio_seconds": 1.9504761904761905,
+      "rtf": 0.06337001220662053
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.1184374000004027,
+      "audio_seconds": 1.9040362811791383,
+      "rtf": 0.06220333150745236
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.3673655999991752,
+      "audio_seconds": 5.932698412698413,
+      "rtf": 0.06192217679780618
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.3654754999988654,
+      "audio_seconds": 6.188117913832199,
+      "rtf": 0.059060849371005676
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.31096120000074734,
+      "audio_seconds": 5.143219954648526,
+      "rtf": 0.060460412493091135
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.08543009999993956,
+      "audio_seconds": 1.195827664399093,
+      "rtf": 0.07144014354515577
+     }
+    ],
+    "total_synthesis_seconds": 1.8789937000019563,
+    "total_audio_seconds": 30.162721088435372,
+    "cpu_percent_of_one_core": 196.2376858523816,
+    "cpu_percent_of_machine": 12.26485536577385
+   }
+  },
+  {
+   "label": "piper-ryan",
+   "engine": "piper",
+   "voice": "ryan",
+   "threads": 4,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 1.091751199999635,
+    "baseline_mb": 24.55078125,
+    "peak_rss_mb": 297.07421875,
+    "model_rss_mb": 272.5234375,
+    "first_audio_seconds": 0.02719280000019353,
+    "question_first_audio_seconds": 0.1050744999993185,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.02719280000019353,
+      "audio_seconds": 0.34829931972789113,
+      "rtf": 0.07807307812555564
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.05834370000047784,
+      "audio_seconds": 1.195827664399093,
+      "rtf": 0.048789388084440846
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.07225880000078178,
+      "audio_seconds": 1.4628571428571429,
+      "rtf": 0.04939566406303442
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.058318100000178674,
+      "audio_seconds": 1.195827664399093,
+      "rtf": 0.04876798031720038
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.09538979999888397,
+      "audio_seconds": 2.0317460317460316,
+      "rtf": 0.046949667186950705
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.0854749999998603,
+      "audio_seconds": 1.6370068027210884,
+      "rtf": 0.05221419963422317
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.0959792000012385,
+      "audio_seconds": 1.8692063492063493,
+      "rtf": 0.05134756793544518
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.09259979999842471,
+      "audio_seconds": 1.8575963718820863,
+      "rtf": 0.04984925756751135
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.2894727000002604,
+      "audio_seconds": 5.839818594104308,
+      "rtf": 0.04956878288865045
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.3129107999993721,
+      "audio_seconds": 6.060408163265306,
+      "rtf": 0.05163196794170674
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.2413617999991402,
+      "audio_seconds": 4.992834467120181,
+      "rtf": 0.04834163872017078
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.059476799999174546,
+      "audio_seconds": 1.2190476190476192,
+      "rtf": 0.04878956249932286
+     }
+    ],
+    "total_synthesis_seconds": 1.4887792999979865,
+    "total_audio_seconds": 29.71047619047619,
+    "cpu_percent_of_one_core": 387.2470825285165,
+    "cpu_percent_of_machine": 24.20294265803228
+   }
+  },
+  {
+   "label": "kitten-nano",
+   "engine": "kitten",
+   "voice": "expr-voice-2-f",
+   "threads": 2,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 1.4450534999996307,
+    "baseline_mb": 24.60546875,
+    "peak_rss_mb": 300.171875,
+    "model_rss_mb": 275.56640625,
+    "first_audio_seconds": 0.355892199999289,
+    "question_first_audio_seconds": 1.5231787000011536,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.355892199999289,
+      "audio_seconds": 1.3,
+      "rtf": 0.27376323076868386
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.7489015999999538,
+      "audio_seconds": 2.725,
+      "rtf": 0.27482627522934083
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.9343088999994507,
+      "audio_seconds": 3.3,
+      "rtf": 0.28312390909074264
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.9788829999997688,
+      "audio_seconds": 3.45,
+      "rtf": 0.2837342028984837
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 1.505426699999589,
+      "audio_seconds": 5.1723333333333334,
+      "rtf": 0.2910536895017572
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 1.052039500000319,
+      "audio_seconds": 3.5265833333333334,
+      "rtf": 0.2983169262034507
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.2078523999989557,
+      "audio_seconds": 4.18675,
+      "rtf": 0.28849403475224356
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.087229099999604,
+      "audio_seconds": 3.7121666666666666,
+      "rtf": 0.29288262021270706
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 3.071603700000196,
+      "audio_seconds": 10.499916666666667,
+      "rtf": 0.29253600742864905
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 3.357816499999899,
+      "audio_seconds": 11.408333333333333,
+      "rtf": 0.29433015339663104
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 2.985046300000249,
+      "audio_seconds": 10.362916666666667,
+      "rtf": 0.2880507868602227
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.8256403000013961,
+      "audio_seconds": 2.95,
+      "rtf": 0.2798780677970834
+     }
+    ],
+    "total_synthesis_seconds": 18.11064019999867,
+    "total_audio_seconds": 62.594,
+    "cpu_percent_of_one_core": 180.3142487324438,
+    "cpu_percent_of_machine": 11.269640545777737
+   }
+  },
+  {
+   "label": "kitten-nano",
+   "engine": "kitten",
+   "voice": "expr-voice-2-f",
+   "threads": 4,
+   "contention": "idle",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 1.4694956000003003,
+    "baseline_mb": 24.61328125,
+    "peak_rss_mb": 300.9453125,
+    "model_rss_mb": 276.33203125,
+    "first_audio_seconds": 0.34584560000075726,
+    "question_first_audio_seconds": 1.4477292999999918,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.34584560000075726,
+      "audio_seconds": 1.3,
+      "rtf": 0.2660350769236594
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.7298549999995885,
+      "audio_seconds": 2.725,
+      "rtf": 0.2678366972475554
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.855214100000012,
+      "audio_seconds": 3.3,
+      "rtf": 0.2591557878787915
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.8759236999994755,
+      "audio_seconds": 3.2765416666666667,
+      "rtf": 0.26733177511842277
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 1.3965337999998155,
+      "audio_seconds": 5.1723333333333334,
+      "rtf": 0.2700007346780593
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.9625758999991376,
+      "audio_seconds": 3.5265,
+      "rtf": 0.2729550262297285
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.152730400001019,
+      "audio_seconds": 4.35,
+      "rtf": 0.26499549425310787
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.0253147000003082,
+      "audio_seconds": 3.7121666666666666,
+      "rtf": 0.27620384321832936
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 2.934694399998989,
+      "audio_seconds": 10.499916666666667,
+      "rtf": 0.279496922991356
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 3.1870141999988846,
+      "audio_seconds": 11.408333333333333,
+      "rtf": 0.2793584397369366
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 2.843429399999877,
+      "audio_seconds": 10.362916666666667,
+      "rtf": 0.2743850492541396
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.7615568000001076,
+      "audio_seconds": 2.95,
+      "rtf": 0.2581548474576636
+     }
+    ],
+    "total_synthesis_seconds": 17.070687999997972,
+    "total_audio_seconds": 62.583708333333334,
+    "cpu_percent_of_one_core": 335.36805967958134,
+    "cpu_percent_of_machine": 20.960503729973833
+   }
+  },
+  {
+   "label": "kokoro-fp32",
+   "engine": "kokoro",
+   "voice": "af_heart",
+   "threads": 2,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 4.58925310000086,
+    "baseline_mb": 24.61328125,
+    "peak_rss_mb": 711.3046875,
+    "model_rss_mb": 686.69140625,
+    "first_audio_seconds": 1.2718342000007397,
+    "question_first_audio_seconds": 2.1173181000012846,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 1.2718342000007397,
+      "audio_seconds": 0.5769166666666666,
+      "rtf": 2.2045371081913734
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 1.7457435000014812,
+      "audio_seconds": 1.2917916666666667,
+      "rtf": 1.3514125729779554
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 1.9275648000002548,
+      "audio_seconds": 1.5049583333333334,
+      "rtf": 1.2808094133283345
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 2.4963439000002836,
+      "audio_seconds": 1.4765833333333334,
+      "rtf": 1.690621750663322
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 2.4823524999992514,
+      "audio_seconds": 2.3321666666666667,
+      "rtf": 1.0643975559204966
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 2.148246700000527,
+      "audio_seconds": 1.9380833333333334,
+      "rtf": 1.1084387668231641
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 5.530406100000619,
+      "audio_seconds": 2.062375,
+      "rtf": 2.68157153766925
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.8083447999997588,
+      "audio_seconds": 2.0105416666666667,
+      "rtf": 0.8994316457006655
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 5.168666200001098,
+      "audio_seconds": 6.2047083333333335,
+      "rtf": 0.8330232337003912
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 5.311013200000161,
+      "audio_seconds": 6.505083333333333,
+      "rtf": 0.8164404555412041
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 4.72142200000053,
+      "audio_seconds": 5.618541666666666,
+      "rtf": 0.8403287329898232
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 1.3519802999999229,
+      "audio_seconds": 1.29925,
+      "rtf": 1.0405851837598021
+     }
+    ],
+    "total_synthesis_seconds": 35.96391820000463,
+    "total_audio_seconds": 32.821,
+    "cpu_percent_of_one_core": 188.0334500288146,
+    "cpu_percent_of_machine": 11.752090626800912
+   }
+  },
+  {
+   "label": "kokoro-fp32",
+   "engine": "kokoro",
+   "voice": "af_heart",
+   "threads": 4,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 3.8659099000014976,
+    "baseline_mb": 24.60546875,
+    "peak_rss_mb": 711.859375,
+    "model_rss_mb": 687.25390625,
+    "first_audio_seconds": 0.6763109000003169,
+    "question_first_audio_seconds": 1.56184679999933,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.6763109000003169,
+      "audio_seconds": 0.5914166666666667,
+      "rtf": 1.1435438636048756
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 1.0328108000012435,
+      "audio_seconds": 1.2919583333333333,
+      "rtf": 0.7994149450133791
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 1.1460846999998466,
+      "audio_seconds": 1.5049583333333334,
+      "rtf": 0.7615391566764395
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 1.1301031000002695,
+      "audio_seconds": 1.4765833333333334,
+      "rtf": 0.7653500310403089
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 1.5775768999992579,
+      "audio_seconds": 2.3322083333333334,
+      "rtf": 0.6764305218584351
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 1.3849546000001283,
+      "audio_seconds": 1.939625,
+      "rtf": 0.7140321453889944
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.4314350000004197,
+      "audio_seconds": 2.062375,
+      "rtf": 0.6940711558278294
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.4359266000010393,
+      "audio_seconds": 2.0094166666666666,
+      "rtf": 0.71459873097551
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 3.993761199999426,
+      "audio_seconds": 6.200541666666667,
+      "rtf": 0.6440987601888694
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 4.140987299999324,
+      "audio_seconds": 6.504208333333334,
+      "rtf": 0.6366627708982247
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 3.639755599999262,
+      "audio_seconds": 5.619458333333333,
+      "rtf": 0.6477057723533725
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 1.0153030000001309,
+      "audio_seconds": 1.2991666666666666,
+      "rtf": 0.781503271327875
+     }
+    ],
+    "total_synthesis_seconds": 22.605009700000664,
+    "total_audio_seconds": 32.831916666666665,
+    "cpu_percent_of_one_core": 389.4280857970674,
+    "cpu_percent_of_machine": 24.339255362316713
+   }
+  },
+  {
+   "label": "kokoro-int8",
+   "engine": "kokoro-int8",
+   "voice": "af_heart",
+   "threads": 2,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 4.025382700001501,
+    "baseline_mb": 24.5859375,
+    "peak_rss_mb": 530.984375,
+    "model_rss_mb": 506.3984375,
+    "first_audio_seconds": 2.1412364000007074,
+    "question_first_audio_seconds": 4.855713400000241,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 2.1412364000007074,
+      "audio_seconds": 0.5775416666666666,
+      "rtf": 3.7075011615335822
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 3.1418217999998888,
+      "audio_seconds": 1.2756666666666667,
+      "rtf": 2.4628861771621806
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 3.3695566000005783,
+      "audio_seconds": 1.45975,
+      "rtf": 2.3083107381404884
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 3.4100218000003224,
+      "audio_seconds": 1.4514166666666666,
+      "rtf": 2.349443738876033
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 4.836853800001336,
+      "audio_seconds": 2.35225,
+      "rtf": 2.056266893400504
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 4.133543299998564,
+      "audio_seconds": 1.9389166666666666,
+      "rtf": 2.131882907120934
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 4.284271399999852,
+      "audio_seconds": 2.0632083333333333,
+      "rtf": 2.076509352343568
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 4.139325799998915,
+      "audio_seconds": 2.001333333333333,
+      "rtf": 2.068284043970144
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 11.32230840000011,
+      "audio_seconds": 6.013833333333333,
+      "rtf": 1.88271070587259
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 12.096021100000144,
+      "audio_seconds": 6.487375,
+      "rtf": 1.8645478487061629
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 10.980100400000083,
+      "audio_seconds": 5.636416666666666,
+      "rtf": 1.9480640004731287
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 3.159381499999654,
+      "audio_seconds": 1.2990833333333334,
+      "rtf": 2.4320083392132816
+     }
+    ],
+    "total_synthesis_seconds": 67.01444230000016,
+    "total_audio_seconds": 32.55679166666667,
+    "cpu_percent_of_one_core": 170.90495051891247,
+    "cpu_percent_of_machine": 10.68155940743203
+   }
+  },
+  {
+   "label": "kokoro-int8",
+   "engine": "kokoro-int8",
+   "voice": "af_heart",
+   "threads": 4,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 4.112056800000573,
+    "baseline_mb": 24.390625,
+    "peak_rss_mb": 531.37109375,
+    "model_rss_mb": 506.98046875,
+    "first_audio_seconds": 1.8876927999990585,
+    "question_first_audio_seconds": 4.427652100001069,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 1.8876927999990585,
+      "audio_seconds": 0.5756666666666667,
+      "rtf": 3.2791420961188047
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 2.8381771000003937,
+      "audio_seconds": 1.2816666666666667,
+      "rtf": 2.2144424707415293
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 3.098496399999931,
+      "audio_seconds": 1.4596666666666667,
+      "rtf": 2.122742452614705
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 3.0597467000006873,
+      "audio_seconds": 1.4514166666666666,
+      "rtf": 2.108110489751866
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 4.35468580000088,
+      "audio_seconds": 2.352125,
+      "rtf": 1.8513836637087229
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 3.774342799999431,
+      "audio_seconds": 1.937,
+      "rtf": 1.948550748579985
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 3.947028099999443,
+      "audio_seconds": 2.063458333333333,
+      "rtf": 1.9128218080485155
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 3.836038699999335,
+      "audio_seconds": 2.0024166666666665,
+      "rtf": 1.9157045403467488
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 10.251370300000417,
+      "audio_seconds": 6.017,
+      "rtf": 1.7037344690045566
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 10.735667299999477,
+      "audio_seconds": 6.486833333333333,
+      "rtf": 1.65499354590059
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 9.800180500000351,
+      "audio_seconds": 5.6365,
+      "rtf": 1.7386996362991842
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 2.8240529999984574,
+      "audio_seconds": 1.3079583333333333,
+      "rtf": 2.1591307062522054
+     }
+    ],
+    "total_synthesis_seconds": 60.40747949999786,
+    "total_audio_seconds": 32.57170833333333,
+    "cpu_percent_of_one_core": 309.4855286969152,
+    "cpu_percent_of_machine": 19.3428455435572
+   }
+  },
+  {
+   "label": "piper-lessac",
+   "engine": "piper",
+   "voice": "lessac",
+   "threads": 2,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 2.0683294999998907,
+    "baseline_mb": 24.5390625,
+    "peak_rss_mb": 305.046875,
+    "model_rss_mb": 280.5078125,
+    "first_audio_seconds": 0.054347299999790266,
+    "question_first_audio_seconds": 0.2552866999994876,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.054347299999790266,
+      "audio_seconds": 0.37605442176870746,
+      "rtf": 0.14451977387787934
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.16769360000034794,
+      "audio_seconds": 1.486077097505669,
+      "rtf": 0.11284313598656226
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.16087420000076236,
+      "audio_seconds": 1.555736961451247,
+      "rtf": 0.10340706943845646
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.18283919999885256,
+      "audio_seconds": 1.8575963718820863,
+      "rtf": 0.0984278408196948
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.30280260000108683,
+      "audio_seconds": 2.8792743764172335,
+      "rtf": 0.10516628859034723
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.18793410000034783,
+      "audio_seconds": 1.8459863945578232,
+      "rtf": 0.10180687168356106
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.21288219999951252,
+      "audio_seconds": 2.182675736961451,
+      "rtf": 0.09753267349545486
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.22728649999953632,
+      "audio_seconds": 2.1942857142857144,
+      "rtf": 0.10358108723937201
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.5749799000004714,
+      "audio_seconds": 5.374195011337869,
+      "rtf": 0.10698902789858646
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.6525171999983286,
+      "audio_seconds": 6.271609977324263,
+      "rtf": 0.10404301325458384
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.5588437000005797,
+      "audio_seconds": 5.36140589569161,
+      "rtf": 0.10423454423580628
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.14294179999888001,
+      "audio_seconds": 1.3815873015873017,
+      "rtf": 0.10346201056904228
+     }
+    ],
+    "total_synthesis_seconds": 3.4259422999984963,
+    "total_audio_seconds": 32.76648526077098,
+    "cpu_percent_of_one_core": 195.1922834441051,
+    "cpu_percent_of_machine": 12.199517715256569
+   }
+  },
+  {
+   "label": "piper-lessac",
+   "engine": "piper",
+   "voice": "lessac",
+   "threads": 4,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 2.0260806000005687,
+    "baseline_mb": 24.4921875,
+    "peak_rss_mb": 304.39453125,
+    "model_rss_mb": 279.90234375,
+    "first_audio_seconds": 0.052092699999775505,
+    "question_first_audio_seconds": 0.2006215000001248,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.052092699999775505,
+      "audio_seconds": 0.5340589569160997,
+      "rtf": 0.09754110351520465
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.11331389999941166,
+      "audio_seconds": 1.3583673469387756,
+      "rtf": 0.0834191871990861
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.13311790000079782,
+      "audio_seconds": 1.6370068027210884,
+      "rtf": 0.08131786610753523
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.13402789999963716,
+      "audio_seconds": 1.6370068027210884,
+      "rtf": 0.08187375872650707
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.22842909999963013,
+      "audio_seconds": 2.8792743764172335,
+      "rtf": 0.0793356485476286
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.14974829999846406,
+      "audio_seconds": 1.787936507936508,
+      "rtf": 0.0837548197789705
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.16895439999825612,
+      "audio_seconds": 2.2058956916099772,
+      "rtf": 0.07659219818999892
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.17290039999898,
+      "audio_seconds": 2.159455782312925,
+      "rtf": 0.08006665448541475
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.4753945000011299,
+      "audio_seconds": 5.515192743764172,
+      "rtf": 0.08619725947722158
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.5164841999994678,
+      "audio_seconds": 6.145895691609978,
+      "rtf": 0.08403725444031572
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.4099242000011145,
+      "audio_seconds": 5.19015873015873,
+      "rtf": 0.07898105266398622
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.11211830000138434,
+      "audio_seconds": 1.3815873015873017,
+      "rtf": 0.08115180262048728
+     }
+    ],
+    "total_synthesis_seconds": 2.666505799998049,
+    "total_audio_seconds": 32.431836734693874,
+    "cpu_percent_of_one_core": 390.2170298528827,
+    "cpu_percent_of_machine": 24.38856436580517
+   }
+  },
+  {
+   "label": "piper-ryan",
+   "engine": "piper",
+   "voice": "ryan",
+   "threads": 2,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 2.024580400000559,
+    "baseline_mb": 24.5859375,
+    "peak_rss_mb": 295.07421875,
+    "model_rss_mb": 270.48828125,
+    "first_audio_seconds": 0.04890309999973397,
+    "question_first_audio_seconds": 0.2179883000007976,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.04890309999973397,
+      "audio_seconds": 0.4295691609977324,
+      "rtf": 0.11384220386340098
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.13073389999954088,
+      "audio_seconds": 1.18421768707483,
+      "rtf": 0.11039684800053141
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.11379820000001928,
+      "audio_seconds": 1.242267573696145,
+      "rtf": 0.091605224518123
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.127096199999869,
+      "audio_seconds": 1.1377777777777778,
+      "rtf": 0.11170564453113485
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.21658989999923506,
+      "audio_seconds": 2.020136054421769,
+      "rtf": 0.10721550141395324
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.17487849999997707,
+      "audio_seconds": 1.7647165532879818,
+      "rtf": 0.09909721743933733
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.20864219999930356,
+      "audio_seconds": 1.9040362811791383,
+      "rtf": 0.10957889934224094
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.18402700000115146,
+      "audio_seconds": 1.9040362811791383,
+      "rtf": 0.09665099442705292
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.5643025999997917,
+      "audio_seconds": 5.7817687074829935,
+      "rtf": 0.09760034144386458
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.608791900000142,
+      "audio_seconds": 5.979138321995465,
+      "rtf": 0.10181933703734172
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.5350482999983797,
+      "audio_seconds": 5.328979591836735,
+      "rtf": 0.10040351830545574
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.13700910000079602,
+      "audio_seconds": 1.2887074829931973,
+      "rtf": 0.10631512721767851
+     }
+    ],
+    "total_synthesis_seconds": 3.0498208999979397,
+    "total_audio_seconds": 29.9653514739229,
+    "cpu_percent_of_one_core": 198.77132599113648,
+    "cpu_percent_of_machine": 12.42320787444603
+   }
+  },
+  {
+   "label": "piper-ryan",
+   "engine": "piper",
+   "voice": "ryan",
+   "threads": 4,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 22050,
+    "load_seconds": 1.984504600000946,
+    "baseline_mb": 24.45703125,
+    "peak_rss_mb": 300.359375,
+    "model_rss_mb": 275.90234375,
+    "first_audio_seconds": 0.04247679999934917,
+    "question_first_audio_seconds": 0.17551149999962945,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.04247679999934917,
+      "audio_seconds": 0.3947392290249433,
+      "rtf": 0.10760724264541006
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 0.10274480000043695,
+      "audio_seconds": 1.1609977324263039,
+      "rtf": 0.08849698593787636
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 0.11008609999953478,
+      "audio_seconds": 1.3467573696145125,
+      "rtf": 0.0817415983630705
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 0.10158330000012938,
+      "audio_seconds": 1.1261678004535147,
+      "rtf": 0.09020263228909685
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 0.1933547999997245,
+      "audio_seconds": 2.078185941043084,
+      "rtf": 0.09304018287347078
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 0.13836489999994228,
+      "audio_seconds": 1.6602267573696146,
+      "rtf": 0.08334096495298096
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 0.16484510000009323,
+      "audio_seconds": 1.9853061224489796,
+      "rtf": 0.08303258532077064
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 0.15998690000014903,
+      "audio_seconds": 1.7589115646258504,
+      "rtf": 0.09095789874699067
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 0.4789154999998573,
+      "audio_seconds": 5.944308390022676,
+      "rtf": 0.08056706829068644
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 0.4855174000003899,
+      "audio_seconds": 6.292607709750567,
+      "rtf": 0.07715678815446694
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 0.4086275999998179,
+      "audio_seconds": 4.985306122448979,
+      "rtf": 0.08196640085144538
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 0.10636879999947269,
+      "audio_seconds": 1.195827664399093,
+      "rtf": 0.08894994083693768
+     }
+    ],
+    "total_synthesis_seconds": 2.492871999998897,
+    "total_audio_seconds": 29.92934240362812,
+    "cpu_percent_of_one_core": 374.7875167869233,
+    "cpu_percent_of_machine": 23.424219799182705
+   }
+  },
+  {
+   "label": "kitten-nano",
+   "engine": "kitten",
+   "voice": "expr-voice-2-f",
+   "threads": 2,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.724096300000383,
+    "baseline_mb": 24.5546875,
+    "peak_rss_mb": 300.953125,
+    "model_rss_mb": 276.3984375,
+    "first_audio_seconds": 0.5320052999995823,
+    "question_first_audio_seconds": 2.1953591000001325,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.5320052999995823,
+      "audio_seconds": 1.3,
+      "rtf": 0.40923484615352484
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 1.1548166000011406,
+      "audio_seconds": 2.725,
+      "rtf": 0.4237859082572993
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 1.347024100001363,
+      "audio_seconds": 3.3,
+      "rtf": 0.40818912121253426
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 1.4181115999999747,
+      "audio_seconds": 3.2834583333333334,
+      "rtf": 0.43189571970609486
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 2.1636908000000403,
+      "audio_seconds": 5.163,
+      "rtf": 0.41907627348441606
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 1.508267799999885,
+      "audio_seconds": 3.5265833333333334,
+      "rtf": 0.4276852855690971
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.786380999999892,
+      "audio_seconds": 4.35,
+      "rtf": 0.41066229885054994
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.6244704000000638,
+      "audio_seconds": 3.712125,
+      "rtf": 0.43761198774288684
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 4.357733000000735,
+      "audio_seconds": 10.499916666666667,
+      "rtf": 0.4150254843293107
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 4.76109919999908,
+      "audio_seconds": 11.408333333333333,
+      "rtf": 0.41733521110291427
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 4.274779299999864,
+      "audio_seconds": 10.362875,
+      "rtf": 0.41250900932413676
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 1.2353705000004993,
+      "audio_seconds": 2.95,
+      "rtf": 0.4187696610171184
+     }
+    ],
+    "total_synthesis_seconds": 26.16374960000212,
+    "total_audio_seconds": 62.581291666666665,
+    "cpu_percent_of_one_core": 180.05450988506226,
+    "cpu_percent_of_machine": 11.253406867816391
+   }
+  },
+  {
+   "label": "kitten-nano",
+   "engine": "kitten",
+   "voice": "expr-voice-2-f",
+   "threads": 4,
+   "contention": "busy",
+   "result": {
+    "sample_rate": 24000,
+    "load_seconds": 2.668702899998607,
+    "baseline_mb": 24.61328125,
+    "peak_rss_mb": 300.828125,
+    "model_rss_mb": 276.21484375,
+    "first_audio_seconds": 0.5131271000009292,
+    "question_first_audio_seconds": 2.0780297000001156,
+    "sentences": [
+     {
+      "text": "Done.",
+      "synthesis_seconds": 0.5131271000009292,
+      "audio_seconds": 1.3,
+      "rtf": 0.3947131538468686
+     },
+     {
+      "text": "Opening Notepad now.",
+      "synthesis_seconds": 1.0945531999986997,
+      "audio_seconds": 2.725,
+      "rtf": 0.40167089908209164
+     },
+     {
+      "text": "The launch attempt succeeded.",
+      "synthesis_seconds": 1.3063393000011274,
+      "audio_seconds": 3.3,
+      "rtf": 0.3958603939397356
+     },
+     {
+      "text": "I couldn't find that window.",
+      "synthesis_seconds": 1.3469285999999556,
+      "audio_seconds": 3.278,
+      "rtf": 0.4108995118974849
+     },
+     {
+      "text": "Would you like me to open Visual Studio Code?",
+      "synthesis_seconds": 2.018576499998744,
+      "audio_seconds": 5.162958333333333,
+      "rtf": 0.3909728434115604
+     },
+     {
+      "text": "Calculator is open and ready.",
+      "synthesis_seconds": 1.478551800000787,
+      "audio_seconds": 3.5265,
+      "rtf": 0.41926890684837287
+     },
+     {
+      "text": "It's twenty past three in the afternoon.",
+      "synthesis_seconds": 1.7257063000015478,
+      "audio_seconds": 4.1847916666666665,
+      "rtf": 0.41237567780193307
+     },
+     {
+      "text": "Okay, I've cancelled that request.",
+      "synthesis_seconds": 1.5057804000007309,
+      "audio_seconds": 3.7121666666666666,
+      "rtf": 0.4056338346879354
+     },
+     {
+      "text": "Formula One is the highest class of international open-wheel single-seater racing, sanctioned by the FIA.",
+      "synthesis_seconds": 4.122277499998745,
+      "audio_seconds": 10.499916666666667,
+      "rtf": 0.39260097302347585
+     },
+     {
+      "text": "I can open approved apps, describe the windows on your screen, and type exact text into an empty Notepad document.",
+      "synthesis_seconds": 4.552717700000358,
+      "audio_seconds": 11.408291666666667,
+      "rtf": 0.399070941822317
+     },
+     {
+      "text": "Your words are processed locally on this laptop, so nothing you say is sent to the cloud or saved to disk.",
+      "synthesis_seconds": 4.0122049000001425,
+      "audio_seconds": 10.362916666666667,
+      "rtf": 0.3871694648385807
+     },
+     {
+      "text": "The rest is on screen.",
+      "synthesis_seconds": 1.1671133999989252,
+      "audio_seconds": 2.95,
+      "rtf": 0.39563166101658476
+     }
+    ],
+    "total_synthesis_seconds": 24.843876700000692,
+    "total_audio_seconds": 62.41054166666667,
+    "cpu_percent_of_one_core": 339.55511100178603,
+    "cpu_percent_of_machine": 21.222194437611627
+   }
+  }
+ ],
+ "ollama_loaded": [
+  {
+   "name": "qwen3:4b-instruct-2507-q4_K_M",
+   "size": 3534917467,
+   "size_vram": 2344636907
+  }
+ ],
+ "busy_stream_chunks": 6171,
+ "busy_seconds": 313.85977209999874,
+ "busy_chunks_per_second": 19.661646851747093
+}

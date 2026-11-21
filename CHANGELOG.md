@@ -28,6 +28,15 @@ Test counts are the offline regression suite at the end of each stage.
   empty, for compatibility).
 - `setup-model --model small [--download]` installs or verifies Whisper Small, pinned to one revision with checked
   sizes and SHA-256 hashes; the default is still Base. The offline suite is now 1020 tests.
+- **Spoken replies, part B (real voices).** `aqua setup-voice --engine {kokoro,kokoro-int8,piper,kitten}` verifies
+  or (with `--download` or `--from-archive`) installs voices from the official sherpa-onnx release: Kokoro v1.0 fp32
+  and int8 (all 28 English voices, American and British), Piper `lessac` and `ryan` (medium), and Kitten nano v0.2.
+  Every archive and every kept file is pinned by size and SHA-256. sherpa-onnx 2.x no longer phonemizes text, so
+  Aqua now does it with `piper_phonemize` (new pinned dependency, GPL-3.0, listed in
+  [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)); Kokoro reads its own lexicon first. Part A's voice tables were
+  right; its directory layout and Piper handling were not, and are fixed. New `tools/benchmark_tts.py` (results in
+  [benchmarks/tts-v1](benchmarks/tts-v1/report.md)) and `tools/tts_samples.py` (listening samples). The default
+  voice is not chosen yet. The offline suite is now 1047 tests.
 - **Experimental, unfinished:** source-grounded entry objectives (`brain/entry_objective.py`). The model proposes a
   literal writing objective tied to the exact request, and the user confirms it once. Its tests pass (1014 total),
   but its final development evaluation stopped partway and the held-out set was never run. It is expected to be

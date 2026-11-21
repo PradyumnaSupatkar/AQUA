@@ -158,6 +158,7 @@ def run_handsfree(
     follow_up: float = FOLLOW_UP_SECONDS,
     keep_alive: str = HANDSFREE_KEEP_ALIVE,
     tts_threads: int | None = None,
+    llm_threads: int | None = None,
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
 
@@ -307,6 +308,7 @@ def run_handsfree(
                         session = chat._start(
                             model=model, timeout=timeout, max_turns=max_turns,
                             max_chars=max_chars, settings=generation, keep_alive=keep_alive,
+                            llm_threads=llm_threads,
                         )
                         if session is None:
                             state.clear()

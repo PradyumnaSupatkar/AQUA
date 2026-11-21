@@ -406,11 +406,16 @@ def _supports_disabled_thinking(template: object) -> bool:
 class OllamaClient:
     """Stream chat only from http://127.0.0.1:11434, with bounded responses."""
 
-    def __init__(self, *, timeout: float = 120.0, keep_alive: str = DEFAULT_KEEP_ALIVE) -> None:
+    def __init__(self, *, timeout: float = 120.0, keep_alive: str = DEFAULT_KEEP_ALIVE,
+                 num_thread: int | None = None) -> None:
         if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not isfinite(timeout) or not 0 < timeout <= 600:
             raise ValueError("Ollama timeout must be finite, positive, and at most 600 seconds.")
         self.timeout = float(timeout)
         self.keep_alive = parse_keep_alive(keep_alive)
+        if num_thread is not None and (type(num_thread) is not int or not 1 <= num_thread <= 64):
+            raise ValueError("Ollama thread count must be an integer from 1 to 64.")
+        # CPU threads for the model's CPU-resident layers; None leaves Ollama's default.
+        self.num_thread = num_thread
         self._thinking_controls: dict[str, str] = {}
         self._thinking_options: dict[str, tuple[str, ...]] = {}
         self.chat_request_count = 0
@@ -594,6 +599,8 @@ class OllamaClient:
             "options": {"temperature": settings.temperature, "num_predict": settings.num_predict, "num_ctx": settings.num_ctx},
             "keep_alive": self.keep_alive,
         }
+        if self.num_thread is not None:
+            payload["options"]["num_thread"] = self.num_thread
         for option in ("seed", "top_p", "top_k", "presence_penalty", "repeat_penalty"):
             value = getattr(settings, option)
             if value is not None:

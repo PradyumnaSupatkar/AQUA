@@ -210,6 +210,9 @@ def _respond_result(
         keep_alive = getattr(client, "keep_alive", None)
         if isinstance(keep_alive, str):
             print(f"Ollama keep-alive: {keep_alive} (model stays loaded this long after each request)")
+        num_thread = getattr(client, "num_thread", None)
+        if num_thread is None or type(num_thread) is int:
+            print(f"Ollama CPU threads: {num_thread if num_thread is not None else 'Ollama default'}")
         overrides = [f"{name}={getattr(settings, name):g}" for name in ("top_p", "top_k", "presence_penalty", "repeat_penalty") if getattr(settings, name) is not None]
         if overrides:
             print("Sampling overrides: " + "; ".join(overrides))
@@ -238,11 +241,14 @@ def _close_speaker(speaker) -> None:
 def _start(
     *, model: str, timeout: float, max_turns: int, max_chars: int,
     settings: GenerationSettings | None, keep_alive: str = DEFAULT_KEEP_ALIVE,
+    llm_threads: int | None = None,
 ) -> tuple[OllamaClient, Conversation, GenerationSettings] | None:
     try:
         generation = settings if settings is not None else GenerationSettings()
         conversation = Conversation(max_turns=max_turns, max_chars=max_chars)
-        client = OllamaClient(timeout=timeout, keep_alive=keep_alive)
+        # num_thread is sent only when chosen, so Ollama keeps its own default otherwise.
+        extra = {} if llm_threads is None else {"num_thread": llm_threads}
+        client = OllamaClient(timeout=timeout, keep_alive=keep_alive, **extra)
         info = client.check_model(model)
         client.validate_thinking(model, generation.thinking)
     except (OllamaError, ValueError) as exc:
@@ -272,13 +278,14 @@ def run_text_chat(
     speech_rate: float = 1.0,
     keep_alive: str = DEFAULT_KEEP_ALIVE,
     tts_threads: int | None = None,
+    llm_threads: int | None = None,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
-            max_chars=max_chars, settings=settings, keep_alive=keep_alive,
+            max_chars=max_chars, settings=settings, keep_alive=keep_alive, llm_threads=llm_threads,
         )
         if session is None:
             return 1
@@ -398,13 +405,14 @@ def run_voice_chat(
     speech_rate: float = 1.0,
     keep_alive: str = DEFAULT_KEEP_ALIVE,
     tts_threads: int | None = None,
+    llm_threads: int | None = None,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
     try:
         session = _start(
             model=model, timeout=timeout, max_turns=max_turns,
-            max_chars=max_chars, settings=settings, keep_alive=keep_alive,
+            max_chars=max_chars, settings=settings, keep_alive=keep_alive, llm_threads=llm_threads,
         )
         if session is None:
             return 1

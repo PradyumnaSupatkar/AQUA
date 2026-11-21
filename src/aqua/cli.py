@@ -138,8 +138,29 @@ def _chat_options(parser: argparse.ArgumentParser, *, keep_alive: str = DEFAULT_
     parser.add_argument("--history-chars", type=_positive_integer, default=12000, help="conversation character budget including system prompt; default: 12000")
     parser.add_argument("--timeout", type=_timeout_seconds, default=120.0, help="local request timeout in seconds; default: 120")
     parser.add_argument("--diagnostics", action="store_true", help="show response and voice-stage latency measurements")
+    parser.add_argument("--llm-threads", type=_llm_threads, default="auto", metavar="N|auto",
+                        help=f"CPU threads Ollama may use; auto: {SPEAKING_LLM_THREADS} while speech output is on, "
+                             "otherwise Ollama's default")
     parser.add_argument("--keep-alive", type=_keep_alive, default=keep_alive, metavar="DURATION",
                         help=f"how long Ollama keeps the model loaded after each request, e.g. 5m, 30m, 1h, or 0; default: {keep_alive}")
+
+
+# From benchmarks/speech-pipeline-v1: while Aqua speaks, limiting Ollama to 4 CPU
+# threads leaves Kokoro room and starts speech ~0.3 s sooner (Qwen ~9% slower).
+# Text-only sessions keep Ollama's own default.
+SPEAKING_LLM_THREADS = 4
+
+
+def _llm_threads(value: str) -> int | str:
+    if value == "auto":
+        return value
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be auto or an integer from 1 to 64") from exc
+    if not 1 <= number <= 64:
+        raise argparse.ArgumentTypeError("must be auto or an integer from 1 to 64")
+    return number
 
 
 def _tts_threads(value: str) -> int:
@@ -388,6 +409,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "speak": args.speak, "tts_engine": args.tts_engine, "voice": args.voice,
                 "voice_model_dir": args.voice_model_dir, "speech_rate": args.speech_rate,
                 "tts_threads": args.tts_threads,
+                "llm_threads": (args.llm_threads if args.llm_threads != "auto"
+                                else SPEAKING_LLM_THREADS if args.speak and args.tts_engine != "none" else None),
                 "keep_alive": args.keep_alive,
             }
             if args.allow_text_entry:

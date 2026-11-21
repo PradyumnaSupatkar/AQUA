@@ -203,7 +203,7 @@ class SessionTests(_SessionHarness):
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
         self.factory.assert_called_once_with(timeout=120.0, keep_alive="5m")
-        self.assertIn("uses hidden thinking", output)
+        self.assertIn("may think before answering", output)
         self.assertIn("first visible reply may take longer", output)
         self.client.check_model.assert_called_once_with("qwen3:4b")
 

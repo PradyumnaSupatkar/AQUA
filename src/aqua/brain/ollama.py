@@ -32,6 +32,9 @@ MAX_TOOL_DEFINITION_BYTES = 16384
 # Names and tags alone are not trusted; changed manifests use normal detection.
 VERIFIED_NON_THINKING_DIGESTS = frozenset({
     "0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+    # qwen3:4b-instruct-2507-q4_K_M as re-pulled in Nov 2026 (newer Ollama lists a "thinking"
+    # capability because the template re-renders past reasoning); probes returned no thinking.
+    "6214d088d3846e16c9fe00adcbabdbfddc61ce4a70daacc46cb2310c38603054",
 })
 
 # The installed models below use Ollama's built-in renderer (their public

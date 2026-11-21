@@ -155,6 +155,15 @@ class ThinkingTests(unittest.TestCase):
         self.assertNotIn("think", json.loads(connections[-1].request.call_args.kwargs["body"]))
         self.assertEqual(client.chat_request_count, 1)
 
+    def test_both_installed_instruct_manifests_are_verified_non_thinking(self):
+        for digest in ("0edcdef34593eac1aa2be9c7d06c432dcf81945adca5eca2f27662c18f168ba0",
+                       "6214d088d3846e16c9fe00adcbabdbfddc61ce4a70daacc46cb2310c38603054"):
+            with self.subTest(digest=digest):
+                self.responses(Response(encoded({"version": "0.40.16"})), Response(encoded({"models": [
+                    {"name": "qwen3:4b-instruct-2507-q4_K_M", "digest": digest, "capabilities": ["thinking", "tools"]}]})))
+                info = OllamaClient().check_model("qwen3:4b-instruct-2507-q4_K_M")
+                self.assertEqual((info.thinking_control, info.thinking_options), ("non_thinking", ("auto", "off")))
+
     def test_explicit_mode_without_preflight_inspects_metadata_before_generation(self):
         name, family, digest = NATIVE[0]
         connections = self.responses(

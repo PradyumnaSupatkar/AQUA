@@ -241,7 +241,9 @@ def _start(
         return None
     print(f"Local Ollama {info.version}; model {info.name}. Conversation stays in memory.")
     if getattr(info, "thinking_control", "") == "hidden":
-        print("This local model uses hidden thinking; the first visible reply may take longer.")
+        # "hidden" means Aqua could not verify these exact weights as non-thinking.
+        print("This local model may think before answering (not verified as non-thinking); "
+              "the first visible reply may take longer.")
     return client, conversation, generation
 
 

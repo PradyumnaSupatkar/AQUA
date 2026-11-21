@@ -35,7 +35,7 @@ class SpeechOutputTests(unittest.TestCase):
         self.assertEqual(timings.sentences_spoken, 5)
         self.assertIsNotNone(timings.first_audio_seconds)
         self.assertGreater(timings.audio_seconds, 0)
-        self.assertIn("sentences spoken 5", timings.describe())
+        self.assertIn("chunks spoken 5", timings.describe())
         self.assertFalse(speaker.is_speaking)
         self.assertEqual(self.warnings, [])
 

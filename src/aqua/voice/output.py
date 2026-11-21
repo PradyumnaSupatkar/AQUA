@@ -24,7 +24,10 @@ class SpeechTimings:
     first_audio_seconds: float | None
     synthesis_seconds: float
     audio_seconds: float
-    sentences_spoken: int
+    sentences_spoken: int  # chunks played (a long sentence is several chunks)
+    longest_gap_seconds: float = 0.0
+    total_gap_seconds: float = 0.0
+    llm_tokens_per_second: float | None = None
 
     @property
     def real_time_factor(self) -> float | None:
@@ -33,21 +36,38 @@ class SpeechTimings:
     def describe(self) -> str:
         first = f"{self.first_audio_seconds:.3f}s" if self.first_audio_seconds is not None else "n/a"
         rtf = f"{self.real_time_factor:.3f}" if self.real_time_factor is not None else "n/a"
+        rate = f"{self.llm_tokens_per_second:.1f} tok/s" if self.llm_tokens_per_second is not None else "n/a"
         return (f"Speech output: first audio {first} after reply start; synthesis {self.synthesis_seconds:.3f}s "
-                f"for {self.audio_seconds:.3f}s audio (RTF {rtf}); sentences spoken {self.sentences_spoken}")
+                f"for {self.audio_seconds:.3f}s audio (RTF {rtf}); chunks spoken {self.sentences_spoken}; "
+                f"longest mid-reply gap {self.longest_gap_seconds:.3f}s (total {self.total_gap_seconds:.3f}s); "
+                f"model generation {rate}")
 
 
 class _Turn:
-    __slots__ = ("started", "first_audio", "synthesis", "audio", "sentences")
+    __slots__ = ("started", "first_audio", "synthesis", "audio", "sentences", "audio_end",
+                 "longest_gap", "total_gap", "llm_rate")
 
     def __init__(self, started: float):
         self.started = started
         self.first_audio = None
         self.synthesis = self.audio = 0.0
         self.sentences = 0
+        self.audio_end = None  # clock time at which the audio handed to the player runs out
+        self.longest_gap = self.total_gap = 0.0
+        self.llm_rate = None
+
+    def schedule(self, now: float, duration: float) -> None:
+        """Model the device timeline: a gap is time it sat idle waiting for the next chunk."""
+        if self.audio_end is not None and now > self.audio_end:
+            gap = now - self.audio_end
+            self.total_gap += gap
+            self.longest_gap = max(self.longest_gap, gap)
+        start = now if self.audio_end is None else max(now, self.audio_end)
+        self.audio_end = start + duration
 
     def snapshot(self) -> SpeechTimings:
-        return SpeechTimings(self.first_audio, self.synthesis, self.audio, self.sentences)
+        return SpeechTimings(self.first_audio, self.synthesis, self.audio, self.sentences,
+                             self.longest_gap, self.total_gap, self.llm_rate)
 
 
 def _default_warn(message: str) -> None:
@@ -97,6 +117,12 @@ class SpeechOutput:
     def timings(self) -> SpeechTimings | None:
         turn = self._turn or self._last_turn
         return turn.snapshot() if turn is not None else None
+
+    def note_generation_rate(self, tokens_per_second: float | None) -> None:
+        """Record the language model's generation speed for this turn's diagnostics."""
+        turn = self._turn or self._last_turn
+        if turn is not None and isinstance(tokens_per_second, (int, float)) and tokens_per_second > 0:
+            turn.llm_rate = float(tokens_per_second)
 
     def feed(self, chunk: str) -> None:
         if not self.enabled:
@@ -269,8 +295,11 @@ class SpeechOutput:
             if self._stale(generation):
                 self._done()
                 continue
-            if turn is not None and turn.first_audio is None:
-                turn.first_audio = self._clock() - turn.started
+            if turn is not None:
+                now = self._clock()
+                if turn.first_audio is None:
+                    turn.first_audio = now - turn.started
+                turn.schedule(now, len(samples) / sample_rate)
             try:
                 self.player.play(samples, sample_rate, cancelled=lambda: self._stale(generation))
                 if turn is not None and not self._stale(generation):

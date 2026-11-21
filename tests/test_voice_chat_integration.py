@@ -75,7 +75,7 @@ class RespondSpeakerTests(Offline):
         speaker = self.fake_speaker()
         _ok, text = self.respond(speaker, ("Short answer.",), diagnostics=True)
         self.assertIn("Speech output: first audio", text)
-        self.assertIn("sentences spoken 1", text)
+        self.assertIn("chunks spoken 1", text)
 
 
 class SessionSpeakerTests(Offline):

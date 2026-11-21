@@ -77,6 +77,12 @@ def _seconds(value: float | None) -> str:
     return f"{value:.3f}s" if value is not None else "n/a"
 
 
+def _generation_rate(event: ChatEvent) -> float | None:
+    """Ollama's own token rate for the final generation (includes any hidden thinking)."""
+    tokens, seconds = _counter(event.eval_count), _duration(event.eval_duration)
+    return tokens / seconds if tokens and seconds else None
+
+
 def _report_server_metrics(event: ChatEvent) -> None:
     """Separate server work from observed streaming phases without reasoning text."""
     load = _duration(event.load_duration)
@@ -176,10 +182,13 @@ def _respond_result(
 
     print("Aqua: ", end="", flush=True)
     controller = ConversationController(client, conversation, model=model, settings=settings, clock=perf_counter)
+    result = None
     try:
         result = controller.respond(user_text, on_text=on_text)
     finally:
         if speaker is not None:
+            if result is not None and result.completion is not None:
+                speaker.note_generation_rate(_generation_rate(result.completion))
             speaker.finish_turn()
     print()
     if result.error:

@@ -135,3 +135,4 @@ docs/        stage reports           benchmarks/   frozen datasets and results
 ## License
 
 [Apache-2.0](LICENSE). Models are downloaded separately and keep their own licences.
+Third-party components and voice licences are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

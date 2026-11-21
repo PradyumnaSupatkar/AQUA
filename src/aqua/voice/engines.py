@@ -2,7 +2,9 @@
 
 Nothing here downloads anything. Each engine validates its local model
 directory before importing sherpa-onnx, so a missing voice fails fast with a
-clear message and no native code is loaded.
+clear message and no native code is loaded. sherpa-onnx 2.x ignores the voices'
+espeak-ng-data, so text is phonemized by aqua.voice.phonemes (piper_phonemize)
+and passed to generate() as phoneme codepoints.
 """
 
 from math import isfinite
@@ -12,34 +14,56 @@ from typing import Protocol, runtime_checkable
 
 SETUP_COMMAND = "aqua setup-voice --download"
 VOICE_ROOT = Path(r"D:\Aqua\models")
+# Directories that `aqua setup-voice` installs into (one per Piper voice).
 ENGINE_DIRS = {
     "kokoro": VOICE_ROOT / "tts-kokoro",
-    "piper": VOICE_ROOT / "tts-piper",
+    "kokoro-int8": VOICE_ROOT / "tts-kokoro-int8",
+    "piper": VOICE_ROOT / "tts-piper",   # prefix only; each Piper voice is tts-piper-<voice>
     "kitten": VOICE_ROOT / "tts-kitten",
 }
-ENGINE_NAMES = ("kokoro", "piper", "kitten", "none")
+ENGINE_NAMES = ("kokoro", "kokoro-int8", "piper", "kitten", "none")
 DEFAULT_ENGINE = "kokoro"
 
-# Speaker ids as published for the sherpa-onnx Kokoro v1.0 and Kitten nano
-# v0.1 voice packs. Numeric ids are always accepted as well. Part B confirms
-# these against the files actually installed.
-KOKORO_VOICES = {
-    name: index for index, name in enumerate((
-        "af_alloy", "af_aoede", "af_bella", "af_heart", "af_jessica", "af_kore",
-        "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky",
-        "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael",
-        "am_onyx", "am_puck", "am_santa",
-        "bf_alice", "bf_emma", "bf_isabella", "bf_lily",
-        "bm_daniel", "bm_fable", "bm_george", "bm_lewis",
-    ))
+# English speakers of sherpa-onnx kokoro-multi-lang-v1_0, as listed in the
+# sherpa-onnx docs (ids 0-19 American, 20-27 British; 28-53 are other languages).
+KOKORO_ENGLISH_VOICES = {
+    "af_alloy": ("female", "American"), "af_aoede": ("female", "American"), "af_bella": ("female", "American"),
+    "af_heart": ("female", "American"), "af_jessica": ("female", "American"), "af_kore": ("female", "American"),
+    "af_nicole": ("female", "American"), "af_nova": ("female", "American"), "af_river": ("female", "American"),
+    "af_sarah": ("female", "American"), "af_sky": ("female", "American"),
+    "am_adam": ("male", "American"), "am_echo": ("male", "American"), "am_eric": ("male", "American"),
+    "am_fenrir": ("male", "American"), "am_liam": ("male", "American"), "am_michael": ("male", "American"),
+    "am_onyx": ("male", "American"), "am_puck": ("male", "American"), "am_santa": ("male", "American"),
+    "bf_alice": ("female", "British"), "bf_emma": ("female", "British"), "bf_isabella": ("female", "British"),
+    "bf_lily": ("female", "British"),
+    "bm_daniel": ("male", "British"), "bm_fable": ("male", "British"), "bm_george": ("male", "British"),
+    "bm_lewis": ("male", "British"),
 }
+KOKORO_VOICES = {name: index for index, name in enumerate(KOKORO_ENGLISH_VOICES)}
+# kitten-nano-en-v0_2-fp16 (sherpa-onnx docs): suffix -m male, -f female.
 KITTEN_VOICES = {
     name: index for index, name in enumerate((
         "expr-voice-2-m", "expr-voice-2-f", "expr-voice-3-m", "expr-voice-3-f",
         "expr-voice-4-m", "expr-voice-4-f", "expr-voice-5-m", "expr-voice-5-f",
     ))
 }
-DEFAULT_VOICES = {"kokoro": "af_heart", "piper": "0", "kitten": "expr-voice-2-f"}
+# Piper ships one single-speaker model per voice, each in its own directory.
+PIPER_VOICES = {"lessac": ("female", "American"), "ryan": ("male", "American")}
+# Provisional until a default is chosen by ear; Piper has none (pass --voice).
+DEFAULT_VOICES = {"kokoro": "af_heart", "kokoro-int8": "af_heart", "piper": None, "kitten": "expr-voice-2-f"}
+
+
+def engine_dir(engine: str, voice: str | None = None) -> Path:
+    if engine == "piper":
+        if voice is None or str(voice).casefold() not in PIPER_VOICES:
+            raise VoiceError(f"Choose a Piper voice with --voice: {', '.join(PIPER_VOICES)}.")
+        return VOICE_ROOT / f"tts-piper-{str(voice).casefold()}"
+    return ENGINE_DIRS[engine]
+
+
+def setup_hint(engine: str, voice: str | None = None) -> str:
+    extra = f" --voice {voice}" if engine == "piper" and voice else ""
+    return f"aqua setup-voice --engine {engine}{extra} --download"
 
 
 class VoiceError(RuntimeError):
@@ -76,10 +100,10 @@ def _speaker_id(voice, table: dict[str, int], engine: str) -> int:
     raise VoiceError(f"Unknown {engine} voice {voice!r}; use one of: {known}.")
 
 
-def _missing(engine: str, path: Path, missing) -> VoiceError:
+def _missing(engine: str, path: Path, missing, voice=None) -> VoiceError:
     return VoiceError(
         f"The {engine} voice is not installed or is incomplete at {path}; missing: "
-        f"{', '.join(missing)}. No download was attempted. Run '{SETUP_COMMAND}' to install it."
+        f"{', '.join(missing)}. No download was attempted. Run '{setup_hint(engine, voice)}' to install it."
     )
 
 
@@ -95,20 +119,19 @@ def _onnx_model(engine: str, path: Path, preferred: tuple[str, ...]) -> Path | N
     return candidates[0] if candidates else None
 
 
-def _validate(engine: str, model_dir, files: tuple[str, ...], preferred: tuple[str, ...]) -> tuple[Path, Path]:
-    path = Path(model_dir if model_dir is not None else ENGINE_DIRS[engine]).expanduser()
+def _validate(engine: str, model_dir, files: tuple[str, ...], preferred: tuple[str, ...],
+              voice=None) -> tuple[Path, Path]:
+    path = Path(model_dir if model_dir is not None else engine_dir(engine, voice)).expanduser()
     try:
         path = path.resolve()
         missing = [name for name in files if not (path / name).is_file() or (path / name).stat().st_size == 0]
-        if not (path / "espeak-ng-data").is_dir():
-            missing.append("espeak-ng-data/")
         model = _onnx_model(engine, path, preferred) if path.is_dir() else None
     except OSError as exc:
         raise VoiceError(f"Could not inspect the {engine} voice files in {path}: {exc}") from exc
     if model is None:
         missing.insert(0, " or ".join(preferred) if preferred else "*.onnx")
     if missing:
-        raise _missing(engine, path, missing)
+        raise _missing(engine, path, missing, voice)
     return path, model
 
 
@@ -134,8 +157,10 @@ class _SherpaEngine:
                  speed: float = 1.0, num_threads: int = 2):
         self.speed = _speed(speed)
         threads = _threads(num_threads)
-        self.speaker_id = _speaker_id(DEFAULT_VOICES[self.engine] if voice is None else voice, self.voices, self.engine)
-        self.model_dir, self.model_path = _validate(self.engine, model_dir, self.files, self.preferred)
+        chosen = DEFAULT_VOICES[self.engine] if voice is None else voice
+        self.voice = None if chosen is None else str(chosen)
+        self.speaker_id = self.resolve_voice(self.voice) if self.voice is not None else 0
+        self.model_dir, self.model_path = _validate(self.engine, model_dir, self.files, self.preferred, self.voice)
         _configure_runtime()
         try:
             import sherpa_onnx
@@ -150,17 +175,28 @@ class _SherpaEngine:
             if hasattr(config, "validate") and not config.validate():
                 raise VoiceError(f"The {self.engine} voice configuration in {self.model_dir} is invalid.")
             self._tts = sherpa_onnx.OfflineTts(config)
+            self._generation_config = sherpa_onnx.GenerationConfig
             self.sample_rate = int(self._tts.sample_rate)
             speakers = int(self._tts.num_speakers)
+            self.phonemizer = self._phonemizer(str(getattr(self._tts, "lang", "") or "en-us"))
         except VoiceError:
             raise
         except Exception as exc:
             raise VoiceError(f"Could not load the {self.engine} voice from {self.model_dir}: {exc}") from exc
         if speakers > 0 and self.speaker_id >= speakers:
             raise VoiceError(f"The {self.engine} voice has {speakers} speakers; id {self.speaker_id} is out of range.")
+        self.num_speakers = speakers
         self._lock = Lock()
 
     engine_field = ""
+
+    def resolve_voice(self, voice) -> int:
+        """Speaker id for a voice name or numeric id of this engine."""
+        return _speaker_id(voice, self.voices, self.engine)
+
+    def _phonemizer(self, lang: str):
+        from .phonemes import EspeakPhonemizer
+        return EspeakPhonemizer(lang)
 
     def _model_config(self, sherpa_onnx):
         raise NotImplementedError
@@ -173,8 +209,13 @@ class _SherpaEngine:
 
         if not isinstance(text, str) or not text.strip():
             return np.zeros(0, dtype=np.float32)
+        codepoints = self.phonemizer.codepoints(text)
+        if not codepoints:
+            return np.zeros(0, dtype=np.float32)
+        config = self._generation_config()
+        config.sid, config.speed, config.phoneme_codepoints = self.speaker_id, self.speed, codepoints
         with self._lock:  # One OfflineTts is not shared across concurrent calls.
-            audio = self._tts.generate(text, sid=self.speaker_id, speed=self.speed)
+            audio = self._tts.generate("", config)
         samples = np.asarray(audio.samples, dtype=np.float32).reshape(-1)
         if not np.isfinite(samples).all():
             raise VoiceError(f"The {self.engine} voice produced invalid audio.")
@@ -182,31 +223,66 @@ class _SherpaEngine:
 
 
 class KokoroEngine(_SherpaEngine):
+    """kokoro-multi-lang-v1_0, English voices only.
+
+    The lexicon and espeak-ng accent follow the voice: British voices (bf_/bm_,
+    ids 20-27) use lexicon-gb-en.txt and en-gb, the others lexicon-us-en.txt
+    and en-us. Chinese assets are not installed or used. Phonemes are computed
+    in aqua.voice.phonemes (sherpa-onnx 2.x no longer phonemizes itself).
+    """
+
     engine, engine_field = "kokoro", "kokoro"
-    files = ("voices.bin", "tokens.txt")
-    preferred = ("model.onnx", "model.int8.onnx")
+    files = ("voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt")
+    preferred = ("model.onnx",)
     voices = KOKORO_VOICES
 
+    @property
+    def british(self) -> bool:
+        voice = self.voice or ""
+        return (KOKORO_ENGLISH_VOICES.get(voice.casefold(), ("", ""))[1] == "British"
+                or (voice.isdigit() and 20 <= int(voice) <= 27))
+
+    def _phonemizer(self, lang: str):
+        from .phonemes import KokoroPhonemizer
+        lexicon = "lexicon-gb-en.txt" if self.british else "lexicon-us-en.txt"
+        return KokoroPhonemizer(self.model_dir / lexicon, self.model_dir / "tokens.txt",
+                                # This espeak-ng build calls British English "en" (no "en-gb").
+                                "en" if self.british else "en-us")
+
     def _model_config(self, sherpa_onnx):
-        lexicons = sorted(self.model_dir.glob("lexicon-*.txt"))
+        lexicon = "lexicon-gb-en.txt" if self.british else "lexicon-us-en.txt"
         return sherpa_onnx.OfflineTtsKokoroModelConfig(
             model=str(self.model_path), voices=self._path("voices.bin"), tokens=self._path("tokens.txt"),
-            lexicon=",".join(str(item) for item in lexicons), data_dir=self._path("espeak-ng-data"),
-            length_scale=1.0,
+            lexicon=self._path(lexicon), length_scale=1.0,
         )
 
 
+class KokoroInt8Engine(KokoroEngine):
+    engine = "kokoro-int8"
+    preferred = ("model.int8.onnx",)
+
+
 class PiperEngine(_SherpaEngine):
-    """Piper voices exported for sherpa-onnx's VITS runtime."""
+    """Piper voices exported for sherpa-onnx's VITS runtime.
+
+    Each voice is a separate single-speaker model in tts-piper-<voice>;
+    --voice selects the directory and the speaker id is always 0.
+    """
 
     engine, engine_field = "piper", "vits"
     files = ("tokens.txt",)
     voices: dict[str, int] = {}
 
+    def resolve_voice(self, voice) -> int:
+        text = str(voice).strip().casefold()
+        if text in PIPER_VOICES or text == "0":
+            return 0
+        raise VoiceError(f"Unknown piper voice {voice!r}; use one of: {', '.join(PIPER_VOICES)}.")
+
     def _model_config(self, sherpa_onnx):
         return sherpa_onnx.OfflineTtsVitsModelConfig(
             model=str(self.model_path), tokens=self._path("tokens.txt"),
-            data_dir=self._path("espeak-ng-data"), length_scale=1.0,
+            length_scale=1.0,
         )
 
 
@@ -219,7 +295,7 @@ class KittenEngine(_SherpaEngine):
     def _model_config(self, sherpa_onnx):
         return sherpa_onnx.OfflineTtsKittenModelConfig(
             model=str(self.model_path), voices=self._path("voices.bin"), tokens=self._path("tokens.txt"),
-            data_dir=self._path("espeak-ng-data"), length_scale=1.0,
+            length_scale=1.0,
         )
 
 
@@ -262,7 +338,8 @@ class FakeEngine:
         return np.full(max(1, len(text)) * self.samples_per_char, .1, dtype=np.float32)
 
 
-ENGINE_CLASSES = {"kokoro": KokoroEngine, "piper": PiperEngine, "kitten": KittenEngine}
+ENGINE_CLASSES = {"kokoro": KokoroEngine, "kokoro-int8": KokoroInt8Engine, "piper": PiperEngine,
+                  "kitten": KittenEngine}
 
 
 def load_engine(name: str = DEFAULT_ENGINE, *, model_dir=None, voice=None, speed: float = 1.0,

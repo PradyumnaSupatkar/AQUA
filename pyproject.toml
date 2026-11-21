@@ -16,6 +16,9 @@ dependencies = [
     "numpy==2.5.4",
     "av==19.0.2",
     "sherpa-onnx==2.0.1",
+    # sherpa-onnx 2.x needs an external phonemizer for Piper, Kitten and unknown Kokoro words.
+    # Wheel from the sherpa-onnx author (bundles espeak-ng, GPL-3.0); pinned by SHA-256.
+    "piper_phonemize @ https://github.com/csukuangfj/piper-phonemize/releases/download/v1.5.9/piper_phonemize-1.5.9-cp312-cp312-win_amd64.whl#sha256=539277e3dec9fd665be6faf67cfe3eb6cedad54fbde50a108fa13ff25869d434 ; sys_platform == 'win32' and platform_machine == 'AMD64' and python_version == '3.12'",
 ]
 
 [project.optional-dependencies]

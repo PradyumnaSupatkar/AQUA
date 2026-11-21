@@ -111,7 +111,7 @@ class SessionSpeakerTests(Offline):
                                                voice_model_dir=Path(r"D:\definitely\absent\voice"))
         self.assertEqual(status, 0)
         self.assertEqual(output.count("speech output unavailable"), 1)
-        self.assertIn("aqua setup-voice --download", output)
+        self.assertIn("aqua setup-voice --engine kokoro --download", output)
         self.assertIn("Hello there.", output)
         self.assertEqual(errors, "")
 

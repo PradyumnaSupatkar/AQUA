@@ -116,7 +116,7 @@ class SpeechOutputTests(unittest.TestCase):
         speaker = open_speaker(engine="kokoro", model_dir=r"D:\definitely\absent\voice", out=notes.append)
         self.assertIsNone(speaker)
         self.assertEqual(len(notes), 1)
-        self.assertIn("aqua setup-voice --download", notes[0])
+        self.assertIn("aqua setup-voice --engine kokoro --download", notes[0])
         self.assertIn("text only", notes[0])
 
 

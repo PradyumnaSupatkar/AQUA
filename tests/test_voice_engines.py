@@ -34,17 +34,31 @@ class FakeTts:
         self.calls = []
         FakeTts.instances.append(self)
 
-    def generate(self, text, sid=0, speed=1.0):
-        self.calls.append((text, sid, speed))
+    lang = "en-us"
+
+    def generate(self, text, config):
+        self.calls.append((text, config.sid, config.speed, config.phoneme_codepoints))
         return SimpleNamespace(samples=[0.0, .25, -.25], sample_rate=self.sample_rate)
+
+
+class GenerationConfig:
+    sid, speed, phoneme_codepoints = 0, 1.0, []
 
 
 def fake_sherpa():
     return SimpleNamespace(
         OfflineTtsKokoroModelConfig=Recorder("kokoro"), OfflineTtsVitsModelConfig=Recorder("vits"),
         OfflineTtsKittenModelConfig=Recorder("kitten"), OfflineTtsModelConfig=Recorder("model"),
-        OfflineTtsConfig=Recorder("config"), OfflineTts=FakeTts,
+        OfflineTtsConfig=Recorder("config"), OfflineTts=FakeTts, GenerationConfig=GenerationConfig,
     )
+
+
+def fake_espeak(text, lang):
+    """Deterministic stand-in for piper_phonemize.phonemize_espeak."""
+    return [list(text.lower())]
+
+
+TOKENS = "\n".join(f"{symbol} {index}" for index, symbol in enumerate(" .,?abcdefghijklmnopqrstuvwxyzəO")) + "\n"
 
 
 class EngineTests(unittest.TestCase):
@@ -59,12 +73,17 @@ class EngineTests(unittest.TestCase):
         modules = patch.dict("sys.modules", {"sherpa_onnx": fake_sherpa()})
         modules.start()
         self.addCleanup(modules.stop)
+        espeak = patch("aqua.voice.phonemes._espeak", return_value=fake_espeak)
+        self.espeak = espeak.start()
+        self.addCleanup(espeak.stop)
 
     def install(self, name, files):
         path = self.root / name
-        (path / "espeak-ng-data").mkdir(parents=True)
+        path.mkdir(parents=True)
         for item in files:
-            (path / item).write_bytes(b"x")
+            content = {"tokens.txt": TOKENS, "lexicon-us-en.txt": "hello h ə l O\n",
+                       "lexicon-gb-en.txt": "hello h ə l ə ʊ\n"}.get(item, "x")
+            (path / item).write_text(content, encoding="utf-8")
         return path
 
     def test_missing_files_name_the_setup_command_and_load_nothing(self):
@@ -73,7 +92,7 @@ class EngineTests(unittest.TestCase):
                 with self.assertRaises(VoiceError) as error:
                     engine(self.root / "absent")
                 message = str(error.exception)
-                self.assertIn(SETUP_COMMAND, message)
+                self.assertIn("aqua setup-voice --engine", message)
                 self.assertIn("No download was attempted", message)
         self.runtime.assert_not_called()
         self.assertEqual(FakeTts.instances, [])
@@ -86,7 +105,7 @@ class EngineTests(unittest.TestCase):
         self.assertNotIn("tokens.txt", str(error.exception))
 
     def test_kokoro_uses_installed_sherpa_kokoro_config(self):
-        path = self.install("kokoro", ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt"])
+        path = self.install("kokoro", ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"])
         engine = KokoroEngine(path, voice="af_heart", speed=1.2)
         self.runtime.assert_called_once()
         tts = FakeTts.instances[-1]
@@ -95,12 +114,15 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(model.kokoro.kind, "kokoro")
         self.assertEqual(model.kokoro.model, str(path / "model.onnx"))
         self.assertEqual(model.kokoro.voices, str(path / "voices.bin"))
-        self.assertEqual(model.kokoro.data_dir, str(path / "espeak-ng-data"))
+        self.assertFalse(hasattr(model.kokoro, "data_dir"))  # sherpa-onnx 2.x ignores espeak-ng-data
         self.assertEqual(model.kokoro.lexicon, str(path / "lexicon-us-en.txt"))
         self.assertEqual(engine.sample_rate, 24000)
-        samples = engine.synthesize("Hello.")
+        samples = engine.synthesize("Hello, Aqua?")
         self.assertEqual(samples.dtype, np.float32)
-        self.assertEqual(tts.calls, [("Hello.", 3, 1.2)])
+        # Lexicon word "hello" -> həlO; unknown "aqua" -> espeak; punctuation kept; text itself not sent.
+        self.assertEqual(tts.calls, [("", 3, 1.2, [[ord(c) for c in "həlO, aqua?"]])])
+        self.assertEqual(engine.synthesize("--- !").size, 0)  # nothing speakable -> no generate call
+        self.assertEqual(len(tts.calls), 1)
         self.assertIsInstance(engine, SpeechEngine)
 
     def test_piper_uses_vits_and_finds_its_single_onnx(self):
@@ -119,7 +141,7 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(engine.speaker_id, 3)
 
     def test_invalid_voice_speed_threads_and_engine(self):
-        path = self.install("kokoro", ["model.onnx", "voices.bin", "tokens.txt"])
+        path = self.install("kokoro", ["model.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"])
         for options in ({"voice": "nobody"}, {"speed": 0}, {"speed": float("nan")}, {"num_threads": 0}, {"voice": "99"}):
             with self.subTest(options=options), self.assertRaises(VoiceError):
                 KokoroEngine(path, **options)
@@ -138,6 +160,54 @@ class EngineTests(unittest.TestCase):
     def test_default_directories_live_under_the_project_models_folder(self):
         for name, path in engines.ENGINE_DIRS.items():
             self.assertEqual(path.parent, Path(r"D:\Aqua\models"))
+
+    def test_directories_match_setup_voice(self):
+        from aqua.voice.setup import ASSETS
+        self.assertEqual(engines.engine_dir("kokoro"), ASSETS["kokoro"].directory)
+        self.assertEqual(engines.engine_dir("kokoro-int8"), ASSETS["kokoro-int8"].directory)
+        self.assertEqual(engines.engine_dir("kitten"), ASSETS["kitten"].directory)
+        for voice in engines.PIPER_VOICES:
+            self.assertEqual(engines.engine_dir("piper", voice), ASSETS[f"piper-{voice}"].directory)
+            self.assertEqual(engines.engine_dir("piper", voice.upper()), ASSETS[f"piper-{voice}"].directory)
+        with self.assertRaisesRegex(VoiceError, "lessac, ryan"):
+            engines.engine_dir("piper")
+
+    def test_piper_voice_selects_its_directory_and_missing_names_exact_command(self):
+        with patch.object(engines, "VOICE_ROOT", self.root):
+            with self.assertRaises(VoiceError) as error:
+                PiperEngine(voice="ryan")
+            self.assertIn(str(self.root / "tts-piper-ryan"), str(error.exception))
+            self.assertIn("aqua setup-voice --engine piper --voice ryan --download", str(error.exception))
+            with self.assertRaisesRegex(VoiceError, "Choose a Piper voice"):
+                PiperEngine()
+            path = self.install("tts-piper-lessac", ["en_US-lessac-medium.onnx", "tokens.txt"])
+            engine = PiperEngine(voice="lessac")
+        self.assertEqual(engine.model_dir, path)
+        self.assertEqual(engine.speaker_id, 0)
+        with self.assertRaises(VoiceError):
+            engine.resolve_voice("amy")
+
+    def test_kokoro_lexicon_follows_voice_accent_and_int8_uses_its_model(self):
+        files = ["model.onnx", "model.int8.onnx", "voices.bin", "tokens.txt", "lexicon-us-en.txt", "lexicon-gb-en.txt"]
+        path = self.install("kokoro-both", files)
+        for voice, lexicon in (("bm_george", "lexicon-gb-en.txt"), ("bf_emma", "lexicon-gb-en.txt"),
+                               ("21", "lexicon-gb-en.txt"), ("am_adam", "lexicon-us-en.txt"), ("af_heart", "lexicon-us-en.txt")):
+            with self.subTest(voice=voice):
+                KokoroEngine(path, voice=voice)
+                self.assertEqual(FakeTts.instances[-1].config.model.kokoro.lexicon, str(path / lexicon))
+        engine = load_engine("kokoro-int8", model_dir=path, voice="bm_lewis")
+        self.assertEqual(engine.engine, "kokoro-int8")
+        self.assertEqual(FakeTts.instances[-1].config.model.kokoro.model, str(path / "model.int8.onnx"))
+        self.assertEqual(engine.speaker_id, 27)
+
+    def test_voice_tables_match_the_sherpa_onnx_docs(self):
+        self.assertEqual(len(engines.KOKORO_VOICES), 28)
+        self.assertEqual((engines.KOKORO_VOICES["af_alloy"], engines.KOKORO_VOICES["am_santa"],
+                          engines.KOKORO_VOICES["bf_alice"], engines.KOKORO_VOICES["bm_lewis"]), (0, 19, 20, 27))
+        self.assertEqual(sum(1 for g, a in engines.KOKORO_ENGLISH_VOICES.values() if a == "British"), 8)
+        self.assertEqual(engines.KITTEN_VOICES["expr-voice-2-m"], 0)
+        self.assertEqual(engines.KITTEN_VOICES["expr-voice-5-f"], 7)
+        self.assertEqual(set(engines.PIPER_VOICES), {"lessac", "ryan"})
 
 
 if __name__ == "__main__":

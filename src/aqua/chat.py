@@ -223,6 +223,59 @@ def _respond_result(
     return result
 
 
+ENGINES = ("legacy", "new")
+
+
+def _start_agent(client, *, model: str, settings: GenerationSettings, max_turns: int, max_chars: int):
+    """The new action core (--engine new). Returns None if the desktop adapter cannot start."""
+    from aqua.agent.loop import build_engine
+    try:
+        agent = build_engine(client, model=model, settings=settings, max_turns=max_turns, max_chars=max_chars)
+    except (OSError, ImportError, ValueError) as exc:
+        print(f"Action engine setup error: {exc}", file=sys.stderr)
+        return None
+    print("Using the new action engine (--engine new).")
+    return agent
+
+
+def _respond_agent(agent, user_text: str, *, diagnostics: bool, speaker=None, wait_for_speech: bool = True):
+    """Render one new-engine turn; the speaker hears exactly what is printed."""
+    if speaker is not None:
+        speaker.stop()
+
+    def on_text(content):
+        print(content, end="", flush=True)
+        if speaker is not None:
+            speaker.feed(content)
+
+    print("Aqua: ", end="", flush=True)
+    result = None
+    try:
+        result = agent.respond(user_text, on_text=on_text)
+    finally:
+        if speaker is not None:
+            if result is not None and result.completion is not None:
+                speaker.note_generation_rate(_generation_rate(result.completion))
+            speaker.finish_turn()
+    print()
+    if result.error:
+        print(f"Chat error ({result.stage}): {result.error}", file=sys.stderr)
+    if diagnostics:
+        first = f"{result.first_token_seconds:.3f}s" if result.first_token_seconds is not None else "n/a"
+        print(f"Ollama: first visible token {first}; complete response {result.total_seconds:.3f}s")
+        print(f"Engine: new; chat requests {result.requests}; outcome {result.outcome}; stage {result.stage}")
+        if result.task is not None:
+            task = result.task
+            steps = ", ".join(f"{op.tool}={op.status}" for op in task.operations) or "none"
+            print(f"Task: model decisions {task.decisions}; tool operations {len(task.operations)} ({steps}); "
+                  f"status {task.status}")
+        if result.completion is not None:
+            _report_server_metrics(result.completion)
+        if speaker is not None and wait_for_speech:
+            _speech_diagnostics(speaker, wait=True)
+    return result
+
+
 def _open_speaker(*, speak: bool, tts_engine: str, voice, voice_model_dir, speech_rate: float,
                   tts_threads: int | None = None):
     """Load the voice once per session; missing voices mean text-only, not an error."""
@@ -279,6 +332,7 @@ def run_text_chat(
     keep_alive: str = DEFAULT_KEEP_ALIVE,
     tts_threads: int | None = None,
     llm_threads: int | None = None,
+    engine: str = "legacy",
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
@@ -291,6 +345,12 @@ def run_text_chat(
             return 1
         client, conversation, generation = session
         conversation.text_entry_apps = text_entry_apps
+        agent = None
+        if engine == "new":
+            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns, max_chars=max_chars)
+            if agent is None:
+                return 1
+            conversation = agent.conversation
         speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
                                 voice_model_dir=voice_model_dir, speech_rate=speech_rate,
                                 tts_threads=tts_threads)
@@ -303,9 +363,14 @@ def run_text_chat(
                 print("\nChat ended.")
                 return 0
             command = _control_command(text, conversation, voice=False)
+            if command is not None and agent is not None:
+                agent.cancel_pending()
             if command == "quit":
                 return 0
             if command == "continue" or not text:
+                continue
+            if agent is not None:
+                _respond_agent(agent, text, diagnostics=diagnostics, speaker=speaker)
                 continue
             _respond(
                 client, conversation, text, model=model,
@@ -406,6 +471,7 @@ def run_voice_chat(
     keep_alive: str = DEFAULT_KEEP_ALIVE,
     tts_threads: int | None = None,
     llm_threads: int | None = None,
+    engine: str = "legacy",
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
@@ -418,6 +484,12 @@ def run_voice_chat(
             return 1
         client, conversation, generation = session
         conversation.text_entry_apps = text_entry_apps
+        agent = None
+        if engine == "new":
+            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns, max_chars=max_chars)
+            if agent is None:
+                return 1
+            conversation = agent.conversation
         started = perf_counter()
         try:
             recognizer = OfflineRecognizer() if speech_model_dir is None else OfflineRecognizer(speech_model_dir)
@@ -440,6 +512,8 @@ def run_voice_chat(
                 print("\nVoice chat ended.")
                 return 0
             command = _control_command(text, conversation, voice=True, action_state=action_state)
+            if command is not None and agent is not None:
+                agent.cancel_pending()
             if command == "quit":
                 return 0
             if command == "continue":
@@ -475,6 +549,9 @@ def run_voice_chat(
                 print("\nVoice turn cancelled; no message was sent.")
                 continue
 
+            if agent is not None:
+                _respond_agent(agent, transcript.text, diagnostics=diagnostics, speaker=speaker)
+                continue
             _respond_or_launch(
                 client,
                 conversation,

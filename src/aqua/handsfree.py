@@ -132,11 +132,11 @@ def _help() -> None:
     print("Type /clear, /help, or /quit then Enter; Ctrl+C stops speech, cancels a capture, or exits while idle.")
 
 
-def _asked_question(result, state: ActionState) -> bool:
+def _asked_question(result, state: ActionState, agent=None) -> bool:
     """A follow-up answer is expected only after a question or pending confirmation."""
     from aqua.voice.text import is_question
 
-    if state.pending_app is not None:
+    if state.pending_app is not None or (agent is not None and agent.pending is not None):
         return True
     text = getattr(result, "text", None)
     return isinstance(text, str) and is_question(text)
@@ -159,6 +159,7 @@ def run_handsfree(
     keep_alive: str = HANDSFREE_KEEP_ALIVE,
     tts_threads: int | None = None,
     llm_threads: int | None = None,
+    engine: str = "legacy",
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
 
@@ -168,6 +169,12 @@ def run_handsfree(
     """
     state = ActionState()
     speaker = None
+    agent = None  # The new action core, created with the Ollama client (--engine new).
+
+    def clear_consent() -> None:
+        state.clear()
+        if agent is not None:
+            agent.cancel_pending()
     try:
         if isinstance(follow_up, bool) or not isinstance(follow_up, (int, float)) or not isfinite(follow_up) \
                 or not (follow_up == 0 or .5 <= follow_up <= 10):
@@ -216,7 +223,7 @@ def run_handsfree(
                 try:
                     control = commands.poll()
                     if control is not None:
-                        state.clear()
+                        clear_consent()
                         silence("Speech stopped.")
                         microphone.pause()
                         frontend.reset()
@@ -254,7 +261,7 @@ def run_handsfree(
                         silence("\nSpeech stopped.")
                         print('Listening for "Hey Aqua"...', flush=True)
                         continue
-                    state.clear()
+                    clear_consent()
                     follow_up_due = False
                     if not frontend.active:
                         print("\nHands-free chat ended.")
@@ -288,7 +295,7 @@ def run_handsfree(
                     if diagnostics:
                         print(f"VAD: {event.status}; capture {event.duration:.3f}s; voiced after wake {event.speech_seconds:.3f}s; silence limit {end_silence:g}s")
                     if event.status != "complete":
-                        state.clear()
+                        clear_consent()
                         reason = "no meaningful speech after wake" if event.status == "no_speech" else "maximum utterance length reached; entire turn discarded"
                         print(f"Skipped: {reason}.")
                         continue
@@ -301,7 +308,7 @@ def run_handsfree(
                     )
                     reason = transcript_rejection_reason(recording, transcript)
                     if reason is not None:
-                        state.clear()
+                        clear_consent()
                         print(f"Skipped: {reason}.")
                         continue
                     if client is None:
@@ -311,22 +318,32 @@ def run_handsfree(
                             llm_threads=llm_threads,
                         )
                         if session is None:
-                            state.clear()
+                            clear_consent()
                             continue
                         client, conversation, generation = session
                         conversation.bind_action_state(state)
                         conversation.text_entry_apps = text_entry_apps
-                    result = chat._respond_or_launch(
-                        client, conversation, transcript.text, model=model, settings=generation,
-                        diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
-                        speaker=speaker, wait_for_speech=False,
-                    )
+                        if engine == "new":
+                            agent = chat._start_agent(client, model=model, settings=generation,
+                                                      max_turns=max_turns, max_chars=max_chars)
+                            if agent is None:
+                                return 1
+                            conversation = agent.conversation
+                    if agent is not None:
+                        result = chat._respond_agent(agent, transcript.text, diagnostics=diagnostics,
+                                                     speaker=speaker, wait_for_speech=False)
+                    else:
+                        result = chat._respond_or_launch(
+                            client, conversation, transcript.text, model=model, settings=generation,
+                            diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
+                            speaker=speaker, wait_for_speech=False,
+                        )
                     # Playback may continue; the loop resumes wake-only listening meanwhile.
                     report_speech = diagnostics and speaker is not None
-                    if follow_up and _asked_question(result, state):
+                    if follow_up and _asked_question(result, state, agent):
                         follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
                 except (SpeechError, KeyboardInterrupt) as exc:
-                    state.clear()
+                    clear_consent()
                     silence("Speech stopped.")
                     message = "Voice turn cancelled" if isinstance(exc, KeyboardInterrupt) else f"Voice turn error: {exc}"
                     print(f"\n{message}; no new action was authorized.", file=sys.stderr)
@@ -337,11 +354,11 @@ def run_handsfree(
                     microphone.resume()
                     print('Listening for "Hey Aqua"...', flush=True)
     except (WakeError, AudioError, SpeechError, ValueError) as exc:
-        state.clear()
+        clear_consent()
         print(f"Hands-free error: {exc}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        state.clear()
+        clear_consent()
         print("\nHands-free chat ended.")
         return 0
     finally:

@@ -230,6 +230,23 @@ def cause(failed: list[str], turn: dict, unwanted: list[str], expects_confirm: b
 
 # -- running ---------------------------------------------------------------------------------------
 
+def replay_tool_history(conversation: Conversation, turns) -> None:
+    """Earlier session turns with their tool calls and results, stored as the engine stores them.
+    The conversation keeps its normal limits, so only the newest turns stay."""
+    for user, calls, reply in turns:
+        exchanges = [({"role": "assistant", "content": "", "tool_calls": [{"function": {"name": name, "arguments": args}}]},
+                      [{"role": "tool", "tool_name": name,
+                        "content": json.dumps({"status": "ok", "message": message})}])
+                     for name, args, message in calls]
+        if not exchanges:
+            conversation.commit(user, reply)
+            continue
+        conversation.commit_tool_turn(user, *exchanges[0])
+        for exchange in exchanges[1:]:
+            conversation.append_tool_step(*exchange)
+        conversation.complete_last_turn(reply)
+
+
 def run_case(case: dict, suite: dict, client, model: str, settings, guards, run: int) -> list[dict]:
     setup = case.get("setup", {})
     desktop = make_desktop(suite, setup)
@@ -238,6 +255,7 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
     conversation = Conversation(system_prompt=SYSTEM_PROMPT)
     for user, assistant in setup.get("history", ()):
         conversation.commit(user, assistant)
+    replay_tool_history(conversation, setup.get("tool_history", ()))
     engine = AgentEngine(client, model=model, settings=settings, registry=build_registry(wikipedia=wiki),
                          context=context, conversation=conversation, guards=guards)
     rows = []
@@ -336,8 +354,8 @@ def report(summary: dict, rows: list[dict], meta: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def load_suite(extra: bool = False) -> tuple[dict, list[dict], str]:
-    """The frozen suite (and optionally cases-extra.json); each file must match its SHA-256."""
+def load_suite(extra: bool = False, long: bool = False) -> tuple[dict, list[dict], str]:
+    """The frozen suite (and optionally cases-extra.json / cases-long.json); each must match its SHA-256."""
     def frozen(name: str) -> tuple[dict, str]:
         data = (SUITE / f"{name}.json").read_bytes()
         digest = sha256(data).hexdigest()
@@ -350,6 +368,10 @@ def load_suite(extra: bool = False) -> tuple[dict, list[dict], str]:
         extra_suite, extra_digest = frozen("cases-extra")
         cases += extra_suite["cases"]
         digest += f" + extra {extra_digest}"
+    if long:
+        long_suite, long_digest = frozen("cases-long")
+        cases += long_suite["cases"]
+        digest += f" + long {long_digest}"
     return suite, cases, digest
 
 
@@ -369,9 +391,9 @@ def rescore(rows: list[dict], cases: list[dict]) -> list[dict]:
     return out
 
 
-def compare(base_stem: str, new_stem: str, extra: bool) -> str:
+def compare(base_stem: str, new_stem: str, extra: bool, long: bool = False) -> str:
     """Markdown comparing two runs on the frozen cases (both re-scored with the same rules)."""
-    suite, cases, digest = load_suite(extra)
+    suite, cases, digest = load_suite(extra, long)
     frozen_ids = {case["id"] for case in suite["cases"]}
     frozen_cases = [case for case in cases if case["id"] in frozen_ids]
     base = rescore(load_rows(base_stem), frozen_cases)
@@ -415,11 +437,12 @@ def compare(base_stem: str, new_stem: str, extra: bool) -> str:
     better = sorted(cid for cid in new_rate if new_rate[cid] > base_rate.get(cid, 0))
     lines += ["", "## Cases that got better (strict pass rate)", ""]
     lines += [f"- `{cid}`: {base_rate.get(cid, 0):.0%} -> {new_rate[cid]:.0%}" for cid in better] or ["- none"]
-    if extra:
+    if extra or long:
         extra_cases = [case for case in cases if case["id"] not in frozen_ids]
         extra_rows = [row for row in new_all if row["case"] not in frozen_ids]
         e = summarize(extra_rows, extra_cases, runs(extra_rows))
-        lines += ["", f"## Extra cases (cases-extra.json, {len(extra_cases)} cases x {runs(extra_rows)} runs)", "",
+        lines += ["", f"## Added cases (cases-extra.json / cases-long.json, {len(extra_cases)} cases x "
+                  f"{runs(extra_rows)} runs)", "",
                   f"Strict success {e['case_success']:.1%}; unwanted actions {e['unwanted_actions']}.", "",
                   "| Case | Passed runs |", "|---|---|"]
         extra_rate = rate(extra_rows)
@@ -439,15 +462,21 @@ def main(argv=None) -> int:
     parser.add_argument("--disable-guard", action="append", default=[], choices=GUARD_NAMES,
                         help="turn one host guard off (evaluation only); repeatable")
     parser.add_argument("--extra", action="store_true", help="also run benchmarks/agent-v1/cases-extra.json")
+    parser.add_argument("--long", action="store_true", help="also run the long-session variants (cases-long.json)")
+    parser.add_argument("--only-added", action="store_true", help="run only the --extra/--long cases")
     parser.add_argument("--compare", nargs=2, metavar=("BASE", "NEW"),
                         help="no model run: write NEW-report.md comparing two saved runs")
     args = parser.parse_args(argv)
     if args.compare:
         base_stem, new_stem = args.compare
-        (SUITE / f"{new_stem}-report.md").write_bytes(compare(base_stem, new_stem, args.extra).encode("utf-8"))
+        (SUITE / f"{new_stem}-report.md").write_bytes(
+            compare(base_stem, new_stem, args.extra, args.long).encode("utf-8"))
         print(f"wrote {new_stem}-report.md")
         return 0
-    suite, cases, digest = load_suite(args.extra)
+    suite, cases, digest = load_suite(args.extra, args.long)
+    if args.only_added:
+        frozen_ids = {case["id"] for case in suite["cases"]}
+        cases = [c for c in cases if c["id"] not in frozen_ids]
     cases = [c for c in cases if not args.cases or args.cases in c["id"]]
     guards = without(*args.disable_guard) if args.disable_guard else DEFAULT_GUARDS
     client = OllamaClient(timeout=180, keep_alive="30m")

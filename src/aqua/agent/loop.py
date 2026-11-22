@@ -22,7 +22,8 @@ from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
 from .registry import Registry, SchemaError, ToolOutcome, validate_arguments
-from .selection import matched_groups, select_tools
+from .selection import (MAX_VISIBLE_TOOLS, matched_groups, select_tools, selected_groups, wants_explanation,
+                        wants_no_action)
 
 MAX_OPERATIONS = 12
 MAX_DECISIONS = 14
@@ -53,7 +54,22 @@ _CLAIMS = (
     (re.compile(r"\b(?:restarting|shutting\s+down|signing\s+(?:you\s+)?out|signed\s+out|going\s+to\s+sleep|"
                 r"put\s+(?:the\s+)?(?:computer|pc)\s+to\s+sleep)\b", re.I), {"power"}),
     (re.compile(r"\bsearched\b", re.I), {"web_search"}),
+    # Device state must come from a live reading this turn, never from earlier turns.
+    (re.compile(r"\bbattery\b[^.?!]*\b\d{1,3}\s?(?:%|percent)|\b\d{1,3}\s?(?:%|percent)[^.?!]*\bbattery\b|"
+                r"\b(?:is|are|it's)\s+(?:currently\s+|still\s+)?(?:charging|plugged\s+in|on\s+battery)\b|"
+                r"\b\d{1,3}\s?(?:%|percent)[^.?!]*\b(?:charging|charged|plugged\s+in)\b", re.I),
+     {"get_battery"}),
+    (re.compile(r"\bvolume\b[^.?!]*\b(?:is|at|of)\b[^.?!]*\d{1,3}\s?(?:%|percent)|\b(?:sound|audio|volume)\s+is\s+"
+                r"(?:currently\s+)?(?:muted|on|off)\b", re.I), {"device_status", "volume"}),
+    (re.compile(r"\bbrightness\b[^.?!]*\b(?:is|at|of)\b[^.?!]*\d{1,3}\s?(?:%|percent)", re.I),
+     {"device_status", "brightness"}),
+    (re.compile(r"\b(?:music|song|track|video|playback|media|something)\b[^.?!]*\b(?:is|are)\s+(?:currently\s+|still\s+)?"
+                r"(?:playing|paused|stopped)\b|\bnothing\s+is\s+playing\b", re.I), {"device_status", "media"}),
+    (re.compile(r"\b(?:open\s+windows\s+are|windows\s+(?:that\s+are\s+)?open\s+(?:are|include))\b", re.I),
+     {"list_windows"}),
 )
+# Answer text that is really a tool call written out; it is never spoken.
+_TOOL_TEXT = ("<tool_call>", '{"name"', "{ \"name\"")
 # Tools whose results are facts for the reply, not actions; their turns skip the claim check.
 _KNOWLEDGE_TOOLS = frozenset({"look_up"})
 # Tool result keys holding window titles and app names, kept for the look_up privacy guard.
@@ -214,6 +230,8 @@ class _Turn:
     start: int = 0              # Index of this request's first tool exchange in ``messages``.
     reviews: list = field(default_factory=list)  # (tool, outcome) whose results check the final reply
     offer_mode: bool = False    # The model is naming the tool for its own offer; calls become "unsure".
+    groups: tuple = ()          # Keyword groups used for this request (inherited by follow-ups).
+    explain: bool = False       # An explanation-only question: action tools hidden, offers still allowed.
 
 
 class AgentEngine:
@@ -225,6 +243,7 @@ class AgentEngine:
         self.registry, self.context = registry, context
         self.conversation = conversation if conversation is not None else Conversation(system_prompt=SYSTEM_PROMPT)
         self.gate = ConfirmationGate()
+        self._last_groups: tuple = ()  # A follow-up with no keyword ("check again") reuses these.
         self.clock = clock
         self.now = now if now is not None else (lambda: datetime.now().astimezone())
 
@@ -328,12 +347,18 @@ class AgentEngine:
 
         text = text.strip()
         self.context.begin_request(text)
-        names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard)
+        names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
+                             question_guard=self.guards.question_guard, previous=self._last_groups)
+        groups = selected_groups(text, self._last_groups) if names else ()
+        self._last_groups = groups
         not_done = tuple(dict.fromkeys(action.summary for action in self.gate.take_dropped() if action.summary))
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
                     {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable(),
                                                              not_done=not_done)}]
-        return self._loop(_Turn(text, names, messages, start=len(messages)), text, emit, result, state)
+        explain = self.guards.question_guard and wants_explanation(text) and not (
+            self.guards.negation_guard and wants_no_action(text))
+        return self._loop(_Turn(text, names, messages, start=len(messages), groups=groups, explain=explain),
+                          text, emit, result, state)
 
     # -- the loop -------------------------------------------------------------
 
@@ -342,8 +367,8 @@ class AgentEngine:
         first_new = len(turn.operations)  # Operations before this point were reported earlier.
         # A request that looks like a command is answered in one checked sentence,
         # so it is buffered; plain conversation streams live.
-        command_like = bool(turn.tool_names) and any(self.registry.in_group(group)
-                                                     for group in matched_groups(turn.request))
+        command_like = turn.explain or (bool(turn.tool_names) and any(
+            self.registry.in_group(group) for group in (turn.groups or matched_groups(turn.request))))
         nudged = False
         offer = None  # (the model's offer text, whether it was already spoken)
         while True:
@@ -353,7 +378,7 @@ class AgentEngine:
                 return self._stop_at_limit(turn, utterance, emit, result, state)
             turn.decisions += 1
             try:
-                content, completion = self._model_round(turn.messages, definitions, emit if live else None)
+                content, completion, held = self._model_round(turn.messages, definitions, emit if live else None)
             except OllamaError as exc:
                 state["completion"] = None
                 summary = join_phrases([op.done for op in turn.operations])
@@ -364,16 +389,27 @@ class AgentEngine:
                 state["requests"] += 1
             state["completion"] = completion
             calls = list(completion.tool_calls)
-            if not calls and not live:
+            if not calls and (held or not live):
                 text_call = parse_text_tool_call(content, turn.tool_names)
                 if text_call is not None:
                     calls, content = [text_call], ""
+                elif held and live:
+                    # A written-out call to a tool that is not available: never speak it.
+                    emit("Okay.")
+                    self._remember(utterance, "Okay.", turn)
+                    return result("answer", "complete", turn)
             if not calls:
                 if offer is None and not nudged and not acted and self._is_offer(turn, content):
                     # One round for the model to name the exact tool of its offer; that call is
                     # forced to "unsure", so a plain "yes" from the user runs it, never the model.
                     offer, nudged = (" ".join(strip_emoji(content).split()), live), True
                     turn.offer_mode, command_like = True, True
+                    # The offer round may name any action the request could involve, even after an
+                    # explanation-only question: every call it makes is "unsure", so the host asks.
+                    wider = select_tools(turn.request, self.registry, negation_guard=self.guards.negation_guard,
+                                         question_guard=False, previous=turn.groups)
+                    turn.tool_names = tuple(dict.fromkeys((*turn.tool_names, *wider)))[:MAX_VISIBLE_TOOLS]
+                    definitions = self.registry.definitions(turn.tool_names) or None
                     turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _OFFER_NOTE}]
                     continue
                 if offer is not None:
@@ -460,7 +496,7 @@ class AgentEngine:
     def _is_offer(self, turn: _Turn, content: str) -> bool:
         """The model asked the user whether to do something while action tools were shown."""
         text = " ".join(strip_emoji(content).split())
-        return (self.guards.cant_retry and bool(turn.tool_names) and text.endswith("?")
+        return (self.guards.cant_retry and (bool(turn.tool_names) or turn.explain) and text.endswith("?")
                 and bool(_ASKS_PERMISSION.search(text)))
 
     def _undoable(self) -> str | None:
@@ -551,8 +587,10 @@ class AgentEngine:
 
     def _model_round(self, messages, definitions, stream_to):
         """One model decision. Text streams live only before any tool has run;
-        afterwards it is buffered so only one sentence is spoken."""
+        afterwards it is buffered so only one sentence is spoken. A reply that starts
+        like a written-out tool call is held back (``held``) and never streamed."""
         guard, parts, completion = AnswerChannelGuard(), [], None
+        undecided, held = stream_to is not None, False
         iterator = self.client.stream_chat(messages, model=self.model, settings=self.settings, tools=definitions)
         try:
             for event in iterator:
@@ -560,22 +598,34 @@ class AgentEngine:
                     visible = guard.feed(event.content)
                     if visible:
                         parts.append(visible)
-                        if stream_to is not None:
+                        if undecided:
+                            start = "".join(parts).lstrip()
+                            if any(prefix.startswith(start) for prefix in _TOOL_TEXT) and len(start) < 16:
+                                continue  # Could still become "<tool_call>": wait.
+                            undecided = False
+                            held = start.startswith(_TOOL_TEXT)
+                            if not held:
+                                stream_to("".join(parts))
+                        elif stream_to is not None and not held:
                             stream_to(visible)
                 if event.done:
                     completion = event
             tail = guard.finish()
             if tail:
                 parts.append(tail)
-                if stream_to is not None:
-                    stream_to(tail)
+            if stream_to is not None and not held:
+                pending = "".join(parts) if undecided else tail
+                if undecided and pending.lstrip().startswith(_TOOL_TEXT):
+                    held = True
+                elif pending:
+                    stream_to(pending)
         finally:
             close = getattr(iterator, "close", None)
             if callable(close):
                 close()
         if completion is None:
             raise OllamaProtocolError("Ollama ended the reply without completing it.")
-        return "".join(parts), completion
+        return "".join(parts), completion, held
 
     def _stop_at_limit(self, turn, utterance, emit, result, state):
         reason = "I stopped there because the task needed too many steps."

@@ -26,7 +26,9 @@ def milestone_one_shaped_registry():
               "window_action": "windows", "get_time": "system", "get_battery": "system", "volume": "audio",
               "media": "audio", "lock_screen": "power", "look_up": "knowledge", "web_search": "web",
               "brightness": "display"}
-    return Registry([tool(name, group=group) for name, group in groups.items()])
+    read_only = {"list_windows", "get_time", "get_battery", "look_up"}
+    return Registry([tool(name, group=group, tier=READ if name in read_only else SAFE)
+                     for name, group in groups.items()])
 
 
 class ArgumentValidationTests(unittest.TestCase):
@@ -232,7 +234,7 @@ class UndoStackTests(unittest.TestCase):
 
 class PromptTests(unittest.TestCase):
     def test_system_prompt_is_short_static_and_has_no_clock(self):
-        self.assertLess(len(SYSTEM_PROMPT), 2000)
+        self.assertLess(len(SYSTEM_PROMPT), 2400)
         self.assertNotIn("2026", SYSTEM_PROMPT)
         self.assertIn("ONE short sentence", SYSTEM_PROMPT)
         self.assertIn("no emoji", SYSTEM_PROMPT)

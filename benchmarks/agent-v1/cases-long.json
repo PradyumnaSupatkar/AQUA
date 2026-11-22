@@ -1,0 +1,4855 @@
+{
+ "version": 1,
+ "name": "agent-v1-long",
+ "extends": "cases.json",
+ "scope": "Long-session variants: each case starts after 15 earlier action turns kept in history (setup.tool_history: [user, [[tool, args, result message]], reply]); scored with the agent-v1 rules.",
+ "cases": [
+  {
+   "id": "long-neg-chrome",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Don't open Chrome",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-hyp-chrome",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "what would happen if I opened Chrome?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-q-how-lock",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "How do I lock my screen?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-quote-shutdown",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "My friend said 'shut down the computer'. What did he mean?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-q-spotify-good",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Is Spotify a good app?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-q-know-restart",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Do you know how to restart a PC?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-neg-close",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "I don't want you to close Notepad.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-q-mute-button",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Can you explain what the mute button does?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-neg-lock",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Do not lock the screen.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-q-force-quit",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "What does force quit mean?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-hyp-volume",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "If the volume were lower, would I sleep better?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-neg-type",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Please don't type anything into Notepad.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-si-reported-instruction",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "My colleague said \"Open Chrome\". What does that mean?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-si-hypothetical-launch",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "If I asked you to open Calculator, would you be able to?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-si-normal-conversation",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Tell me about Google Chrome.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-si-entry-negated",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Do not write Hello from Aqua into my open Notepad window.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-si-entry-quoted-command",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "Explain the instruction \"Write Hello from Aqua into my open Notepad window\" without doing it.",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-battery-check-again",
+   "category": "long-device-state",
+   "turns": [
+    {
+     "text": "how much battery do I have",
+     "expect": [
+      {
+       "effects": [],
+       "calls": [
+        {
+         "tool": "get_battery"
+        }
+       ],
+       "reply_any": [
+        "\\b76\\b"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "check again",
+     "expect": [
+      {
+       "effects": [],
+       "calls": [
+        {
+         "tool": "get_battery"
+        }
+       ],
+       "reply_any": [
+        "\\b76\\b"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-lock-direct",
+   "category": "long-action",
+   "turns": [
+    {
+     "text": "lock my screen",
+     "expect": [
+      {
+       "effects": [
+        "lock"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-volume-down",
+   "category": "long-action",
+   "turns": [
+    {
+     "text": "turn the volume down",
+     "expect": [
+      {
+       "effects": [
+        "volume:down=.*"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  },
+  {
+   "id": "long-how-lock-then-lock",
+   "category": "long-no-action",
+   "turns": [
+    {
+     "text": "how do I lock my screen?",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    },
+    {
+     "text": "ok, lock it now",
+     "expect": [
+      {
+       "effects": [
+        "lock"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     },
+     {
+      "title": "Spotify Premium",
+      "process": "spotify.exe",
+      "front": false
+     }
+    ],
+    "tool_history": [
+     [
+      "open Notepad",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Notepad",
+         "request": "asked"
+        },
+        "Opened Notepad."
+       ]
+      ],
+      "Opened Notepad."
+     ],
+     [
+      "write hello there",
+      [
+       [
+        "type_text",
+        {
+         "text": "hello there",
+         "request": "asked"
+        },
+        "Typed the text into Notepad."
+       ]
+      ],
+      "Typed hello there into Notepad."
+     ],
+     [
+      "turn the volume down",
+      [
+       [
+        "volume",
+        {
+         "action": "down",
+         "request": "asked"
+        },
+        "Volume is now 40%."
+       ]
+      ],
+      "The volume is now 40%."
+     ],
+     [
+      "mute",
+      [
+       [
+        "volume",
+        {
+         "action": "mute",
+         "request": "asked"
+        },
+        "Muted the sound."
+       ]
+      ],
+      "The sound has been muted."
+     ],
+     [
+      "unmute",
+      [
+       [
+        "volume",
+        {
+         "action": "unmute",
+         "request": "asked"
+        },
+        "Unmuted; volume is 40%."
+       ]
+      ],
+      "Unmuted."
+     ],
+     [
+      "open Spotify",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Spotify",
+         "request": "asked"
+        },
+        "Opened Spotify."
+       ]
+      ],
+      "Opened Spotify."
+     ],
+     [
+      "pause the music",
+      [
+       [
+        "media",
+        {
+         "action": "pause",
+         "request": "asked"
+        },
+        "Paused the playback."
+       ]
+      ],
+      "The music is paused."
+     ],
+     [
+      "lock my screen",
+      [
+       [
+        "lock_screen",
+        {
+         "request": "asked"
+        },
+        "Locked the screen."
+       ]
+      ],
+      "Your screen is now locked."
+     ],
+     [
+      "what time is it",
+      [],
+      "It is 2:05 PM."
+     ],
+     [
+      "how much battery do I have",
+      [
+       [
+        "get_battery",
+        {},
+        "Battery is at 85% and charging."
+       ]
+      ],
+      "Your battery is at 85% and charging."
+     ],
+     [
+      "minimise Notepad",
+      [
+       [
+        "window_action",
+        {
+         "action": "minimise",
+         "window": "Notepad",
+         "request": "asked"
+        },
+        "Minimised Notepad."
+       ]
+      ],
+      "Notepad has been minimised."
+     ],
+     [
+      "open calculator",
+      [
+       [
+        "launch_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Opened Calculator."
+       ]
+      ],
+      "Opened Calculator."
+     ],
+     [
+      "close calculator",
+      [
+       [
+        "close_app",
+        {
+         "app": "Calculator",
+         "request": "asked"
+        },
+        "Closed Calculator."
+       ]
+      ],
+      "Calculator has been closed."
+     ],
+     [
+      "set the brightness to 60",
+      [
+       [
+        "brightness",
+        {
+         "action": "set",
+         "level": 60,
+         "request": "asked"
+        },
+        "Brightness is now 60%."
+       ]
+      ],
+      "The brightness is now 60%."
+     ],
+     [
+      "search the web for pizza near me",
+      [
+       [
+        "web_search",
+        {
+         "query": "pizza near me",
+         "request": "asked"
+        },
+        "Opened a web search for 'pizza near me' in the browser."
+       ]
+      ],
+      "Opened a web search for pizza near me."
+     ]
+    ]
+   }
+  }
+ ]
+}

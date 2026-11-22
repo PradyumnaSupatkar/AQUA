@@ -62,24 +62,64 @@ def wants_no_action(text: str) -> bool:
     return bool(_NEGATED.search(text)) and not _REDIRECT.search(text)
 
 
+# Questions asking how/what/why about doing something want an explanation, not the action:
+# "how do I lock my screen?", "what does force quit do?", "do you know how to restart a PC?".
+# They see only read-only tools (time, battery, windows, look-up), so they cannot act; an
+# offer the model makes in its answer still becomes a host yes/no question. "How about ...",
+# "why don't you ..." are suggestions, i.e. requests, and are excluded.
+_EXPLAIN = re.compile(
+    r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+)?(?:"
+    r"how(?!\s+about\b)|what|why(?!\s+(?:don'?t|not|won'?t)\b)|"
+    r"(?:do|does)\s+(?:you|anyone)\s+know\s+(?:how|what|why)|"
+    r"(?:can|could)\s+you\s+(?:explain|tell\s+me)\s+(?:how|what|why)|"
+    r"is\s+there\s+(?:a|any)\s+way\s+to"
+    r")\b", re.IGNORECASE)
+# Device-state tools that a status question needs beside its group's action tools.
+_STATUS_GROUPS = {"audio", "display"}
+
+
+def wants_explanation(text: str) -> bool:
+    return bool(_EXPLAIN.search(text.replace("’", "'")))
+
+
 def matched_groups(text: str) -> tuple[str, ...]:
     text = text.replace("’", "'")
     return tuple(group for group in GROUP_ORDER
                  if _PATTERNS[group].search(text) or (group == "web" and _DOMAIN.search(text)))
 
 
-def select_tools(text: str, registry, *, negation_guard: bool = True) -> tuple[str, ...]:
-    """The core tools plus every group whose keywords appear, capped at eight."""
+def selected_groups(text: str, previous: tuple[str, ...] = ()) -> tuple[str, ...]:
+    """The request's keyword groups; a follow-up with none ("check again", "yes", "do it
+    again") inherits the previous request's groups."""
+    return matched_groups(text) or tuple(previous)
+
+
+def _read_only(registry, name: str) -> bool:
+    tool = registry.get(name)
+    return tool is not None and not callable(tool.tier) and tool.tier == 0
+
+
+def select_tools(text: str, registry, *, negation_guard: bool = True, question_guard: bool = True,
+                 previous: tuple[str, ...] = ()) -> tuple[str, ...]:
+    """The core tools plus every selected group's tools, capped at eight."""
     if negation_guard and wants_no_action(text):
         return ()
     names = [name for name in CORE_TOOLS if registry.get(name) is not None]
-    groups = matched_groups(text)
-    if not groups:
-        # No keyword matched (misheard words, unusual phrasing): offer the likely actions
-        # rather than only the core three. Visibility still grants no permission.
-        names += [name for name in FALLBACK_TOOLS if registry.get(name) is not None and name not in names]
+    groups = selected_groups(text, previous)
     for group in groups:
         for name in registry.in_group(group):
             if name not in names:
                 names.append(name)
-    return tuple(names[:MAX_VISIBLE_TOOLS])
+    if set(groups) & _STATUS_GROUPS and registry.get("device_status") is not None:
+        names.append("device_status")
+    if not groups:
+        # No keyword matched (misheard words, unusual phrasing): offer the likely actions
+        # rather than only the core three. Visibility still grants no permission.
+        names += [name for name in FALLBACK_TOOLS if registry.get(name) is not None and name not in names]
+    if question_guard and wants_explanation(text):
+        names = [name for name in names if _read_only(registry, name)]
+    names = list(dict.fromkeys(names))
+    # The cap keeps read-only status tools: they never act, and status answers need them.
+    keep = [n for n in names if _read_only(registry, n)][:2]
+    rest = [n for n in names if n not in keep]
+    return tuple(n for n in names if n in keep or n in rest[:MAX_VISIBLE_TOOLS - len(keep)])

@@ -36,7 +36,8 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(set(registry.names), {"launch_app", "type_text", "undo_last", "list_windows",
                                                "window_action", "get_time", "get_battery", "volume", "media",
                                                "lock_screen", "close_app", "force_quit_app", "inspect_window",
-                                               "brightness", "power", "open_url", "web_search", "look_up"})
+                                               "brightness", "power", "open_url", "web_search", "look_up",
+                                               "device_status"})
         disruptive = {"force_quit_app", "power"}
         for name in registry.names:
             self.assertEqual(registry.get(name).tier_for({"action": "sleep"}, None) > SAFE, name in disruptive, name)

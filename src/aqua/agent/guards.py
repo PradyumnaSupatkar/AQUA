@@ -15,6 +15,7 @@ class Guards:
     citation_strip: bool = True     # "According to Wikipedia" without a look-up: retry, then the citation is removed
     knowledge_cutoff: bool = True   # years after the model's training (2024) mean: look it up
     restate_request: bool = True    # each tool result restates the request so multi-step requests finish
+    question_guard: bool = True     # how/what/why questions about doing something see only read-only tools
 
 
 DEFAULT_GUARDS = Guards()

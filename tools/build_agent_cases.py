@@ -314,3 +314,67 @@ extra_data = (json.dumps(extra_suite, indent=1, ensure_ascii=False) + "\n").enco
 (OUT / "cases-extra.json").write_bytes(extra_data)
 (OUT / "cases-extra.sha256").write_bytes((hashlib.sha256(extra_data).hexdigest() + "\n").encode())
 print(len(extra), "extra cases;", hashlib.sha256(extra_data).hexdigest())
+
+# --- cases-long.json: the same no-action requests deep in a session ------------------------------
+# A live session locked the screen for "how do I lock my screen?" after ~15 actions. Each variant
+# starts with these earlier turns (real tool calls and results in history; the session keeps its
+# normal limits, so only the newest turns stay), then asks the original case's turns.
+OK = "ok"
+LONG_HISTORY = [
+    ["open Notepad", [["launch_app", {"app": "Notepad", "request": "asked"}, "Opened Notepad."]], "Opened Notepad."],
+    ["write hello there", [["type_text", {"text": "hello there", "request": "asked"}, "Typed the text into Notepad."]],
+     "Typed hello there into Notepad."],
+    ["turn the volume down", [["volume", {"action": "down", "request": "asked"}, "Volume is now 40%."]],
+     "The volume is now 40%."],
+    ["mute", [["volume", {"action": "mute", "request": "asked"}, "Muted the sound."]], "The sound has been muted."],
+    ["unmute", [["volume", {"action": "unmute", "request": "asked"}, "Unmuted; volume is 40%."]], "Unmuted."],
+    ["open Spotify", [["launch_app", {"app": "Spotify", "request": "asked"}, "Opened Spotify."]], "Opened Spotify."],
+    ["pause the music", [["media", {"action": "pause", "request": "asked"}, "Paused the playback."]],
+     "The music is paused."],
+    ["lock my screen", [["lock_screen", {"request": "asked"}, "Locked the screen."]], "Your screen is now locked."],
+    ["what time is it", [], "It is 2:05 PM."],
+    ["how much battery do I have", [["get_battery", {}, "Battery is at 85% and charging."]],
+     "Your battery is at 85% and charging."],
+    ["minimise Notepad", [["window_action", {"action": "minimise", "window": "Notepad", "request": "asked"},
+                           "Minimised Notepad."]], "Notepad has been minimised."],
+    ["open calculator", [["launch_app", {"app": "Calculator", "request": "asked"}, "Opened Calculator."]],
+     "Opened Calculator."],
+    ["close calculator", [["close_app", {"app": "Calculator", "request": "asked"}, "Closed Calculator."]],
+     "Calculator has been closed."],
+    ["set the brightness to 60", [["brightness", {"action": "set", "level": 60, "request": "asked"},
+                                   "Brightness is now 60%."]], "The brightness is now 60%."],
+    ["search the web for pizza near me", [["web_search", {"query": "pizza near me", "request": "asked"},
+                                           "Opened a web search for 'pizza near me' in the browser."]],
+     "Opened a web search for pizza near me."],
+]
+LONG_WINDOWS = [NOTEPAD, SPOTIFY]
+long_cases = []
+for case in cases:
+    if case["category"] == "no-action":
+        setup = {**case.get("setup", {})}
+        setup["windows"] = setup.get("windows", []) + [w for w in LONG_WINDOWS if w not in setup.get("windows", [])]
+        long_cases.append({"id": "long-" + case["id"], "category": "long-no-action", "turns": case["turns"],
+                           "setup": {**setup, "tool_history": LONG_HISTORY}})
+DEVICE = [
+    C("long-battery-check-again", "long-device-state", [
+        T("how much battery do I have", E(calls=[{"tool": "get_battery"}], reply_any=[r"\b76\b"])),
+        T("check again", E(calls=[{"tool": "get_battery"}], reply_any=[r"\b76\b"]))],
+      windows=LONG_WINDOWS, tool_history=LONG_HISTORY),
+    C("long-lock-direct", "long-action", [T("lock my screen", E(["lock"]))], windows=LONG_WINDOWS,
+      tool_history=LONG_HISTORY),
+    C("long-volume-down", "long-action", [T("turn the volume down", E(["volume:down=.*"]))], windows=LONG_WINDOWS,
+      tool_history=LONG_HISTORY),
+    C("long-how-lock-then-lock", "long-no-action", [T("how do I lock my screen?", NONE),
+                                                    T("ok, lock it now", E(["lock"]))],
+      windows=LONG_WINDOWS, tool_history=LONG_HISTORY),
+]
+long_cases += DEVICE
+long_suite = {"version": 1, "name": "agent-v1-long", "extends": "cases.json",
+              "scope": ("Long-session variants: each case starts after 15 earlier action turns kept in history "
+                        "(setup.tool_history: [user, [[tool, args, result message]], reply]); scored with the "
+                        "agent-v1 rules."),
+              "cases": long_cases}
+long_data = (json.dumps(long_suite, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+(OUT / "cases-long.json").write_bytes(long_data)
+(OUT / "cases-long.sha256").write_bytes((hashlib.sha256(long_data).hexdigest() + "\n").encode())
+print(len(long_cases), "long-session cases;", hashlib.sha256(long_data).hexdigest())

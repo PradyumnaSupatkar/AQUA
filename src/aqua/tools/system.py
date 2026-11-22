@@ -130,12 +130,33 @@ def _lock(args: dict, context: ToolContext) -> ToolOutcome:
     return ToolOutcome("ok", "Locked the screen.", done="locked the screen")
 
 
+def _status(args: dict, context: ToolContext) -> ToolOutcome:
+    desktop = context.desktop
+    level, muted = desktop.get_volume()
+    brightness = desktop.get_brightness()
+    playback = desktop.media_state()
+    parts = [f"volume {level}%" + (" (muted)" if muted else "")]
+    parts.append(f"brightness {brightness}%" if brightness is not None else "brightness not adjustable")
+    if playback is not None:
+        parts.append("nothing playing" if playback == "none" else f"media {playback}")
+    return ToolOutcome("ok", "Right now: " + ", ".join(parts) + ".",
+                       data={"volume": level, "muted": muted, "brightness": brightness, "playback": playback})
+
+
+device_status = Tool(
+    name="device_status", group="system", tier=READ,
+    description="Read the current volume, mute, screen brightness and media playback state. Always call it before "
+                "saying any of these; earlier values may be out of date.",
+    parameters={"type": "object", "properties": {}}, run=_status)
+
 get_time = Tool(
     name="get_time", group="system", tier=READ, description="Get the current local time and date.",
     parameters={"type": "object", "properties": {}}, run=_time)
 
 get_battery = Tool(
-    name="get_battery", group="system", tier=READ, description="Get the battery level and charging state.",
+    name="get_battery", group="system", tier=READ,
+    description="Get the battery level and charging state. Always call it before saying them; earlier values may be "
+                "out of date.",
     parameters={"type": "object", "properties": {}}, run=_battery)
 
 volume = Tool(

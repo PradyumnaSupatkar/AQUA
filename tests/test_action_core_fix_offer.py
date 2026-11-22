@@ -11,7 +11,7 @@ from aqua.tools.fake import FakeDesktop
 
 from action_core_helpers import call, make_engine
 
-READ_ONLY = {"get_time", "get_battery", "list_windows", "inspect_window", "look_up"}
+READ_ONLY = {"get_time", "get_battery", "device_status", "list_windows", "inspect_window", "look_up"}
 
 
 class RequestArgumentTests(unittest.TestCase):

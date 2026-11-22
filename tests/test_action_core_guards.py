@@ -18,7 +18,7 @@ class GuardSwitchTests(unittest.TestCase):
     def test_all_guards_default_on_and_names_are_checked(self):
         self.assertTrue(all(getattr(DEFAULT_GUARDS, name) for name in GUARD_NAMES))
         self.assertEqual(set(GUARD_NAMES), {"negation_guard", "claim_retry", "cant_retry", "citation_strip",
-                                            "knowledge_cutoff", "restate_request"})
+                                            "knowledge_cutoff", "restate_request", "question_guard"})
         self.assertFalse(without("claim_retry").claim_retry)
         with self.assertRaises(ValueError):
             without("no_such_guard")

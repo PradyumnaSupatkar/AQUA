@@ -171,15 +171,15 @@ class ConfirmationFlowTests(unittest.TestCase):
 
 class LoopBehaviourTests(unittest.TestCase):
     def test_plain_conversation_streams_and_is_remembered(self):
-        engine, _, model = make_engine("Hi Sam, nice to meet you.", "Your name is Sam.")
+        engine, _, model = make_engine("Hi Sam. Nice to meet you.", "Your name is Sam.")
         streamed = []
         engine.respond("Hi, I'm Sam", on_text=streamed.append)
-        self.assertEqual(len(streamed), 2)  # Live chunks, not one buffered string.
+        self.assertEqual(streamed, ["Hi Sam. ", "Nice to meet you."])  # Streamed one sentence at a time.
         engine.respond("what's my name")
         history = model.requests[1]["messages"]
         self.assertEqual(history[0], {"role": "system", "content": SYSTEM_PROMPT})
         self.assertEqual(history[1], {"role": "user", "content": "Hi, I'm Sam"})
-        self.assertEqual(history[2]["content"], "Hi Sam, nice to meet you.")
+        self.assertEqual(history[2]["content"], "Hi Sam. Nice to meet you.")
         self.assertTrue(history[3]["content"].startswith("what's my name\n\n[Aqua host context"))
 
     def test_system_message_is_identical_across_requests(self):

@@ -45,10 +45,10 @@ class FallbackFlowTests(unittest.TestCase):
         self.assertEqual(desktop.power, [("sign_out", 0)])
 
     def test_plain_chat_still_streams_live(self):
-        engine, _, _ = make_engine("Hi there, nice to hear from you.")
+        engine, _, _ = make_engine("Hi there. Nice to hear from you.")
         chunks = []
         engine.respond("hello there", on_text=chunks.append)
-        self.assertEqual(len(chunks), 2)  # Streamed in pieces, not one buffered sentence.
+        self.assertEqual(chunks, ["Hi there. ", "Nice to hear from you."])  # Streamed sentence by sentence.
 
 
 if __name__ == "__main__":

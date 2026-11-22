@@ -32,6 +32,7 @@ _EMOJI = re.compile(
     "[\U0001F000-\U0001FAFF\U00002600-\U000027BF\U0001F1E6-\U0001F1FF\U00002B00-\U00002BFF"
     "\U0000FE0F\U0000200D\U000020E3]")
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+_SENTENCE_BREAK = re.compile(r"[.!?]+[\"')\]]*\s+")  # End of a sentence while streaming
 # Statuses of operations that actually ran; only these count toward MAX_OPERATIONS.
 _EXECUTED = frozenset({"ok", "unverified", "failed", "empty"})
 
@@ -442,6 +443,7 @@ class AgentEngine:
         command_like = turn.explain or (bool(turn.tool_names) and any(
             self.registry.in_group(group) for group in (turn.groups or matched_groups(turn.request))))
         nudged = False
+        already = ""  # Text of this reply already streamed before a held claim
         offer = None  # (the model's offer text, whether it was already spoken)
         while True:
             acted = bool(turn.operations)
@@ -450,7 +452,12 @@ class AgentEngine:
                 return self._stop_at_limit(turn, utterance, emit, result, state)
             turn.decisions += 1
             try:
-                content, completion, held = self._model_round(turn.messages, definitions, emit if live else None)
+                content, completion, held, streamed, claimed = self._model_round(
+                    turn.messages, definitions, emit if live else None)
+                if live and claimed:
+                    # A streamed sentence claimed an action: check it like a buffered reply; what
+                    # was already spoken (before that sentence) is not repeated.
+                    live, command_like, already = False, True, " ".join(streamed.split())
             except OllamaError as exc:
                 state["completion"] = None
                 summary = join_phrases([op.done for op in turn.operations])
@@ -555,7 +562,10 @@ class AgentEngine:
                         countdown.fresh = False
                         if "cancel" not in reply.casefold():
                             reply += " Say cancel to stop it."
-                    emit(reply, segment=True)
+                    if already and reply.startswith(already):
+                        reply = reply[len(already):].strip()  # The streamed start was already spoken.
+                    if reply:
+                        emit(reply, segment=True)
                 self._remember(utterance, "".join(state["spoken"]), turn)
                 return result("action" if acted else "answer", "complete", turn)
             for index, call in enumerate(calls):
@@ -677,12 +687,38 @@ class AgentEngine:
             for item in data:
                 self._observe(item)
 
+    def _risky(self, sentence: str) -> bool:
+        """A sentence that claims or promises an action; while streaming it is held back
+        until the claim check has run, because spoken words cannot be taken back."""
+        return self.guards.claim_retry and (unsupported_claim(sentence, set()) or bool(_PROMISE.search(sentence)))
+
     def _model_round(self, messages, definitions, stream_to):
-        """One model decision. Text streams live only before any tool has run;
-        afterwards it is buffered so only one sentence is spoken. A reply that starts
-        like a written-out tool call is held back (``held``) and never streamed."""
+        """One model decision. Text streams live only before any tool has run, one sentence
+        at a time; afterwards it is buffered so only one sentence is spoken.
+
+        Returns (content, completion, held, streamed, claimed): ``held`` means the reply
+        starts like a written-out tool call and nothing was streamed; ``claimed`` means a
+        sentence claimed or promised an action, so it and the rest were held back and only
+        ``streamed`` was spoken.
+        """
         guard, parts, completion = AnswerChannelGuard(), [], None
-        undecided, held = stream_to is not None, False
+        decided, held, claimed = stream_to is None, False, False
+        pending, streamed = "", []
+
+        def release(final: bool) -> None:
+            nonlocal pending, claimed
+            while pending and not claimed:
+                match = _SENTENCE_BREAK.search(pending)
+                if match is None and not final:
+                    return
+                chunk = pending[:match.end()] if match else pending
+                if self._risky(chunk):
+                    claimed = True
+                    return
+                stream_to(chunk)
+                streamed.append(chunk)
+                pending = pending[len(chunk):]
+
         iterator = self.client.stream_chat(messages, model=self.model, settings=self.settings, tools=definitions)
         try:
             for event in iterator:
@@ -690,34 +726,40 @@ class AgentEngine:
                     visible = guard.feed(event.content)
                     if visible:
                         parts.append(visible)
-                        if undecided:
+                        if stream_to is None or held:
+                            pass
+                        elif not decided:
                             start = "".join(parts).lstrip()
                             if any(prefix.startswith(start) for prefix in _TOOL_TEXT) and len(start) < 16:
                                 continue  # Could still become "<tool_call>": wait.
-                            undecided = False
+                            decided = True
                             held = start.startswith(_TOOL_TEXT)
                             if not held:
-                                stream_to("".join(parts))
-                        elif stream_to is not None and not held:
-                            stream_to(visible)
+                                pending = "".join(parts)
+                                release(False)
+                        else:
+                            pending += visible
+                            release(False)
                 if event.done:
                     completion = event
             tail = guard.finish()
             if tail:
                 parts.append(tail)
             if stream_to is not None and not held:
-                pending = "".join(parts) if undecided else tail
-                if undecided and pending.lstrip().startswith(_TOOL_TEXT):
-                    held = True
-                elif pending:
-                    stream_to(pending)
+                if not decided:
+                    held = "".join(parts).lstrip().startswith(_TOOL_TEXT)
+                    pending = "" if held else "".join(parts)
+                else:
+                    pending += tail
+                if not held:
+                    release(True)
         finally:
             close = getattr(iterator, "close", None)
             if callable(close):
                 close()
         if completion is None:
             raise OllamaProtocolError("Ollama ended the reply without completing it.")
-        return "".join(parts), completion, held
+        return "".join(parts), completion, held, "".join(streamed), claimed
 
     def _stop_at_limit(self, turn, utterance, emit, result, state):
         reason = "I stopped there because the task needed too many steps."

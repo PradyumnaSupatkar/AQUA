@@ -79,5 +79,31 @@ class FactualAnswerTests(unittest.TestCase):
         self.assertEqual(len(model.requests), 1)
 
 
+class StreamingHoldTests(unittest.TestCase):
+    def test_a_streamed_claim_is_held_until_checked(self):
+        engine, desktop, model = make_engine("Sure thing. I have opened Notepad for you.",
+                                             [call("launch_app", app="Notepad")], "Opened Notepad.")
+        spoken = []
+        result = engine.respond("hello there, Notepad please", on_text=spoken.append)
+        self.assertEqual(spoken[0], "Sure thing. ")  # Safe sentence streamed at once.
+        self.assertNotIn("I have opened Notepad for you.", "".join(spoken))
+        self.assertEqual(desktop.launched, ["Notepad"])
+        self.assertEqual(result.text, "Sure thing. Opened Notepad.")
+
+    def test_a_held_promise_without_any_action_becomes_honest(self):
+        engine, desktop, _ = make_engine("I will open Notepad for you.", "I will open Notepad for you.")
+        spoken = []
+        result = engine.respond("hello there, my notes thing", on_text=spoken.append)
+        self.assertEqual(desktop.launched, [])
+        self.assertEqual(result.text, "Sorry, I didn't manage to do that.")
+        self.assertNotIn("I will open", "".join(spoken))
+
+    def test_ordinary_chat_streams_every_sentence(self):
+        engine, _, _ = make_engine("Paris is the capital of France. It is lovely in spring.")
+        spoken = []
+        engine.respond("chat with me about spring in Paris", on_text=spoken.append)
+        self.assertEqual(spoken, ["Paris is the capital of France. ", "It is lovely in spring."])
+
+
 if __name__ == "__main__":
     unittest.main()

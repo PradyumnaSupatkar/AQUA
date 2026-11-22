@@ -76,6 +76,15 @@ _KNOWLEDGE_TOOLS = frozenset({"look_up"})
 _OBSERVED_KEYS = ("app", "window", "title", "process")
 _NUDGE = ("[Aqua host: no tool was called for that, so it has not happened. If the user asked for an action, "
           "call the tool now. If you cannot, say plainly that you did not do it.]")
+# "I'll open Notepad for you" with no tool call: a promise is not an action.
+_PROMISE = re.compile(
+    r"\b(?:i'?ll|i\s+will|let\s+me|i'?m\s+going\s+to|i\s+am\s+going\s+to|i\s+can\s+do\s+that)\b[^.?!]{0,40}?"
+    r"\b(?:open|launch|start|type|write|put|mute|unmute|turn|set|lock|close|quit|minimi[sz]e|maximi[sz]e|restore|"
+    r"bring|switch|pause|play|resume|skip|search|undo|adjust|raise|lower|reduce|increase|dim|brighten|do\s+that|"
+    r"do\s+it)\b", re.I)
+_PROMISE_NUDGE = ("[Aqua host: you said you would do it, but no tool was called, so nothing happened. If the user "
+                  "asked for it, call the tool now with request \"asked\". Otherwise answer without promising an "
+                  "action.]")
 # The model offered an action itself ("Would you like me to ...?"). The host turns the
 # offer into a real pending confirmation instead of letting the model act on it.
 _ASKS_PERMISSION = re.compile(r"\b(?:would|do)\s+you\s+(?:like|want)\s+(?:me\s+)?to\b|\bshall\s+i\b|\bshould\s+i\b|"
@@ -478,6 +487,17 @@ class AgentEngine:
                     if self.guards.citation_strip and not looked_up and _WIKI_CLAIM.search(reply):
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
+                    acted_for_real = any(op.status in {"ok", "unverified", "empty"} and not self._read_only(op.tool)
+                                         for op in turn.operations)
+                    if (self.guards.claim_retry and turn.tool_names and not looked_up and not acted_for_real
+                            and _PROMISE.search(reply)):
+                        if not nudged:
+                            # "I'll open Notepad for you" and no call: one nudge to actually do it.
+                            nudged = True
+                            turn.messages += [{"role": "assistant", "content": content},
+                                              {"role": "user", "content": _PROMISE_NUDGE}]
+                            continue
+                        reply = "Sorry, I didn't manage to do that."  # Never promise what did not happen.
                     if (self.guards.claim_retry and turn.tool_names and not looked_up
                             and unsupported_claim(reply, succeeded)):
                         if not nudged:

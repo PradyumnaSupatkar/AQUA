@@ -210,12 +210,15 @@ class TypeTextTests(unittest.TestCase):
         for text in ("line one\nline two", "a\rb"):
             decision = decide(type_text, {"text": text, "app": "notepad"}, ctx)
             self.assertEqual(decision.action, "confirm", text)
-            self.assertIn("never press Enter", decision.question)
-        self.assertIn("'line one line two'", decide(type_text, {"text": "line one\nline two", "app": "notepad"}, ctx).question)
+            self.assertIn("on 2 lines", decision.question)  # Notepad is a plain editor: Enter is a line break.
         self.assertEqual(decide(type_text, {"text": "bell\x07", "app": "notepad"}, ctx).action, DENY)
-        outcome = type_text.run({"text": "line one\nline two", "app": "notepad"}, ctx)
+        outcome = type_text.run({"text": "line one\r\nline two", "app": "notepad"}, ctx)
         self.assertEqual(outcome.status, "ok")
-        self.assertEqual(list(ctx.desktop.text.values()), ["line one line two"])  # No line break typed.
+        self.assertEqual(list(ctx.desktop.text.values()), ["line one\nline two"])
+        chat = ctx.desktop.add_window("General - Team Chat", "teamchat.exe")
+        self.assertIn("as one line", decide(type_text, {"text": "line one\nline two", "app": "Team Chat"}, ctx).question)
+        type_text.run({"text": "line one\nline two", "app": "Team Chat"}, ctx)
+        self.assertEqual(ctx.desktop.text[chat.handle], "line one line two")  # Enter could send a message here.
 
     def test_never_types_into_terminals(self):
         desktop = FakeDesktop()

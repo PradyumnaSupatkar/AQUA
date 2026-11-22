@@ -34,6 +34,7 @@ WM_CLOSE = 0x0010
 INPUT_KEYBOARD = 1
 KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE = 0x1, 0x2, 0x4
 VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN = 0x10, 0x11, 0x12, 0x5B, 0x5C
+VK_RETURN = 0x0D
 MEDIA_KEYS = {"play_pause": 0xB3, "next": 0xB0, "previous": 0xB1}
 PROCESS_QUERY_LIMITED_INFORMATION, SYNCHRONIZE, PROCESS_TERMINATE = 0x1000, 0x00100000, 0x0001
 SHUTDOWN_EXE = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "shutdown.exe")
@@ -112,7 +113,10 @@ def key_plan(text: str, scan) -> list[tuple]:
     """
     plan = []
     for ch in text:
-        code = scan(ch) if ch not in "\t\r\n" else -1
+        if ch == "\n":
+            plan.append(("key", VK_RETURN, False))  # Only plain editors get line breaks (type_text).
+            continue
+        code = scan(ch) if ch not in "\t\r" else -1
         vk, mods = code & 0xFF, (code >> 8) & 0xFF
         if code == -1 or vk in (0, 0xFF) or mods:
             plan.append(("unicode", ch))
@@ -520,7 +524,8 @@ class Win32Desktop(Desktop):
     def type_text(self, handle: int, text: str) -> int:
         """Type one character at a time, paced, as real key presses where the keyboard
         layout has the character (Shift as needed, Caps Lock accounted for), else as Unicode.
-        Never presses Enter; stops as soon as focus leaves the window."""
+        A line break is the Enter key (type_text sends one only to plain editors); stops as
+        soon as focus leaves the window."""
         self._wait_for_modifiers()
         self._editor_ready(handle, FOCUS_READY_SECONDS)
         layout = self.user.GetKeyboardLayout(self.user.GetWindowThreadProcessId(handle, None))

@@ -32,6 +32,7 @@ class Decision:
     tier: int = SAFE
     reason: str = ""            # deny: why (shown to the model)
     question: str = ""          # confirm / clarify: host-authored question
+    detail: str = ""            # confirm: shown on screen with the question, never spoken
 
 
 def normalize_name(value: str) -> str:
@@ -89,7 +90,7 @@ class Policy:
         if tool.check is not None:
             scoped = tool.check(args, context)
             if scoped is not None:
-                return Decision(scoped.action, tier, scoped.reason, scoped.question)
+                return Decision(scoped.action, tier, scoped.reason, scoped.question, scoped.detail)
         if tier >= DISRUPTIVE:
             question = tool.confirm(args) if tool.confirm is not None else f"Run {tool.name}? Say yes or no."
             return Decision(CONFIRM, tier, question=question)
@@ -107,9 +108,10 @@ def clarify(question: str) -> Decision:
     return Decision(CLARIFY, question=question)
 
 
-def ask(question: str) -> Decision:
-    """A scope rule asking the user to confirm this exact action first."""
-    return Decision(CONFIRM, question=question)
+def ask(question: str, detail: str = "") -> Decision:
+    """A scope rule asking the user to confirm this exact action first; ``detail`` is
+    shown on screen with the spoken question (e.g. the full text about to be typed)."""
+    return Decision(CONFIRM, question=question, detail=detail)
 
 
 __all__ = ["CLARIFY", "CONFIRM", "DENY", "DESTRUCTIVE", "DISRUPTIVE", "Decision", "Policy", "RUN",

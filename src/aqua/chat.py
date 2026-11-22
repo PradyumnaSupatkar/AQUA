@@ -260,6 +260,10 @@ def _respond_agent(agent, user_text: str, *, diagnostics: bool, speaker=None, wa
                 speaker.note_generation_rate(_generation_rate(result.completion))
             speaker.finish_turn()
     print()
+    if result.detail:
+        # Shown, never spoken: e.g. the full text a "Go ahead?" read-back summarised.
+        for line in result.detail.splitlines():
+            print("      " + line)
     if result.error:
         print(f"Chat error ({result.stage}): {result.error}", file=sys.stderr)
     if diagnostics:

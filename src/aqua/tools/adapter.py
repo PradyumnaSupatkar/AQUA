@@ -67,7 +67,8 @@ class Desktop(ABC):
     @abstractmethod
     def type_text(self, handle: int, text: str) -> int:
         """Type Unicode text at the cursor of the foreground window ``handle``.
-        Never presses Enter. Stops if focus moves away; returns characters typed."""
+        A line break is the Enter key (type_text sends one only to plain editors).
+        Stops if focus moves away; returns characters typed."""
     @abstractmethod
     def read_focused_text(self) -> str | None:
         """UI Automation readback of the focused control, or None if unsupported."""

@@ -70,18 +70,56 @@ def _check(args: dict, context: ToolContext):
     if not args.get("app") and _target(args, context) is None:
         return clarify("Which app should I type that into?")
     target = f" into {args['app']}" if args.get("app") else ""
-    if "\n" in text or "\r" in text:
-        # Aqua never presses Enter: line breaks become spaces, and the user hears it first.
-        return ask(f"That has line breaks and I never press Enter, so I'll type it as one line{target}: "
-                   f"'{readback(one_line(text))}'. Go ahead?")
-    if not dictated(text, context.request, context.earlier):
+    if "\n" in text or "\r" in text or not dictated(text, context.request, context.earlier):
         # Text the model wrote (a poem, an email) is read back first; dictation is typed at once.
-        return ask(f"I'll type{target}: '{readback(text)}'. Go ahead?")
+        return ask(*read_back(text, context.request, target, keep_lines=plain_editor(args, context)))
     return None
 
 
+SPOKEN_WORDS = 12  # Longer text is summarised when spoken; the full text is shown on screen.
+# Plain editors take Enter as a line break; elsewhere Enter can send a message or run a command.
+PLAIN_EDITORS = frozenset({"notepad.exe", "code.exe"})
+_PLAIN_EDITOR_NAMES = frozenset({"notepad", "vs code", "vscode", "visual studio code", "code"})
+_WHAT = re.compile(r"\b(?:write|type|compose|draft|put|jot|add)\s+(?:down\s+|out\s+|up\s+)?(?:me\s+)?(.+)", re.I)
+# The place at the end: "... into (the) Notepad (window)". Only the last such phrase, so
+# "an email to my boss in Notepad" keeps "to my boss".
+_WHERE = re.compile(r"\s+(?:into|in|on|onto|to)\s+(?:the\s+|my\s+|a\s+)?(?:new\s+)?"
+                    r"(?:(?!(?:into|in|on|onto|to)\b)[\w.]+\s*){1,3}?(?:\s*(?:window|app|file|document|tab))?\s*$",
+                    re.I)
+
+
+def plain_editor(args: dict, context: ToolContext) -> bool:
+    window = _target(args, context)
+    if window is not None:
+        return window.process.casefold() in PLAIN_EDITORS
+    return normalize(args.get("app") or "") in _PLAIN_EDITOR_NAMES
+
+
+def what_to_type(request: str) -> str:
+    """"write a short poem about rain into Notepad" -> "a short poem about rain"; "" if unclear."""
+    match = _WHAT.search(request)
+    if match is None:
+        return ""
+    words = _WHERE.sub("", match.group(1).strip().rstrip(".!?"), count=1).strip(" ,")
+    return words if 0 < len(words.split()) <= 10 else ""
+
+
+def read_back(text: str, request: str, target: str, *, keep_lines: bool) -> tuple[str, str]:
+    """(spoken question, text shown on screen). Short one-line text is read in full; longer
+    text is summarised ("I'll type a short poem about rain, 38 words. Go ahead?") and shown."""
+    lines = [part.strip() for part in _lines(text).split("\n") if part.strip()]
+    breaks = len(lines) > 1
+    shown = "\n".join(lines) if keep_lines else one_line(text)
+    if not breaks and len(text.split()) <= SPOKEN_WORDS:
+        return f"I'll type{target}: '{text}'. Go ahead?", ""
+    count = len(text.split())
+    what = what_to_type(request) or "the text"
+    layout = f", on {len(lines)} lines" if breaks and keep_lines else ", as one line" if breaks else ""
+    return f"I'll type {what}{target}, {count} word{'s' if count != 1 else ''}{layout}. Go ahead?", shown
+
+
 def one_line(text: str) -> str:
-    """Line breaks as single spaces; nothing ever presses Enter. Other text is unchanged."""
+    """Line breaks as single spaces, for apps where Enter could send or run something."""
     if "\n" not in text and "\r" not in text:
         return text
     return " ".join(part.strip() for part in text.replace("\r", "\n").split("\n") if part.strip())
@@ -121,10 +159,15 @@ def inserted(before: str | None, after: str, text: str) -> bool:
 
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
-    desktop, text = context.desktop, one_line(args["text"])
+    desktop = context.desktop
     window = _target(args, context)
     if window is None:
         return ToolOutcome("failed", f"No open window matches {args.get('app')}. Open the app first, then type.")
+    if window.process.casefold() in PLAIN_EDITORS:
+        # Line ends normalised (each line break is one Enter press); the text is otherwise as written.
+        text = _lines(args["text"])
+    else:
+        text = one_line(args["text"])
     name = label(window)
     if desktop.is_terminal(window):
         # Text left at a shell prompt runs on the next Enter, so never type there.
@@ -151,8 +194,8 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
 type_text = Tool(
     name="type_text", group="input", tier=SAFE,
     description=("Write (type) text into an app window that is already open, e.g. 'write hello in Notepad'. "
-                 "Focuses the window itself; never opens apps or presses Enter. Text you compose yourself "
-                 "(a poem, an email) is read back to the user first; write it as one line."),
+                 "Focuses the window itself; never opens apps. Text you compose yourself (a poem, an email) "
+                 "is read back to the user first. Line breaks are kept only in Notepad and VS Code."),
     parameters={"type": "object", "properties": {
         "text": {"type": "string", "description": "Exact text to type", "minLength": 1, "maxLength": MAX_TEXT},
         "app": {"type": "string", "description": "Window to type into, e.g. Notepad; omit for the app just opened",

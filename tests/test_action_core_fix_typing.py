@@ -55,7 +55,9 @@ class TypingFlowTests(unittest.TestCase):
                                    desktop=desktop)
         asked = engine.respond("write a short poem about rain into Notepad")
         self.assertEqual(asked.outcome, "confirm")
-        self.assertEqual(asked.text, f"I'll type into Notepad: '{POEM}'. Go ahead?")
+        # Over 12 words: summarised aloud, the full text shown.
+        self.assertEqual(asked.text, "I'll type a short poem about rain into Notepad, 13 words. Go ahead?")
+        self.assertEqual(asked.detail, POEM)
         self.assertEqual(desktop.typed, [])
         self.assertTrue(engine.awaiting_answer)  # Hands-free opens its answer window.
         self.assertEqual(engine.respond("yes").text, "Typed the poem into Notepad.")

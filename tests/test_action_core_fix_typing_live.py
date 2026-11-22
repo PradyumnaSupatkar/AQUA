@@ -29,6 +29,10 @@ class KeyPlanTests(unittest.TestCase):
         # A busy Windows 11 Notepad can miss Shift; a packet carries the character itself.
         self.assertEqual(key_plan("Hi!", scan), [("unicode", "H"), ("key", ord("I"), False), ("unicode", "!")])
 
+    def test_a_line_break_is_the_enter_key(self):
+        self.assertEqual(key_plan("a\nb", scan), [("key", ord("A"), False), ("key", 0x0D, False),
+                                                   ("key", ord("B"), False)])
+
     def test_everything_else_is_sent_as_unicode(self):
         # Tab could move focus and Ctrl+Alt (AltGr) could fire shortcuts; unknown characters have no key.
         self.assertEqual(key_plan("\t€é😀", scan), [("unicode", "\t"), ("unicode", "€"), ("unicode", "é"),
@@ -121,17 +125,27 @@ class DeadQuestionTests(unittest.TestCase):
 class LineBreakAndClaimTests(unittest.TestCase):
     POEM = "Rain falls gently on the earth,\nA soft melody, a quiet birth."
 
-    def test_poem_with_line_breaks_is_read_back_as_one_line_then_typed(self):
+    def test_poem_keeps_its_line_breaks_in_notepad(self):
         desktop = FakeDesktop()
         notepad = desktop.add_window("Untitled - Notepad", "notepad.exe", front=False)
         engine, _, _ = make_engine([call("type_text", text=self.POEM, app="Notepad")], "Typed the poem.",
                                    desktop=desktop)
         asked = engine.respond("write a short poem about rain into Notepad")
         self.assertEqual(asked.outcome, "confirm")
-        self.assertIn("one line", asked.text)
+        self.assertEqual(asked.text, "I'll type a short poem about rain into Notepad, 12 words, on 2 lines. Go ahead?")
+        self.assertEqual(asked.detail, self.POEM)  # Shown on screen, not spoken.
         engine.respond("yes")
-        self.assertEqual(desktop.text[notepad.handle],
-                         "Rain falls gently on the earth, A soft melody, a quiet birth.")
+        self.assertEqual(desktop.text[notepad.handle], self.POEM)
+
+    def test_elsewhere_line_breaks_become_one_line(self):
+        desktop = FakeDesktop()
+        chat = desktop.add_window("General - Team Chat", "teamchat.exe", front=False)
+        engine, _, _ = make_engine([call("type_text", text=self.POEM, app="Team Chat")], "Typed the poem.",
+                                   desktop=desktop)
+        asked = engine.respond("write a short poem about rain into Team Chat")
+        self.assertIn("as one line", asked.text)
+        engine.respond("yes")
+        self.assertEqual(desktop.text[chat.handle], "Rain falls gently on the earth, A soft melody, a quiet birth.")
 
     def test_a_refused_attempt_does_not_back_a_success_claim(self):
         from aqua.agent.loop import unsupported_claim

@@ -305,6 +305,7 @@ class AgentTurnResult:
     error: str | None = None
     task: AgentTask | None = None
     tool_result: None = None
+    detail: str | None = None   # Shown on screen after the reply, never spoken (e.g. text to type).
 
     @property
     def asked_question(self) -> bool:
@@ -323,6 +324,7 @@ class _Turn:
     offer_mode: bool = False    # The model is naming the tool for its own offer; calls become "unsure".
     groups: tuple = ()          # Keyword groups used for this request (inherited by follow-ups).
     explain: bool = False       # An explanation-only question: action tools hidden, offers still allowed.
+    detail: str = ""            # Display-only text for the host question this request ended in.
 
 
 class AgentEngine:
@@ -419,7 +421,8 @@ class AgentEngine:
         def result(outcome, stage, turn, *, ok=True, error=None, status="done", reason=None):
             task = None if turn is None else AgentTask(turn.request, turn.decisions, tuple(turn.operations), status, reason)
             return AgentTurnResult(ok, "".join(state["spoken"]).strip(), outcome, state["requests"],
-                                   self.clock() - started, state["first"], state["completion"], stage, error, task)
+                                   self.clock() - started, state["first"], state["completion"], stage, error, task,
+                                   detail=(turn.detail or None) if turn is not None else None)
 
         cancelled = self._cancel_countdown(text)
         if cancelled is not None:
@@ -776,6 +779,7 @@ class AgentEngine:
             turn.messages.pop()  # The question replaces this call; the user's answer is a new request.
             return "clarify", decision.question
         if decision.action == CONFIRM:
+            turn.detail = decision.detail
             summary = tool.describe(args) if tool.describe is not None else tool.name.replace("_", " ")
             self.gate.offer(PendingAction(tool.name, args, decision.question, self.clock(), turn.request,
                                           turn.messages, turn.tool_names, turn.decisions, list(turn.operations),

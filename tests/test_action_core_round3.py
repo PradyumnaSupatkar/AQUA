@@ -287,5 +287,52 @@ class DirectCommandTests(unittest.TestCase):
         self.assertEqual(desktop.power, [])
 
 
+POEM = ("Rain taps softly on the glass,\nPuddles gather on the grass,\nClouds drift slowly, grey and wide,\n"
+        "Rivers swell with every tide.")
+
+
+class ReadBackWordingTests(unittest.TestCase):
+    def test_what_is_typed_comes_from_the_request(self):
+        from aqua.tools.input import what_to_type
+        self.assertEqual(what_to_type("write a short poem about rain into Notepad"), "a short poem about rain")
+        self.assertEqual(what_to_type("Could you type me an email to my boss in the Notepad window?"),
+                         "an email to my boss")
+        self.assertEqual(what_to_type("put a greeting into notepad"), "a greeting")
+        self.assertEqual(what_to_type("hello there"), "")
+
+    def test_long_text_is_summarised_aloud_and_shown_in_full(self):
+        desktop = FakeDesktop()
+        desktop.add_window("Untitled - Notepad", "notepad.exe", front=False)
+        engine, _, _ = make_engine([call("type_text", text=POEM, app="Notepad")], "Typed it.", desktop=desktop)
+        spoken = []
+        asked = engine.respond("write a short poem about rain into Notepad", on_text=spoken.append)
+        self.assertEqual(asked.text, "I'll type a short poem about rain into Notepad, 22 words, on 4 lines. Go ahead?")
+        self.assertNotIn("Puddles", "".join(spoken))
+        self.assertEqual(asked.detail, POEM)
+
+    def test_short_text_is_read_in_full_with_nothing_extra_shown(self):
+        desktop = FakeDesktop()
+        desktop.add_window("Untitled - Notepad", "notepad.exe", front=False)
+        engine, _, _ = make_engine([call("type_text", text="Hello from Aqua", app="Notepad")], "Typed it.",
+                                   desktop=desktop)
+        asked = engine.respond("put a greeting into notepad")
+        self.assertEqual(asked.text, "I'll type into Notepad: 'Hello from Aqua'. Go ahead?")
+        self.assertIsNone(asked.detail)
+
+    def test_unknown_description_falls_back_to_the_text(self):
+        from aqua.tools.input import read_back
+        question, shown = read_back(POEM, "go on then", "", keep_lines=False)
+        self.assertEqual(question, "I'll type the text, 22 words, as one line. Go ahead?")
+        self.assertNotIn("\n", shown)
+
+    def test_vs_code_is_a_plain_editor(self):
+        desktop = FakeDesktop()
+        code = desktop.add_window("Welcome - Visual Studio Code", "code.exe", front=False)
+        engine, _, _ = make_engine([call("type_text", text=POEM, app="VS Code")], "Typed it.", desktop=desktop)
+        engine.respond("write a poem about rain into VS Code")
+        engine.respond("yes")
+        self.assertEqual(desktop.text[code.handle], POEM)
+
+
 if __name__ == "__main__":
     unittest.main()

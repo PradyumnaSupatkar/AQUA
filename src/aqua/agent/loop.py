@@ -534,6 +534,15 @@ class AgentEngine:
                     if self.guards.citation_strip and not looked_up and _WIKI_CLAIM.search(reply):
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
+                    undoable = self._undoable()
+                    if (not nudged and undoable and "undo" in matched_groups(turn.request)
+                            and "undo_last" in turn.tool_names and "undo_last" not in attempted):
+                        # "undo that" answered without undoing: one nudge naming what would be undone.
+                        nudged = True
+                        turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content":
+                                          f"[Aqua host: undo_last can undo {undoable}. The user asked to undo it: "
+                                          "call undo_last now.]"}]
+                        continue
                     acted_for_real = any(op.status in {"ok", "unverified", "empty"} and not self._read_only(op.tool)
                                          for op in turn.operations)
                     if (self.guards.claim_retry and turn.tool_names and not looked_up and not acted_for_real

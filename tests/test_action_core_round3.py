@@ -105,5 +105,25 @@ class StreamingHoldTests(unittest.TestCase):
         self.assertEqual(spoken, ["Paris is the capital of France. ", "It is lovely in spring."])
 
 
+class BrightnessUndoTests(unittest.TestCase):
+    def test_brightness_change_is_undoable_and_undo_is_offered(self):
+        engine, desktop, model = make_engine([call("brightness", action="down")], "Brightness is now 60%.",
+                                             "No action was requested.", [call("undo_last")], "")
+        engine.respond("turn the brightness down")
+        self.assertEqual(desktop.brightness, 60)
+        self.assertEqual(engine.context.undo.peek().description, "the brightness change")
+        result = engine.respond("undo that")
+        self.assertIn("undo_last", model.requests[2]["tools"])
+        self.assertIn("undo_last would undo: the brightness change", model.requests[2]["messages"][-1]["content"])
+        self.assertIn("call undo_last now", model.requests[3]["messages"][-1]["content"])  # The nudge.
+        self.assertEqual(desktop.brightness, 70)
+        self.assertEqual(result.text, "Put the brightness back to 70%.")
+
+    def test_no_nudge_when_there_is_nothing_to_undo(self):
+        engine, _, model = make_engine("There is nothing to undo.")
+        engine.respond("undo that")
+        self.assertEqual(len(model.requests), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

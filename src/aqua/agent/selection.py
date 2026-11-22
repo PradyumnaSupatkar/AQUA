@@ -28,12 +28,16 @@ _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in w
 # Requests that ask for no action at all: a leading "don't ...", or a
 # hypothetical ("what would happen if ..."). Tools are hidden for these, so the
 # model can only talk. Hiding tools can only remove capability, never add it.
-_NEGATED = re.compile(r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+)?(?:don'?t|do\s+not|never|no\s+need\s+to)\b", re.IGNORECASE)
+# "Never mind ..." and "don't forget to ..." are not negations: they precede a request.
+_NEGATED = re.compile(
+    r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+)?"
+    r"(?:(?:don'?t|do\s+not)(?!\s+forget\b)|never(?!\s+mind\b)|no\s+need\s+to)\b", re.IGNORECASE)
 _REDIRECT = re.compile(r"\b(?:instead|but|rather|then)\b", re.IGNORECASE)
+# Polite requests ("would you be able to open Chrome?") are requests, not hypotheticals.
 _HYPOTHETICAL = re.compile(
     r"\bwhat\s+(?:would|will|could|might)\s+(?:happen|you\s+do)\b|\bwhat\s+happens\s+(?:if|when)\b|"
     r"\bwhat\s+if\b|\bhypothetical(?:ly)?\b|\bif\s+i\s+(?:said|asked|told|were\s+to|wanted)\b|"
-    r"\bwould\s+you\s+(?:be\s+able\s+to|ever)\b|\bimagine\b|\bpretend\b",
+    r"\bimagine\b|\bpretend\b",
     re.IGNORECASE)
 
 

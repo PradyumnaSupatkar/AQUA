@@ -196,6 +196,20 @@ class SelectionTests(unittest.TestCase):
                      "Would you open Chrome please"):
             self.assertFalse(wants_no_action(text), text)
 
+    def test_polite_requests_keep_their_tools(self):
+        for text in ("would you be able to open Chrome?", "Would you ever open Chrome for me?",
+                     "never mind that, open Calculator", "Never mind. Open Calculator",
+                     "don't forget to open Notepad", "Aqua, do not forget to open Notepad"):
+            self.assertFalse(wants_no_action(text), text)
+            self.assertIn("launch_app", select_tools(text, self.registry), text)
+
+    def test_real_negations_and_hypotheticals_still_hide_tools(self):
+        for text in ("Never open Chrome", "don't open Notepad", "Do not launch Calculator",
+                     "no need to open Spotify", "What would happen if I opened Chrome?",
+                     "Imagine you opened Notepad"):
+            self.assertTrue(wants_no_action(text), text)
+            self.assertEqual(select_tools(text, self.registry), (), text)
+
 
 class UndoStackTests(unittest.TestCase):
     def test_last_action_is_undone_first_and_stack_is_bounded(self):

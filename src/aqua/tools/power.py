@@ -14,6 +14,8 @@ QUESTIONS = {
     "shutdown": "Shut down the computer? Say yes or no.",
     "sign_out": "Sign out of Windows? Unsaved work may be lost. Say yes or no.",
 }
+_PHRASES = {"sleep": "put the computer to sleep", "restart": "restart the computer",
+            "shutdown": "shut down the computer", "sign_out": "sign out of Windows"}
 _SPELLING = {"shut_down": "shutdown", "shut down": "shutdown", "reboot": "restart", "log_out": "sign_out",
              "log_off": "sign_out", "logout": "sign_out", "signout": "sign_out", "suspend": "sleep"}
 
@@ -44,4 +46,5 @@ power = Tool(
         "action": {"type": "string", "enum": ["sleep", "restart", "shutdown", "sign_out", *_SPELLING]}},
         "required": ["action"]},
     run=_run,
-    confirm=lambda args: QUESTIONS[action_of(args)])
+    confirm=lambda args: QUESTIONS[action_of(args)],
+    describe=lambda args: _PHRASES[action_of(args)])

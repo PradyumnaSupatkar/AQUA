@@ -329,8 +329,10 @@ class AgentEngine:
         text = text.strip()
         self.context.begin_request(text)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard)
+        not_done = tuple(dict.fromkeys(action.summary for action in self.gate.take_dropped() if action.summary))
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
-                    {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable())}]
+                    {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable(),
+                                                             not_done=not_done)}]
         return self._loop(_Turn(text, names, messages, start=len(messages)), text, emit, result, state)
 
     # -- the loop -------------------------------------------------------------
@@ -512,9 +514,10 @@ class AgentEngine:
             turn.messages.pop()  # The question replaces this call; the user's answer is a new request.
             return "clarify", decision.question
         if decision.action == CONFIRM:
+            summary = tool.describe(args) if tool.describe is not None else tool.name.replace("_", " ")
             self.gate.offer(PendingAction(tool.name, args, decision.question, self.clock(), turn.request,
                                           turn.messages, turn.tool_names, turn.decisions, list(turn.operations),
-                                          start=turn.start))
+                                          start=turn.start, summary=summary))
             return "confirm", decision.question
         outcome = self._run(tool, args)
         turn.messages.append(self._tool_message(tool.name, outcome))

@@ -80,22 +80,34 @@ class PendingAction:
     operations: list = field(default_factory=list)
     start: int = 0
     expires_after: float = CONFIRM_SECONDS
+    summary: str = ""           # e.g. "force quit Spotify", for the "not done" note
 
     def expired(self, now: float) -> bool:
         return now - self.created > self.expires_after
 
 
 class ConfirmationGate:
-    """Holds at most one pending action. Each answer consumes it."""
+    """Holds at most one pending action. Each answer consumes it.
+
+    Actions that end without a yes (declined, expired, or replaced by another
+    request) are kept in ``dropped`` until the next request reads them, so the
+    model is told they were not done and does not propose them again.
+    """
 
     def __init__(self) -> None:
         self.pending: PendingAction | None = None
+        self.dropped: list[PendingAction] = []
 
     def offer(self, action: PendingAction) -> None:
         self.pending = action
 
     def clear(self) -> None:
         self.pending = None
+        self.dropped.clear()
+
+    def take_dropped(self) -> list[PendingAction]:
+        dropped, self.dropped = self.dropped, []
+        return dropped
 
     def answer(self, text: str, now: float) -> tuple[str, PendingAction | None]:
         """("yes"|"no", action) for an answer, otherwise ("none", None).
@@ -103,9 +115,11 @@ class ConfirmationGate:
         Any other utterance, or one after the expiry, cancels the pending action.
         """
         action, self.pending = self.pending, None
-        if action is None or action.expired(now):
+        if action is None:
             return "none", None
-        verdict = classify_reply(text)
+        verdict = None if action.expired(now) else classify_reply(text)
+        if verdict != "yes":
+            self.dropped.append(action)
         if verdict is None:
             return "none", None
         return verdict, action

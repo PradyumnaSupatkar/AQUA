@@ -21,6 +21,7 @@ MAX_SHORTCUTS = 3000
 # repeats of the last character ("Hello aaaaaaaaa") and drops Shift on queued real keys;
 # live tests: 12 ms steps were exact 6/6, 5 ms steps 2/6.
 KEY_STEP_SECONDS = .012
+PACKET_GAP_SECONDS = .06    # At least this long between two Unicode packets (they collapse if queued)
 READY_SECONDS = 6.0         # Longest wait for a new window's editor to accept keys
 FOCUS_READY_SECONDS = 2.0   # ... and for an existing window after focusing it
 STEADY_SECONDS = .6         # The title must stop changing this long (session tabs restoring)
@@ -101,20 +102,22 @@ def utf16_units(character: str) -> list[int]:
 
 
 def key_plan(text: str, scan) -> list[tuple]:
-    """How to type each character: ("key", vk, shift) for a key on the keyboard layout
-    (``scan(ch)`` is VkKeyScanEx: low byte vk, high byte modifiers), else ("unicode", ch).
+    """How to type each character: ("key", vk, False) for an unshifted key on the keyboard
+    layout (``scan(ch)`` is VkKeyScanEx: low byte vk, high byte modifiers), else ("unicode", ch).
 
-    Real key presses survive a busy target; Unicode packets do not. Tab and anything that
-    needs Ctrl or Alt (AltGr) is sent as Unicode so no shortcut or focus change can fire.
+    Plain key presses survive a busy target; queued Unicode packets collapse into the last
+    character, and a busy Windows 11 Notepad can miss Shift (live: 'I' became 'i' 1 in 12).
+    So characters that need Shift (capitals, most punctuation), Ctrl or Alt (AltGr), and Tab,
+    are sent as single Unicode packets, spaced so two are never queued at once.
     """
     plan = []
     for ch in text:
         code = scan(ch) if ch not in "\t\r\n" else -1
         vk, mods = code & 0xFF, (code >> 8) & 0xFF
-        if code == -1 or vk in (0, 0xFF) or mods & ~1:
+        if code == -1 or vk in (0, 0xFF) or mods:
             plan.append(("unicode", ch))
         else:
-            plan.append(("key", vk, bool(mods & 1)))
+            plan.append(("key", vk, False))
     return plan
 
 
@@ -524,17 +527,21 @@ class Win32Desktop(Desktop):
         caps = bool(self.user.GetKeyState(0x14) & 1)
         shift_scan = self.user.MapVirtualKeyExW(VK_SHIFT, 0, layout)
         step = KEY_STEP_SECONDS
-        typed = 0
+        typed, last_packet = 0, float("-inf")
         for ch, item in zip(text, key_plan(text, lambda c: self.user.VkKeyScanExW(c, layout))):
             if self._root(self.user.GetForegroundWindow()) != handle:
                 break
             if item[0] == "unicode":
+                wait = PACKET_GAP_SECONDS - (time.monotonic() - last_packet)
+                if wait > 0:
+                    time.sleep(wait)
                 sent = True
                 for unit in utf16_units(ch):
                     sent = sent and self._send((0, unit, KEYEVENTF_UNICODE))
                     time.sleep(step / 2)
                     sent = sent and self._send((0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP))
                 self._answers(handle, 1000)
+                last_packet = time.monotonic()
             else:
                 _kind, vk, shift = item
                 shift = shift ^ (caps and ch.isalpha())

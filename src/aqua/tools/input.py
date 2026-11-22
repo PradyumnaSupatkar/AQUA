@@ -98,6 +98,28 @@ def dictated(text: str, request: str, earlier: tuple[str, ...] = ()) -> bool:
     return bool(words) and any(f" {words} " in f" {_plain(said)} " for said in (request, *earlier))
 
 
+def _lines(text: str) -> str:
+    return text.replace("\r\n", "\n").replace("\r", "\n")
+
+
+def inserted(before: str | None, after: str, text: str) -> bool:
+    """The typed text went in exactly at one place (the caret) and nothing else changed:
+    ``after`` is ``before`` with ``text`` inserted. Without a "before" reading, the text
+    must at least appear in the document."""
+    after, text = _lines(after), _lines(text)
+    if before is None:
+        return text in after
+    before = _lines(before)
+    if len(after) != len(before) + len(text):
+        return False
+    index = after.find(text)
+    while index != -1:
+        if after[:index] + after[index + len(text):] == before:
+            return True
+        index = after.find(text, index + 1)
+    return False
+
+
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
     desktop, text = context.desktop, one_line(args["text"])
     window = _target(args, context)
@@ -110,16 +132,17 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
     front = desktop.foreground()
     if (front is None or front.handle != window.handle) and not desktop.focus(window.handle):
         return ToolOutcome("failed", f"Could not bring {name} to the front, so nothing was typed.")
+    before = desktop.read_focused_text()  # The document may already hold text (e.g. restored tabs).
     typed = desktop.type_text(window.handle, text)
     if typed < len(text):
         detail = "Nothing was typed" if typed == 0 else f"Only {typed} of {len(text)} characters were typed"
         return ToolOutcome("failed", f"{detail} because focus moved away from {name}.")
     readback = desktop.read_focused_text()
-    if readback is not None and text not in readback:
-        # The editor can be read and the exact text is not there: say so, never claim success.
+    if readback is not None and not inserted(before, readback, text):
+        # The editor can be read and the text did not go in exactly: say so, never claim success.
         return ToolOutcome("failed", f"The text did not arrive correctly in {name}; please check it.",
                            data={"window": name})
-    if readback is not None and text in readback:
+    if readback is not None:
         return ToolOutcome("ok", f"Typed the text into {name}.", done="typed your text", data={"window": name})
     return ToolOutcome("unverified", f"Typed the text into {name} (not verified).", done="typed your text",
                        data={"window": name})

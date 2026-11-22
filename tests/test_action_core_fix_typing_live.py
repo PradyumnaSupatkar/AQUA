@@ -22,10 +22,12 @@ def scan(ch):
 
 
 class KeyPlanTests(unittest.TestCase):
-    def test_layout_characters_become_real_key_presses_with_shift(self):
-        self.assertEqual(key_plan("Hi!", scan), [("key", ord("H"), True), ("key", ord("I"), False),
-                                                  ("key", 0x31, True)])
+    def test_unshifted_layout_characters_become_real_key_presses(self):
         self.assertEqual(key_plan("a 1", scan), [("key", ord("A"), False), ("key", 0x20, False), ("key", 0x31, False)])
+
+    def test_shifted_characters_become_single_unicode_packets(self):
+        # A busy Windows 11 Notepad can miss Shift; a packet carries the character itself.
+        self.assertEqual(key_plan("Hi!", scan), [("unicode", "H"), ("key", ord("I"), False), ("unicode", "!")])
 
     def test_everything_else_is_sent_as_unicode(self):
         # Tab could move focus and Ctrl+Alt (AltGr) could fire shortcuts; unknown characters have no key.

@@ -147,5 +147,32 @@ class SiteSearchTests(unittest.TestCase):
             validate_arguments(schema, {"query": "x", "site": "evil.example", "request": "asked"})
 
 
+class InsertionCheckTests(unittest.TestCase):
+    def test_text_inserted_at_the_caret_in_an_existing_document_passes(self):
+        from aqua.tools.input import inserted
+        old = "Old restored tab text. Second sentence."
+        self.assertTrue(inserted(old, "Old restored tab text. hello I am Aqua Second sentence.", "hello I am Aqua "))
+        self.assertTrue(inserted(old, old + "hello", "hello"))
+        self.assertTrue(inserted("", "hello", "hello"))
+        self.assertTrue(inserted("a\r\nb", "a\nXb", "X"))  # Line endings are normalised.
+        self.assertTrue(inserted(None, "anything hello anything", "hello"))
+
+    def test_garbled_or_extra_changes_fail(self):
+        from aqua.tools.input import inserted
+        old = "Old text."
+        self.assertFalse(inserted(old, old + "hello i am aqua", "hello I am Aqua"))   # Shift lost
+        self.assertFalse(inserted(old, old + "Hello aaaaaaaaa", "Hello I am Aqua"))   # Repeated packets
+        self.assertFalse(inserted(old, "Old text changed.hello", "hello"))            # Something else changed
+
+    def test_typing_into_a_notepad_that_already_has_text(self):
+        desktop = FakeDesktop()
+        notepad = desktop.add_window("*Restored notes - Notepad", "notepad.exe", front=False)
+        desktop.text[notepad.handle] = "Notes Notepad restored from last time. "
+        engine, _, _ = make_engine([call("type_text", text="hello I am your assistant", app="Notepad")],
+                                   "Typed it.", desktop=desktop)
+        result = engine.respond("Write hello I am your assistant into the notepad window")
+        self.assertEqual(result.task.operations[0].status, "ok")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -60,5 +60,24 @@ class PartialRequestTests(unittest.TestCase):
         self.assertEqual(engine.respond("mute").text, "Muted the sound.")
 
 
+class FactualAnswerTests(unittest.TestCase):
+    def test_facts_are_not_action_claims(self):
+        from aqua.agent.loop import unsupported_claim
+        for fact in ("Jane Austen wrote Pride and Prejudice.", "The Eiffel Tower was opened in 1889.",
+                     "Hamilton started racing at eight.", "The shop closed in 2010."):
+            self.assertFalse(unsupported_claim(fact, set()), fact)
+
+    def test_claims_about_the_pc_still_count(self):
+        from aqua.agent.loop import unsupported_claim
+        for claim in ("I have written the poem.", "The text has been written into Notepad.", "Notepad is now open.",
+                      "Your music has been paused.", "Battery is at 85%.", "Nothing is playing right now."):
+            self.assertTrue(unsupported_claim(claim, set()), claim)
+
+    def test_factual_answer_is_spoken_unchanged(self):
+        engine, _, model = make_engine("Jane Austen wrote Pride and Prejudice.")
+        self.assertEqual(engine.respond("Who wrote Pride and Prejudice?").text, "Jane Austen wrote Pride and Prejudice.")
+        self.assertEqual(len(model.requests), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

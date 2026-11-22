@@ -38,8 +38,9 @@ _EXECUTED = frozenset({"ok", "unverified", "failed", "empty"})
 # Past-tense action claims and the tools whose results can back them up. Used
 # only to catch a reply that says something happened when no tool did it; it
 # never authorizes or blocks an action.
-_CLAIMS = (
-    (re.compile(r"\b(?:opened|launched|started|brought)\b", re.I), {"launch_app", "window_action", "open_url",
+_ACTION_CLAIMS = (
+    (re.compile(r"\b(?:opened|launched|started|brought)\b|\b(?:is|are)\s+now\s+open\b", re.I),
+     {"launch_app", "window_action", "open_url",
                                                                      "web_search"}),
     (re.compile(r"\b(?:typed|wrote|written|entered)\b", re.I), {"type_text"}),
     (re.compile(r"\b(?:muted|unmuted|lowered|raised|increased|decreased|turned\s+(?:the\s+)?(?:volume|sound|it)|"
@@ -54,6 +55,8 @@ _CLAIMS = (
     (re.compile(r"\b(?:restarting|shutting\s+down|signing\s+(?:you\s+)?out|signed\s+out|going\s+to\s+sleep|"
                 r"put\s+(?:the\s+)?(?:computer|pc)\s+to\s+sleep)\b", re.I), {"power"}),
     (re.compile(r"\bsearched\b", re.I), {"web_search"}),
+)
+_STATE_CLAIMS = (
     # Device state must come from a live reading this turn, never from earlier turns.
     (re.compile(r"\bbattery\b[^.?!]*\b\d{1,3}\s?(?:%|percent)|\b\d{1,3}\s?(?:%|percent)[^.?!]*\bbattery\b|"
                 r"\b(?:is|are|it's)\s+(?:currently\s+|still\s+)?(?:charging|plugged\s+in|on\s+battery)\b|"
@@ -157,13 +160,28 @@ def parse_text_tool_call(content: str, visible: tuple[str, ...]) -> dict | None:
 _NEGATION = re.compile(r"\b(?:not|never|no|nothing|cannot|unable|failed|blocked)\b|n't\b", re.I)
 
 
+# An action claim is about the user's PC: Aqua speaking ("I opened ..."), a state change
+# ("has been muted", "is now open"), or the PC, a device part or an app named. "Jane Austen
+# wrote Pride and Prejudice" is a fact, not a claim.
+_ON_PC = re.compile(
+    r"\b(?:i|i've|i'd|i'm|we|aqua|you|windows)\b|\b(?:has|have)\s+been\b|\bis\s+now\b|"
+    r"\b(?:your|the|my)\s+(?:computer|pc|laptop|screen|desktop|volume|sound|audio|brightness|window|windows|browser|"
+    r"music|media|playback|song|track|app|apps|file|files|text)\b|"
+    r"\b(?:notepad|chrome|spotify|calculator|vs\s+code|visual\s+studio|edge|file\s+explorer|word|excel|paint|"
+    r"youtube|settings)\b", re.I)
+
+
 def unsupported_claim(reply: str, succeeded: set[str]) -> bool:
     """True when a sentence of the reply claims something no successful tool call this turn
-    backs. Negated sentences ("couldn't open it", "nothing was typed") are not claims."""
+    backs. Negated sentences ("couldn't open it", "nothing was typed") are not claims, and an
+    action verb counts only in a sentence about the user's PC."""
     for sentence in _SENTENCE_END.split(" ".join(reply.split())):
+        if any(pattern.search(sentence) and not (tools & succeeded) for pattern, tools in _STATE_CLAIMS):
+            return True  # Device state ("nothing is playing" too) always needs a reading.
         if _NEGATION.search(sentence):
             continue
-        if any(pattern.search(sentence) and not (tools & succeeded) for pattern, tools in _CLAIMS):
+        on_pc = bool(_ON_PC.search(sentence))
+        if on_pc and any(pattern.search(sentence) and not (tools & succeeded) for pattern, tools in _ACTION_CLAIMS):
             return True
     return False
 

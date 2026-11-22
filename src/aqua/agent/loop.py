@@ -17,6 +17,7 @@ from aqua.brain.ollama import ChatEvent, GenerationSettings, OllamaError, Ollama
 from .confirm import ConfirmationGate, PendingAction
 from .context import ToolContext
 from .countdown import is_cancel
+from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
 from .registry import Registry, SchemaError, ToolOutcome, validate_arguments
@@ -66,6 +67,17 @@ _CLAIMS_NO_ACCESS = re.compile(r"\bI\s+(?:cannot|can't|can\s+not|am\s+unable\s+t
                                r"\brequires?\s+system[- ]level\s+access\b", re.I)
 _ACT_NUDGE = ("[Aqua host: you have a tool for this request. Call it now. Do not ask for permission yourself: "
               "Aqua asks the user when an action needs a yes.]")
+# Citing a source that was never consulted is a false claim too.
+_WIKI_CLAIM = re.compile(r"\b(?:according\s+to|from|on)\s+wikipedia\b,?\s*|\bwikipedia\s+(?:says|states|reports|lists)"
+                         r"\b(?:\s+that)?,?\s*", re.I)
+_WIKI_NUDGE = ("[Aqua host: you did not call look_up, so you have not checked Wikipedia. Call look_up now and answer "
+               "from its result, or answer without mentioning Wikipedia.]")
+
+
+def _recent_nudge(now: datetime) -> str:
+    return (f"[Aqua host: today is {now:%A} {now.day} {now:%B %Y}. This is about something after your training data, "
+            "and it may well have happened already. Call look_up now with a short query and answer from its result.]")
+
 
 _TEXT_CALL = re.compile(r"^\s*(?:<tool_call>\s*)?(\{.*\})\s*(?:</tool_call>)?\s*$", re.S)
 
@@ -336,8 +348,27 @@ class AgentEngine:
                     # A looked-up answer may add one caveat ("...may be out of date").
                     reply = (first_sentences(content, 2 if looked_up else 1) if acted
                              else " ".join(strip_emoji(content).split()))
+                    can_look_up = "look_up" in turn.tool_names and not looked_up
+                    recent = beyond_model_memory(turn.request, reply, self.now())
+                    if not nudged and can_look_up and (recent or _WIKI_CLAIM.search(reply)):
+                        # Recent events, or a Wikipedia citation without a look-up: look it up first.
+                        # Only look_up is offered for this one retry, so the model cannot just talk again.
+                        nudged = True
+                        definitions = self.registry.definitions(("look_up",))
+                        note = _recent_nudge(self.now()) if recent else _WIKI_NUDGE
+                        turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": note}]
+                        continue
+                    if not looked_up and nudged and recent and can_look_up:
+                        reply = ("I can't check that right now, and it may be too recent for me to know. "
+                                 "I don't want to guess.")
+                    found = any(op.tool in _KNOWLEDGE_TOOLS and op.status == "ok" for op in turn.operations)
+                    if looked_up and not found and claims_not_happened(reply):
+                        reply = "I couldn't find that on Wikipedia, so I don't know."  # Not a stale-memory guess.
                     for tool, outcome in turn.reviews:
                         reply = tool.review(reply, outcome) or reply  # The tool's own check of the answer.
+                    if not looked_up and _WIKI_CLAIM.search(reply):
+                        reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
+                        reply = reply[:1].upper() + reply[1:]
                     if (not nudged and not acted and set(matched_groups(turn.request)) - {"knowledge"}
                             and ((reply.rstrip().endswith("?") and _ASKS_PERMISSION.search(reply))
                                  or _CLAIMS_NO_ACCESS.search(reply))):
@@ -538,8 +569,9 @@ class AgentEngine:
 
 
 def build_engine(client, *, model: str, settings: GenerationSettings, max_turns: int = 8,
-                 max_chars: int = 12000, desktop=None, policy: Policy | None = None) -> AgentEngine:
-    """The real session engine: Windows adapter, app index, all tools."""
+                 max_chars: int = 12000, desktop=None, policy: Policy | None = None,
+                 lookup: bool = True) -> AgentEngine:
+    """The real session engine: Windows adapter, app index, all tools (look_up unless disabled)."""
     from aqua.tools import build_registry
     from aqua.tools.app_index import AppIndex
     if desktop is None:
@@ -550,7 +582,7 @@ def build_engine(client, *, model: str, settings: GenerationSettings, max_turns:
     context = ToolContext(desktop=desktop, apps=apps,
                           policy=policy if policy is not None else Policy.from_user_config())
     conversation = Conversation(max_turns=max_turns, max_chars=max_chars, system_prompt=SYSTEM_PROMPT)
-    return AgentEngine(client, model=model, settings=settings, registry=build_registry(),
+    return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup),
                        context=context, conversation=conversation)
 
 

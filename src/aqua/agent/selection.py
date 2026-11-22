@@ -22,9 +22,14 @@ GROUP_KEYWORDS = {
               "turn off the computer", "turn off my computer", "turn off the pc", "power off"),
     "web": ("search", "google", "website", "web site", "site", "browse", "browser", "url", "link", "http",
             "https", "web", "online"),
+    "knowledge": ("who", "what", "when", "where", "which", "why", "how many", "how much", "how old", "how tall",
+                  "how long", "how far", "champion", "championship", "championships", "won", "win", "winner",
+                  "population", "capital", "born", "died", "founded", "invented", "discovered", "president",
+                  "prime minister", "wikipedia", "look up", "tell me about", "history of", "fact", "facts",
+                  "record", "tallest", "largest", "biggest", "oldest", "first"),
     "undo": ("undo", "revert", "take back", "put it back", "change it back"),
 }
-GROUP_ORDER = ("apps", "input", "windows", "system", "audio", "display", "power", "web", "undo")
+GROUP_ORDER = ("apps", "input", "windows", "system", "audio", "display", "power", "web", "knowledge", "undo")
 
 _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE)
              for group, words in GROUP_KEYWORDS.items()}

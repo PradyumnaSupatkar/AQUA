@@ -79,7 +79,7 @@ open_url = Tool(
 
 web_search = Tool(
     name="web_search", group="web", tier=SAFE,
-    description="Search the web in the default browser (shows results on screen).",
+    description="Search the web in the default browser (shows results on screen; for spoken facts use look_up).",
     parameters={"type": "object", "properties": {
         "query": {"type": "string", "description": "What to search for", "minLength": 1, "maxLength": 300}},
         "required": ["query"]},

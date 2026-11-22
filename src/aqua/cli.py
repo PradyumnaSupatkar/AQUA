@@ -125,6 +125,8 @@ def _chat_options(parser: argparse.ArgumentParser, *, keep_alive: str = DEFAULT_
     parser.add_argument("--engine", choices=("legacy", "new"), default="legacy",
                         help="action engine: legacy (default) or new (tool registry with risk tiers; "
                              "opens any installed app, types text, controls windows and volume)")
+    parser.add_argument("--no-lookup", action="store_true",
+                        help="new engine: never send look-up queries to Wikipedia (answers from the model only)")
     parser.add_argument("--allow-text-entry", action="append", choices=("notepad",), default=[],
                         help="explicitly enable guarded blank Edit text-entry proposals for the Stage 2B.1 application")
     parser.add_argument("--model", default=DEFAULT_CHAT_MODEL, help=f"installed Ollama model tag; default: {DEFAULT_CHAT_MODEL}")
@@ -420,6 +422,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 common["text_entry_apps"] = tuple(dict.fromkeys(args.allow_text_entry))
             if args.engine != "legacy":
                 common["engine"] = args.engine
+                if args.no_lookup:
+                    common["lookup"] = False
             if args.command == "chat":
                 return run_text_chat(**common)
             speech_path = resolve_model_dir(args.speech_model, args.speech_model_dir)

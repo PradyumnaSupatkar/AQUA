@@ -226,11 +226,13 @@ def _respond_result(
 ENGINES = ("legacy", "new")
 
 
-def _start_agent(client, *, model: str, settings: GenerationSettings, max_turns: int, max_chars: int):
+def _start_agent(client, *, model: str, settings: GenerationSettings, max_turns: int, max_chars: int,
+                 lookup: bool = True):
     """The new action core (--engine new). Returns None if the desktop adapter cannot start."""
     from aqua.agent.loop import build_engine
     try:
-        agent = build_engine(client, model=model, settings=settings, max_turns=max_turns, max_chars=max_chars)
+        agent = build_engine(client, model=model, settings=settings, max_turns=max_turns, max_chars=max_chars,
+                             **({} if lookup else {"lookup": False}))
     except (OSError, ImportError, ValueError) as exc:
         print(f"Action engine setup error: {exc}", file=sys.stderr)
         return None
@@ -333,6 +335,7 @@ def run_text_chat(
     tts_threads: int | None = None,
     llm_threads: int | None = None,
     engine: str = "legacy",
+    lookup: bool = True,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
@@ -347,7 +350,8 @@ def run_text_chat(
         conversation.text_entry_apps = text_entry_apps
         agent = None
         if engine == "new":
-            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns, max_chars=max_chars)
+            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns,
+                                 max_chars=max_chars, lookup=lookup)
             if agent is None:
                 return 1
             conversation = agent.conversation
@@ -472,6 +476,7 @@ def run_voice_chat(
     tts_threads: int | None = None,
     llm_threads: int | None = None,
     engine: str = "legacy",
+    lookup: bool = True,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
@@ -486,7 +491,8 @@ def run_voice_chat(
         conversation.text_entry_apps = text_entry_apps
         agent = None
         if engine == "new":
-            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns, max_chars=max_chars)
+            agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns,
+                                 max_chars=max_chars, lookup=lookup)
             if agent is None:
                 return 1
             conversation = agent.conversation

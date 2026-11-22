@@ -1,7 +1,9 @@
 """type_text: type at the cursor of a target window, after focusing and checking it."""
 
+import re
+
 from aqua.agent.context import ToolContext
-from aqua.agent.policy import clarify, deny
+from aqua.agent.policy import ask, clarify, deny
 from aqua.agent.registry import SAFE, Tool, ToolOutcome
 
 from .adapter import Window
@@ -54,7 +56,21 @@ def _check(args: dict, context: ToolContext):
         return deny("The text contains control characters.")
     if not args.get("app") and _target(args, context) is None:
         return clarify("Which app should I type that into?")
+    if not dictated(text, context.request):
+        # Text the model wrote (a poem, an email) is read back first; dictation is typed at once.
+        target = f" into {args['app']}" if args.get("app") else ""
+        return ask(f"I'll type{target}: '{readback(text)}'. Go ahead?")
     return None
+
+
+def _plain(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", text.casefold().replace("’", "'").replace("'", "")).split())
+
+
+def dictated(text: str, request: str) -> bool:
+    """The text to type is the user's own words (ignoring case, punctuation and spacing)."""
+    words = _plain(text)
+    return bool(words) and f" {words} " in f" {_plain(request)} "
 
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
@@ -83,7 +99,8 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
 type_text = Tool(
     name="type_text", group="input", tier=SAFE,
     description=("Write (type) text into an app window that is already open, e.g. 'write hello in Notepad'. "
-                 "Focuses the window itself; never opens apps or presses Enter."),
+                 "Focuses the window itself; never opens apps or presses Enter. Text you compose yourself "
+                 "(a poem, an email) is read back to the user first; write it as one line."),
     parameters={"type": "object", "properties": {
         "text": {"type": "string", "description": "Exact text to type", "minLength": 1, "maxLength": MAX_TEXT},
         "app": {"type": "string", "description": "Window to type into, e.g. Notepad; omit for the app just opened",

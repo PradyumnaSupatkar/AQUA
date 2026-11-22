@@ -1,11 +1,14 @@
 """launch_app, close_app and force_quit_app."""
 
+import re
+
 from aqua.agent.context import Launch, ToolContext
-from aqua.agent.policy import clarify, deny
+from aqua.agent.policy import ask, clarify, deny
 from aqua.agent.registry import DISRUPTIVE, SAFE, Tool, ToolOutcome, UndoRecord
+from aqua.agent.selection import matched_groups
 
 from .adapter import AppEntry, Window
-from .app_index import executable_stem, normalize
+from .app_index import ALIASES, executable_stem, normalize
 
 LAUNCH_WAIT_SECONDS = 8.0
 RUNNING_WAIT_SECONDS = 3.0
@@ -44,7 +47,25 @@ def _check(args: dict, context: ToolContext):
         names = [entry.name for entry in match.candidates]
         listed = ", ".join(names[:-1]) + " or " + names[-1]
         return clarify(f"Which one did you mean: {listed}?")
+    entry = match.entry
+    if (entry is not None and "input" in matched_groups(context.request) and not app_named(context.request, query, entry)
+            and not any(window_matches_app(w, entry) for w in context.desktop.windows())):
+        # A typing request that named no app: starting one to type into is the model's guess.
+        return ask(f"Open {entry.name} to type into it? Say yes or no.")
     return None
+
+
+def app_named(request: str, query: str, entry: AppEntry) -> bool:
+    """The request names the app (its name, the spoken name, the exe or an alias)."""
+    tokens = re.sub(r"[^\w\s+#]", " ", request.casefold()).split()
+    words = " " + " ".join(tokens) + " "
+    # Speech recognition splits names ("note pad"): also match 2-3 request words written together.
+    joined = {"".join(tokens[i:i + n]) for n in (2, 3) for i in range(len(tokens) - n + 1)}
+    name = normalize(entry.name)
+    names = {normalize(query), name, entry.name.casefold(), executable_stem(entry),
+             *(alias for alias, target in ALIASES.items() if target == name)}
+    return any(candidate and (f" {candidate} " in words or candidate.replace(" ", "") in joined)
+               for candidate in names)
 
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:

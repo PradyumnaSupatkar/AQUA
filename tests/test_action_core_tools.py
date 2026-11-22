@@ -171,6 +171,7 @@ class LaunchAppTests(unittest.TestCase):
 class TypeTextTests(unittest.TestCase):
     def test_types_into_the_window_opened_earlier_in_the_request(self):
         ctx = context()
+        ctx.begin_request("Open Notepad and write Hello I am Aqua")
         launch_app.run({"app": "notepad"}, ctx)
         self.assertEqual(decide(type_text, {"text": "Hello I am Aqua"}, ctx).action, "run")
         outcome = type_text.run({"text": "Hello I am Aqua"}, ctx)
@@ -197,6 +198,7 @@ class TypeTextTests(unittest.TestCase):
         desktop = FakeDesktop()
         word = desktop.add_window("Document1 - Word", "winword.exe")
         ctx = context(desktop)
+        ctx.begin_request("type hi")
         self.assertEqual(decide(type_text, {"text": "hi"}, ctx).action, "run")
         self.assertEqual(type_text.run({"text": "hi"}, ctx).status, "ok")
         self.assertEqual(desktop.text[word.handle], "hi")

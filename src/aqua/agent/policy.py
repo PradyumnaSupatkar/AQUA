@@ -107,5 +107,10 @@ def clarify(question: str) -> Decision:
     return Decision(CLARIFY, question=question)
 
 
+def ask(question: str) -> Decision:
+    """A scope rule asking the user to confirm this exact action first."""
+    return Decision(CONFIRM, question=question)
+
+
 __all__ = ["CLARIFY", "CONFIRM", "DENY", "DESTRUCTIVE", "DISRUPTIVE", "Decision", "Policy", "RUN",
            "clarify", "deny", "normalize_name", "read_user_blocklist"]

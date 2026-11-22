@@ -1,0 +1,352 @@
+{
+ "version": 1,
+ "name": "agent-v1-extra",
+ "extends": "cases.json",
+ "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
+ "cases": [
+  {
+   "id": "extra-poem-yes",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "write a short poem about rain into Notepad",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "type|go ahead"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "yes",
+     "expect": [
+      {
+       "effects": [
+        "type:[^:]*notepad[^:]*:.+[.!]?"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-poem-no",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "write a short poem about rain into Notepad",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "type|go ahead"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "no",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "declined"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-email-yes",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "write a short email to my boss saying I'm running late into Notepad",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "type|go ahead"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "go ahead",
+     "expect": [
+      {
+       "effects": [
+        "type:[^:]*notepad[^:]*:.+[.!]?"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-email-no",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "write a short email to my boss saying I'm running late into Notepad",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "type|go ahead"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "no thanks",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "declined"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-haiku-other",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "type a haiku about Monday into Notepad",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "type|go ahead"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "what time is it",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "\\d"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "yes",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-dictation-now",
+   "category": "extra-composed",
+   "turns": [
+    {
+     "text": "write meeting at noon into Notepad",
+     "expect": [
+      {
+       "effects": [
+        "type:[^:]*notepad[^:]*:meeting at noon[.!]?"
+       ],
+       "outcome": [
+        "action"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "windows": [
+     {
+      "title": "Untitled - Notepad",
+      "process": "notepad.exe",
+      "front": false
+     }
+    ]
+   }
+  },
+  {
+   "id": "extra-offer-programming-yes",
+   "category": "extra-offer",
+   "turns": [
+    {
+     "text": "I feel like programming",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ]
+      },
+      {
+       "effects": [
+        "launch:visual studio code"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "yes",
+     "expect": [
+      {
+       "effects": [
+        "launch:visual studio code"
+       ]
+      },
+      {
+       "effects": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "extra-offer-notes-no",
+   "category": "extra-offer",
+   "turns": [
+    {
+     "text": "I'd like somewhere to jot down a few thoughts",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ]
+      },
+      {
+       "effects": [],
+       "outcome": [
+        "answer",
+        "clarify"
+       ],
+       "reply_any": [
+        "\\?"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "no",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "extra-offer-quiet-no",
+   "category": "extra-offer",
+   "turns": [
+    {
+     "text": "it's very quiet in here",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ]
+      },
+      {
+       "effects": [],
+       "outcome": [
+        "answer",
+        "clarify"
+       ],
+       "reply_any": [
+        "\\?"
+       ]
+      },
+      {
+       "effects": [
+        "volume:up=.*"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "no",
+     "expect": [
+      {
+       "effects": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

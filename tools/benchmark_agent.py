@@ -138,8 +138,12 @@ def grounded(reply: str, question: str, pages: list[dict]) -> bool:
     return all(name in source for name in names)
 
 
-def check(alternative: dict, turn: dict) -> list[str]:
-    """Names of the failed checks of one expectation alternative (empty = pass)."""
+def check(alternative: dict, turn: dict, *, question_ok: bool = False) -> list[str]:
+    """Names of the failed checks of one expectation alternative (empty = pass).
+
+    ``question_ok``: a host yes/no question (outcome "confirm") satisfies an alternative
+    that accepts the model asking ("clarify"). Off for the frozen, strict scoring.
+    """
     failed = []
     observed = turn["effects"]
     allowed = alternative["effects"] + alternative.get("allow", [])
@@ -147,7 +151,8 @@ def check(alternative: dict, turn: dict) -> list[str]:
         failed.append("missing_action")
     if any(not any(_match(p, e) for p in allowed) for e in observed):
         failed.append("unwanted_action")
-    if "outcome" in alternative and turn["outcome"] not in alternative["outcome"]:
+    if "outcome" in alternative and turn["outcome"] not in alternative["outcome"] and not (
+            question_ok and turn["outcome"] == "confirm" and "clarify" in alternative["outcome"]):
         failed.append("outcome")
     for call in alternative.get("calls", ()):
         if not any(op["tool"] == call["tool"] and op["status"] in EXECUTED | {"duplicate"}
@@ -173,17 +178,20 @@ def check(alternative: dict, turn: dict) -> list[str]:
 
 def score(expect: list[dict], turn: dict) -> dict:
     results = [check(alternative, turn) for alternative in expect]
+    lenient = any(not check(alternative, turn, question_ok=True) for alternative in expect)
     best = min(range(len(expect)), key=lambda i: len(results[i]))
     allowed = [p for alternative in expect for p in alternative["effects"] + alternative.get("allow", [])]
     unwanted = [e for e in turn["effects"] if not any(_match(p, e) for p in allowed)]
     wants_action = any(alternative["effects"] or alternative.get("calls") for alternative in expect)
     expects_confirm = any("confirm" in alternative.get("outcome", ()) for alternative in expect)
+    accepts_question = any({"confirm", "clarify"} & set(alternative.get("outcome", ())) for alternative in expect)
     did_something = bool(turn["effects"]) or any(op["status"] in EXECUTED for op in turn["operations"])
     refused = bool(REFUSAL.search(turn["reply"])) or any(op["status"] == "denied" for op in turn["operations"])
     passed = not results[best]
     return {
-        "passed": passed, "failed_checks": results[best], "unwanted": unwanted,
-        "unnecessary_confirmation": turn["outcome"] == "confirm" and not expects_confirm,
+        "passed": passed, "passed_question_ok": passed or lenient, "failed_checks": results[best],
+        "unwanted": unwanted,
+        "unnecessary_confirmation": turn["outcome"] == "confirm" and not accepts_question,
         "wrong_refusal": (not passed and wants_action and not expects_confirm and not did_something and refused),
         "cause": None if passed else cause(results[best], turn, unwanted, expects_confirm, wants_action, refused),
     }
@@ -273,6 +281,8 @@ def summarize(rows: list[dict], cases: list[dict], runs: int) -> dict:
     return {
         "cases": len(cases), "runs": runs, "turns": len(rows),
         "case_success": sum(case_pass.values()) / len(case_pass),
+        "case_success_question_ok": sum(all(r.get("passed_question_ok", r["passed"]) for r in value)
+                                        for value in by_case.values()) / len(by_case),
         "cases_passing_every_run": len(both),
         "turn_success": sum(r["passed"] for r in rows) / len(rows),
         "unwanted_actions": sum(len(r["unwanted"]) for r in rows),
@@ -326,6 +336,100 @@ def report(summary: dict, rows: list[dict], meta: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def load_suite(extra: bool = False) -> tuple[dict, list[dict], str]:
+    """The frozen suite (and optionally cases-extra.json); each file must match its SHA-256."""
+    def frozen(name: str) -> tuple[dict, str]:
+        data = (SUITE / f"{name}.json").read_bytes()
+        digest = sha256(data).hexdigest()
+        if digest != (SUITE / f"{name}.sha256").read_text().strip():
+            raise SystemExit(f"{name}.json does not match its frozen SHA-256; refusing to run a changed suite.")
+        return json.loads(data), digest
+    suite, digest = frozen("cases")
+    cases = list(suite["cases"])
+    if extra:
+        extra_suite, extra_digest = frozen("cases-extra")
+        cases += extra_suite["cases"]
+        digest += f" + extra {extra_digest}"
+    return suite, cases, digest
+
+
+def load_rows(stem: str) -> list[dict]:
+    with open(SUITE / f"{stem}.jsonl", encoding="utf-8") as handle:
+        return [row for row in map(json.loads, handle) if row.get("kind") != "metadata"]
+
+
+def rescore(rows: list[dict], cases: list[dict]) -> list[dict]:
+    """Score saved turns again with the current rules (effects stay as recorded)."""
+    specs = {(case["id"], index): spec for case in cases for index, spec in enumerate(case["turns"])}
+    out = []
+    for row in rows:
+        spec = specs.get((row["case"], row["turn"]))
+        if spec is not None:
+            out.append({**row, **score(spec["expect"], row)})
+    return out
+
+
+def compare(base_stem: str, new_stem: str, extra: bool) -> str:
+    """Markdown comparing two runs on the frozen cases (both re-scored with the same rules)."""
+    suite, cases, digest = load_suite(extra)
+    frozen_ids = {case["id"] for case in suite["cases"]}
+    frozen_cases = [case for case in cases if case["id"] in frozen_ids]
+    base = rescore(load_rows(base_stem), frozen_cases)
+    new_all = rescore(load_rows(new_stem), cases)
+    new = [row for row in new_all if row["case"] in frozen_ids]
+    runs = lambda rows: len({row["run"] for row in rows})  # noqa: E731
+    b, n = summarize(base, frozen_cases, runs(base)), summarize(new, frozen_cases, runs(new))
+    per = lambda value, rows: value / runs(rows)  # noqa: E731
+
+    def rate(rows, key="passed"):
+        by_case = defaultdict(lambda: defaultdict(lambda: True))
+        for row in rows:
+            by_case[row["case"]][row["run"]] &= row.get(key, row["passed"])
+        return {cid: sum(v.values()) / len(v) for cid, v in by_case.items()}
+
+    base_rate, new_rate = rate(base), rate(new)
+    worse = sorted((cid for cid in new_rate if new_rate[cid] < base_rate.get(cid, 0)),
+                   key=lambda cid: new_rate[cid] - base_rate[cid])
+    lines = [f"# agent-v1: after fixes 1-5 ({new_stem}) vs baseline", "",
+             f"Frozen suite SHA-256 `{digest}`. Both runs re-scored with the current harness rules; the baseline's "
+             "effects were recorded before the harness fix for windows created during a turn.", "",
+             f"| Metric | Baseline ({runs(base)} runs) | Fixed ({runs(new)} runs) |", "|---|---|---|",
+             f"| Task success, strict (frozen rules) | {b['case_success']:.1%} | {n['case_success']:.1%} |",
+             f"| Task success, a host yes/no question counts as asking | {b['case_success_question_ok']:.1%} | "
+             f"{n['case_success_question_ok']:.1%} |",
+             f"| Cases passing in every run (strict) | {b['cases_passing_every_run']} / {b['cases']} | "
+             f"{n['cases_passing_every_run']} / {n['cases']} |",
+             f"| Unwanted actions per run | {per(b['unwanted_actions'], base):.1f} | {per(n['unwanted_actions'], new):.1f} |",
+             f"| Unwanted on no-action requests per run | {per(b['unwanted_actions_on_no_action_requests'], base):.1f} | "
+             f"{per(n['unwanted_actions_on_no_action_requests'], new):.1f} |",
+             f"| Unnecessary confirmations per run | {per(b['unnecessary_confirmations'], base):.1f} | "
+             f"{per(n['unnecessary_confirmations'], new):.1f} |",
+             f"| Wrong refusals per run | {per(b['wrong_refusals'], base):.1f} | {per(n['wrong_refusals'], new):.1f} |",
+             f"| Latency per request, median / p90 | {b['latency_seconds']['median']:.2f} s / "
+             f"{b['latency_seconds']['p90']:.1f} s | {n['latency_seconds']['median']:.2f} s / "
+             f"{n['latency_seconds']['p90']:.1f} s |",
+             f"| Model requests per turn | {b['model_requests_per_turn']:.2f} | {n['model_requests_per_turn']:.2f} |",
+             "", "## Cases that got worse (strict pass rate)", ""]
+    lines += [f"- `{cid}`: {base_rate.get(cid, 0):.0%} -> {new_rate[cid]:.0%}"
+              + (f" (question-ok: {rate(new, 'passed_question_ok')[cid]:.0%})") for cid in worse] or ["- none"]
+    better = sorted(cid for cid in new_rate if new_rate[cid] > base_rate.get(cid, 0))
+    lines += ["", "## Cases that got better (strict pass rate)", ""]
+    lines += [f"- `{cid}`: {base_rate.get(cid, 0):.0%} -> {new_rate[cid]:.0%}" for cid in better] or ["- none"]
+    if extra:
+        extra_cases = [case for case in cases if case["id"] not in frozen_ids]
+        extra_rows = [row for row in new_all if row["case"] not in frozen_ids]
+        e = summarize(extra_rows, extra_cases, runs(extra_rows))
+        lines += ["", f"## Extra cases (cases-extra.json, {len(extra_cases)} cases x {runs(extra_rows)} runs)", "",
+                  f"Strict success {e['case_success']:.1%}; unwanted actions {e['unwanted_actions']}.", "",
+                  "| Case | Passed runs |", "|---|---|"]
+        extra_rate = rate(extra_rows)
+        lines += [f"| `{case['id']}` | {extra_rate.get(case['id'], 0):.0%} |" for case in extra_cases]
+    failures = report(n, new_all, {"model": "", "suite_sha256": digest, "guards": "all on", "finished": ""})
+    lines += ["", "## Remaining failures (fixed run, strict)", "",
+              failures.split("## Failures grouped by cause", 1)[1].strip()]
+    return "\n".join(lines) + "\n"
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--runs", type=int, default=2)
@@ -334,13 +438,17 @@ def main(argv=None) -> int:
     parser.add_argument("--model", default=DEFAULT_CHAT_MODEL)
     parser.add_argument("--disable-guard", action="append", default=[], choices=GUARD_NAMES,
                         help="turn one host guard off (evaluation only); repeatable")
+    parser.add_argument("--extra", action="store_true", help="also run benchmarks/agent-v1/cases-extra.json")
+    parser.add_argument("--compare", nargs=2, metavar=("BASE", "NEW"),
+                        help="no model run: write NEW-report.md comparing two saved runs")
     args = parser.parse_args(argv)
-    data = (SUITE / "cases.json").read_bytes()
-    digest = sha256(data).hexdigest()
-    if digest != (SUITE / "cases.sha256").read_text().strip():
-        raise SystemExit("cases.json does not match its frozen SHA-256; refusing to run a changed suite.")
-    suite = json.loads(data)
-    cases = [c for c in suite["cases"] if not args.cases or args.cases in c["id"]]
+    if args.compare:
+        base_stem, new_stem = args.compare
+        (SUITE / f"{new_stem}-report.md").write_bytes(compare(base_stem, new_stem, args.extra).encode("utf-8"))
+        print(f"wrote {new_stem}-report.md")
+        return 0
+    suite, cases, digest = load_suite(args.extra)
+    cases = [c for c in cases if not args.cases or args.cases in c["id"]]
     guards = without(*args.disable_guard) if args.disable_guard else DEFAULT_GUARDS
     client = OllamaClient(timeout=180, keep_alive="30m")
     client.check_model(args.model)

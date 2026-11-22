@@ -48,6 +48,34 @@ class SuiteIntegrityTests(unittest.TestCase):
             self.assertIn(needle, text)
 
 
+class ExtraSuiteAndCompareTests(unittest.TestCase):
+    def test_extra_cases_are_frozen_separately_and_load_with_the_suite(self):
+        data = (SUITE / "cases-extra.json").read_bytes()
+        self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-extra.sha256").read_text().strip())
+        suite, cases, digest = bench.load_suite(extra=True)
+        extra = json.loads(data)["cases"]
+        self.assertTrue(6 <= len(extra) <= 10)
+        self.assertEqual(len(cases), len(suite["cases"]) + len(extra))
+        self.assertIn("+ extra", digest)
+        self.assertEqual(len(bench.load_suite()[1]), len(suite["cases"]))
+
+    def test_host_question_counts_as_asking_only_in_the_lenient_score(self):
+        expect = [{"effects": ["launch:visual studio code"]},
+                  {"effects": [], "outcome": ["answer", "clarify"], "reply_any": [r"\?"]}]
+        result = bench.score(expect, turn(outcome="confirm", reply="Open Visual Studio Code? Say yes or no."))
+        self.assertEqual((result["passed"], result["passed_question_ok"]), (False, True))
+        self.assertFalse(result["unnecessary_confirmation"])
+        direct = bench.score([{"effects": ["mute:on"]}], turn(outcome="confirm", reply="Mute the sound? Say yes or no."))
+        self.assertEqual((direct["passed_question_ok"], direct["unnecessary_confirmation"]), (False, True))
+
+    def test_rescoring_saved_rows_uses_the_case_expectations(self):
+        _suite, cases, _digest = bench.load_suite()
+        row = {**turn(text="mute", effects=["mute:on"], outcome="action"), "case": "mute", "category": "direct",
+               "run": 0, "turn": 0}
+        self.assertTrue(bench.rescore([row], cases)[0]["passed"])
+        self.assertEqual(bench.rescore([{**row, "case": "gone"}], cases), [])
+
+
 class EffectTests(unittest.TestCase):
     def test_desktop_changes_become_effect_strings(self):
         suite = json.loads((SUITE / "cases.json").read_bytes())

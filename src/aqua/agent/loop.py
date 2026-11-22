@@ -172,6 +172,19 @@ def strip_emoji(text: str) -> str:
     return _EMOJI.sub("", text)
 
 
+_UNABLE = re.compile(r"\b(?:can't|cannot|can\s+not|couldn't|could\s+not|unable|not\s+able|no\s+tool|don't\s+have|"
+                     r"isn't\s+something|is\s+not\s+something|not\s+allowed|blocked)\b", re.I)
+
+
+def with_unable_part(reply: str, content: str) -> str:
+    """The one-sentence reply plus the first later sentence saying what could not be done."""
+    if _UNABLE.search(reply):
+        return reply
+    sentences = _SENTENCE_END.split(" ".join(strip_emoji(content).split()))
+    extra = next((sentence for sentence in sentences[1:] if _UNABLE.search(sentence)), "")
+    return f"{reply} {extra}".strip() if extra else reply
+
+
 def first_sentence(text: str) -> str:
     return first_sentences(text, 1)
 
@@ -464,6 +477,8 @@ class AgentEngine:
                     # A looked-up answer may add one caveat ("...may be out of date").
                     reply = (first_sentences(content, 2 if looked_up else 1) if acted
                              else " ".join(strip_emoji(content).split()))
+                    if acted and not looked_up:
+                        reply = with_unable_part(reply, content)  # "... but I can't delete files." stays.
                     can_look_up = "look_up" in turn.tool_names and not looked_up
                     recent = beyond_model_memory(turn.request, reply, self.now(),
                                                  knowledge_cutoff=self.guards.knowledge_cutoff)
@@ -563,7 +578,8 @@ class AgentEngine:
             return
         body = json.loads(message["content"])
         body["next"] = (f"The user's request was: {turn.request!r}. If any part of it is not done yet, "
-                        "call the tool for it now. Otherwise reply in one sentence.")
+                        "call the tool for it now. If a part cannot be done with the available tools, say which "
+                        "part and why. Otherwise reply in one sentence.")
         message["content"] = json.dumps(body, ensure_ascii=False)
 
     def _handle_call(self, turn: _Turn, name, raw_args):

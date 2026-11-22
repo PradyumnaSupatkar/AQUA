@@ -41,5 +41,24 @@ class PoliteRequestTests(unittest.TestCase):
         self.assertEqual(engine.respond("open Notepad").text, "Opened Notepad; I'll keep it open.")
 
 
+class PartialRequestTests(unittest.TestCase):
+    def test_the_part_that_cannot_be_done_is_kept_in_the_reply(self):
+        engine, desktop, _ = make_engine([call("launch_app", app="Chrome")],
+                                         "I have opened Chrome. I can't delete files, because I have no tool for that. "
+                                         "Anything else?")
+        result = engine.respond("Open Chrome and delete my files.")
+        self.assertEqual(desktop.launched, ["Google Chrome"])
+        self.assertEqual(result.text, "I have opened Chrome. I can't delete files, because I have no tool for that.")
+
+    def test_the_reminder_asks_for_the_part_that_cannot_be_done(self):
+        engine, _, model = make_engine([call("launch_app", app="Chrome")], "Opened Chrome.")
+        engine.respond("Open Chrome and delete my files.")
+        self.assertIn("say which part and why", model.tool_results(1)[-1]["content"])
+
+    def test_plain_one_sentence_replies_stay_one_sentence(self):
+        engine, _, _ = make_engine([call("volume", action="mute")], "Muted the sound. Enjoy the quiet!")
+        self.assertEqual(engine.respond("mute").text, "Muted the sound.")
+
+
 if __name__ == "__main__":
     unittest.main()

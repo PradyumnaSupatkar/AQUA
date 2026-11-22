@@ -3,6 +3,8 @@
 import re
 
 CORE_TOOLS = ("launch_app", "type_text", "undo_last")
+# Shown beside the core tools when no keyword group matches.
+FALLBACK_TOOLS = ("volume", "media", "window_action", "power", "look_up")
 MAX_VISIBLE_TOOLS = 8  # OllamaClient accepts at most eight tool definitions.
 
 GROUP_KEYWORDS = {
@@ -71,7 +73,12 @@ def select_tools(text: str, registry, *, negation_guard: bool = True) -> tuple[s
     if negation_guard and wants_no_action(text):
         return ()
     names = [name for name in CORE_TOOLS if registry.get(name) is not None]
-    for group in matched_groups(text):
+    groups = matched_groups(text)
+    if not groups:
+        # No keyword matched (misheard words, unusual phrasing): offer the likely actions
+        # rather than only the core three. Visibility still grants no permission.
+        names += [name for name in FALLBACK_TOOLS if registry.get(name) is not None and name not in names]
+    for group in groups:
         for name in registry.in_group(group):
             if name not in names:
                 names.append(name)

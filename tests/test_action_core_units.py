@@ -169,7 +169,8 @@ class SelectionTests(unittest.TestCase):
     registry = milestone_one_shaped_registry()
 
     def test_core_tools_are_always_shown(self):
-        self.assertEqual(select_tools("hello there", self.registry), CORE_TOOLS)
+        self.assertEqual(select_tools("hello there", self.registry)[:3], CORE_TOOLS)
+        self.assertEqual(select_tools("turn the volume down", self.registry)[:3], CORE_TOOLS)
 
     def test_keyword_groups_add_their_tools(self):
         self.assertEqual(matched_groups("Open Notepad and write Hello I am Aqua"), ("apps", "input"))

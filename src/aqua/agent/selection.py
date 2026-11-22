@@ -6,24 +6,31 @@ CORE_TOOLS = ("launch_app", "type_text", "undo_last")
 MAX_VISIBLE_TOOLS = 8  # OllamaClient accepts at most eight tool definitions.
 
 GROUP_KEYWORDS = {
-    "apps": ("open", "launch", "start", "run", "app", "apps", "application", "program"),
+    "apps": ("open", "launch", "start", "run", "app", "apps", "application", "program", "close", "quit",
+             "exit", "kill", "force", "frozen", "not responding"),
     "input": ("type", "write", "enter", "text", "dictate", "put"),
     "windows": ("window", "windows", "minimise", "minimize", "maximise", "maximize", "restore",
                 "focus", "switch to", "bring up", "bring back", "front", "foreground", "hide",
-                "full screen", "fullscreen", "what's open", "what is open", "open apps"),
-    "system": ("volume", "louder", "quieter", "softer", "mute", "unmute", "sound", "audio",
-               "loud", "quiet", "time", "clock", "date", "day", "battery", "charge", "charging",
-               "power left", "music", "song", "track", "play", "pause", "resume", "skip", "next",
-               "previous", "media", "playback"),
-    "power": ("lock", "sleep", "restart", "reboot", "shut down", "shutdown", "sign out",
-              "log off", "log out"),
-    "web": ("search", "google", "look up", "website", "browse", "url", "http"),
+                "full screen", "fullscreen", "what's open", "what is open", "open apps", "inspect",
+                "buttons", "button", "menu", "menus", "tabs", "controls", "what's on", "what is on"),
+    "system": ("time", "clock", "date", "day", "battery", "charge", "charging", "power left"),
+    "audio": ("volume", "louder", "quieter", "softer", "mute", "unmute", "sound", "audio", "loud", "quiet",
+              "music", "song", "track", "play", "pause", "resume", "skip", "next", "previous", "media",
+              "playback", "video", "podcast"),
+    "display": ("brightness", "brighter", "dimmer", "dim", "screen bright", "too bright", "too dark", "darker"),
+    "power": ("lock", "sleep", "restart", "reboot", "shut down", "shutdown", "sign out", "log off", "log out",
+              "turn off the computer", "turn off my computer", "turn off the pc", "power off"),
+    "web": ("search", "google", "website", "web site", "site", "browse", "browser", "url", "link", "http",
+            "https", "web", "online"),
     "undo": ("undo", "revert", "take back", "put it back", "change it back"),
 }
-GROUP_ORDER = ("apps", "input", "windows", "system", "power", "web", "undo")
+GROUP_ORDER = ("apps", "input", "windows", "system", "audio", "display", "power", "web", "undo")
 
 _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE)
              for group, words in GROUP_KEYWORDS.items()}
+# A bare domain ("open bbc.co.uk") also selects the web tools.
+_DOMAIN = re.compile(r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|gov|edu|co|uk|in|de|dev|app|info|ai|me|tv)\b",
+                     re.IGNORECASE)
 
 # Requests that ask for no action at all: a leading "don't ...", or a
 # hypothetical ("what would happen if ..."). Tools are hidden for these, so the
@@ -50,7 +57,8 @@ def wants_no_action(text: str) -> bool:
 
 def matched_groups(text: str) -> tuple[str, ...]:
     text = text.replace("’", "'")
-    return tuple(group for group in GROUP_ORDER if _PATTERNS[group].search(text))
+    return tuple(group for group in GROUP_ORDER
+                 if _PATTERNS[group].search(text) or (group == "web" and _DOMAIN.search(text)))
 
 
 def select_tools(text: str, registry) -> tuple[str, ...]:

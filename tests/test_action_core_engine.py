@@ -129,52 +129,41 @@ class MustWorkScenarios(unittest.TestCase):
 
 
 class ConfirmationFlowTests(unittest.TestCase):
-    def registry(self, ran):
-        shutdown = Tool(name="shutdown", group="power", tier=DISRUPTIVE, description="Shut down.",
-                        parameters={"type": "object", "properties": {}},
-                        confirm=lambda args: "Shut down the computer? Say yes or no.",
-                        run=lambda args, ctx: ran.append("shutdown") or ToolOutcome("ok", "Shutting down.",
-                                                                                     done="started the shutdown"))
-        registry = build_registry()
-        registry.register(shutdown)
-        return registry
+    """Tier 2 actions with the real power tool on the fake desktop."""
 
     def test_yes_runs_the_exact_action_and_resumes_the_loop(self):
-        ran = []
-        engine, _, model = make_engine([call("shutdown")], "Shutting down in 30 seconds.", registry=self.registry(ran))
-        first = engine.respond("shut down the computer")
-        self.assertEqual((first.outcome, first.text), ("confirm", "Shut down the computer? Say yes or no."))
+        engine, desktop, model = make_engine([call("power", action="sleep")], "The computer is going to sleep.")
+        first = engine.respond("put the computer to sleep")
+        self.assertEqual((first.outcome, first.text), ("confirm", "Put the computer to sleep? Say yes or no."))
         self.assertTrue(first.asked_question)
         self.assertIsNotNone(engine.pending)
-        self.assertEqual(ran, [])
+        self.assertEqual(desktop.power, [])
         second = engine.respond("yeah, go ahead")
-        self.assertEqual(ran, ["shutdown"])
-        self.assertEqual(second.text, "Shutting down in 30 seconds.")
+        self.assertEqual(desktop.power, [("sleep", 0)])
+        self.assertEqual(second.text, "The computer is going to sleep.")
         self.assertIsNone(engine.pending)
         self.assertEqual(results(model)[-1]["status"], "ok")
 
     def test_no_declines_and_unrelated_speech_cancels(self):
-        ran = []
-        engine, _, _ = make_engine([call("shutdown")], [call("shutdown")], "Hello!", registry=self.registry(ran))
+        engine, desktop, _ = make_engine([call("power", action="shutdown")], [call("power", action="shutdown")],
+                                         "Hello!")
         engine.respond("shut down")
         self.assertEqual(engine.respond("no").text, "Okay, I won't.")
         engine.respond("shut down")
         self.assertEqual(engine.respond("what's the weather like").outcome, "answer")
         self.assertIsNone(engine.pending)
-        self.assertEqual(ran, [])
+        self.assertEqual(desktop.power, [])
 
     def test_expired_confirmation_is_not_used(self):
-        ran, clock = [], Clock(0.0)
-        engine, _, _ = make_engine([call("shutdown")], "Hi.", registry=self.registry(ran), clock=clock)
+        clock = Clock(0.0)
+        engine, desktop, _ = make_engine([call("power", action="shutdown")], "Hi.", clock=clock)
         engine.respond("shut down")
         clock.value = 61.0
         self.assertEqual(engine.respond("yes").outcome, "answer")
-        self.assertEqual(ran, [])
+        self.assertEqual(desktop.power, [])
 
     def test_earlier_steps_are_reported_with_the_question(self):
-        ran = []
-        engine, desktop, _ = make_engine([call("launch_app", app="notepad"), call("shutdown")],
-                                         registry=self.registry(ran))
+        engine, desktop, _ = make_engine([call("launch_app", app="notepad"), call("power", action="shutdown")])
         result = engine.respond("open notepad and shut down")
         self.assertEqual(result.text, "Opened Notepad. Shut down the computer? Say yes or no.")
         self.assertEqual(desktop.launched, ["Notepad"])

@@ -84,9 +84,42 @@ class Desktop(ABC):
     def media_key(self, key: str) -> None:
         """key: play_pause | next | previous."""
     @abstractmethod
+    def media_state(self) -> str | None:
+        """Current playback: playing | paused | stopped | none (no player), or None if unknown."""
+    @abstractmethod
     def lock(self) -> None: ...
     @abstractmethod
     def battery(self) -> Battery: ...
+    @abstractmethod
+    def get_brightness(self) -> int | None:
+        """Built-in display brightness 0-100, or None when Windows cannot control it."""
+    @abstractmethod
+    def set_brightness(self, level: int) -> None: ...
+
+    # Apps and power (milestone 2)
+    @abstractmethod
+    def terminate(self, pid: int) -> None:
+        """Force-quit a process (TerminateProcess)."""
+    @abstractmethod
+    def schedule_shutdown(self, kind: str, seconds: int) -> None:
+        """kind: restart | shutdown, after ``seconds``; Windows shows its own notice."""
+    @abstractmethod
+    def abort_shutdown(self) -> None:
+        """Cancel a scheduled restart or shutdown (shutdown /a)."""
+    @abstractmethod
+    def suspend(self) -> None:
+        """Put the PC to sleep (after a short delay so the reply can be heard)."""
+    @abstractmethod
+    def sign_out(self) -> None:
+        """Sign the user out (after a short delay so the reply can be heard)."""
+
+    # Web and observation (milestone 2)
+    @abstractmethod
+    def open_url(self, url: str) -> None:
+        """Open an http(s) URL in the default browser."""
+    @abstractmethod
+    def inspect(self, handle: int) -> dict:
+        """Read-only UI Automation snapshot: {"status", "controls": [...], "truncated"}."""
 
     # Time
     @abstractmethod

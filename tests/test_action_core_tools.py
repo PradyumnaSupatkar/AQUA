@@ -35,10 +35,14 @@ class RegistryTests(unittest.TestCase):
         registry = build_registry()
         self.assertEqual(set(registry.names), {"launch_app", "type_text", "undo_last", "list_windows",
                                                "window_action", "get_time", "get_battery", "volume", "media",
-                                               "lock_screen"})
+                                               "lock_screen", "close_app", "force_quit_app", "inspect_window",
+                                               "brightness", "power", "open_url", "web_search"})
+        disruptive = {"force_quit_app", "power"}
         for name in registry.names:
-            self.assertLessEqual(registry.get(name).tier_for({}, None), SAFE, name)
+            self.assertEqual(registry.get(name).tier_for({"action": "sleep"}, None) > SAFE, name in disruptive, name)
             self.assertIn(registry.get(name).group, GROUP_KEYWORDS, name)
+        for group in GROUP_KEYWORDS:  # Every group fits beside the core tools.
+            self.assertLessEqual(len(set(CORE_TOOLS) | set(registry.in_group(group))), 8, group)
         self.assertTrue(set(CORE_TOOLS) <= set(registry.names))
         # The largest selection (eight tools) must fit Ollama's definition size limit.
         biggest = registry.definitions(registry.names[:8])

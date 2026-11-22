@@ -38,7 +38,8 @@ TERMINALS = frozenset({"windowsterminal.exe", "conhost.exe", "openconsole.exe", 
 class FakeDesktop(Desktop):
     def __init__(self, *, apps=DEFAULT_APPS, windows=None, volume: int = 50, muted: bool = False,
                  battery: Battery = Battery(True, 76, False, 190), focus_allowed: bool = True,
-                 readback: bool = True, slow_apps=(), silent_apps=()) -> None:
+                 readback: bool = True, slow_apps=(), silent_apps=(), playback: str | None = "playing",
+                 brightness: int | None = 70, stubborn_apps=()) -> None:
         self.apps = list(apps)
         # Front to back. By default Aqua's own terminal is in front, as in `aqua chat`.
         self._windows: list[Window] = list(windows) if windows is not None else [
@@ -54,12 +55,20 @@ class FakeDesktop(Desktop):
         self.media: list[str] = []
         self.closed: list[int] = []
         self.locked = False
+        self.playback, self.brightness = playback, brightness
+        self.stubborn_apps = set(stubborn_apps)   # processes whose windows ignore WM_CLOSE (unsaved work)
+        self.terminated: list[int] = []
+        self.power: list[tuple[str, int]] = []
+        self.scheduled: str | None = None
+        self.opened_urls: list[str] = []
+        self.controls: dict[int, list[dict]] = {}
         self.clock = 0.0
         self._pending: list[tuple[float, Window]] = []
 
     # helpers for tests
-    def add_window(self, title: str, process: str, *, front: bool = True) -> Window:
-        window = Window(self._new_handle(), title, process, 200)
+    def add_window(self, title: str, process: str, *, front: bool = True, pid: int | None = None) -> Window:
+        handle = self._new_handle()
+        window = Window(handle, title, process, pid if pid is not None else handle)
         self._windows.insert(0 if front else len(self._windows), window)
         return window
 
@@ -91,7 +100,8 @@ class FakeDesktop(Desktop):
                 self._windows.insert(0, replace(window, minimized=False))  # Already open: comes to the front.
                 return
         title, process = LAUNCH_WINDOWS.get(entry.name, (entry.name, entry.name.casefold().replace(" ", "") + ".exe"))
-        window = Window(self._new_handle(), title, process, 300)
+        handle = self._new_handle()
+        window = Window(handle, title, process, handle)
         if entry.name in self.slow_apps:
             self._pending.append((self.clock + 2.0, window))
         else:
@@ -127,7 +137,7 @@ class FakeDesktop(Desktop):
 
     def close_window(self, handle: int) -> None:
         self.closed.append(handle)
-        self._windows = [w for w in self._windows if w.handle != handle]
+        self._windows = [w for w in self._windows if w.handle != handle or w.process in self.stubborn_apps]
 
     def wait_ready(self, handle: int) -> None:
         pass
@@ -159,11 +169,48 @@ class FakeDesktop(Desktop):
     def media_key(self, key: str) -> None:
         self.media.append(key)
 
+    def media_state(self):
+        return self.playback
+
     def lock(self) -> None:
         self.locked = True
 
     def battery(self):
         return self._battery
+
+    def get_brightness(self):
+        return self.brightness
+
+    def set_brightness(self, level: int) -> None:
+        if self.brightness is None:
+            raise OSError("This display has no adjustable brightness.")
+        self.brightness = level
+
+    def terminate(self, pid: int) -> None:
+        self.terminated.append(pid)
+        self._windows = [w for w in self._windows if w.pid != pid]
+
+    def schedule_shutdown(self, kind: str, seconds: int) -> None:
+        self.power.append((kind, seconds))
+        self.scheduled = kind
+
+    def abort_shutdown(self) -> None:
+        self.power.append(("abort", 0))
+        self.scheduled = None
+
+    def suspend(self) -> None:
+        self.power.append(("sleep", 0))
+
+    def sign_out(self) -> None:
+        self.power.append(("sign_out", 0))
+
+    def open_url(self, url: str) -> None:
+        self.opened_urls.append(url)
+
+    def inspect(self, handle: int) -> dict:
+        if self.window(handle) is None:
+            return {"status": "stale_window"}
+        return {"status": "ok", "controls": list(self.controls.get(handle, ())), "truncated": False}
 
     def monotonic(self) -> float:
         return self.clock

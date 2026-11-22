@@ -313,6 +313,33 @@ def walk_controls(root, ui, native, app_id, root_pid, deadline, *, discover_edit
     return controls, truncated or bool(queue)
 
 
+def inspect_handle(request, *, native=None, ui=None):
+    """Read-only snapshot of any visible top-level window, for the new action core.
+
+    Reuses walk_controls/safe_control unchanged: names only for label-type
+    controls, never Edit/Document values or password fields, and child
+    elements from other processes are skipped (no approved app id is given).
+    """
+    try:
+        handle = request.get("handle") if type(request) is dict else None
+        if type(handle) is not int or handle <= 0:
+            return {"status": "error"}
+        native = native or NativeWindows()
+        info = native.window_info(handle)
+        if info is None:
+            return {"status": "stale_window"}
+        ui = ui or UIAutomation()
+        root = ui.bind(handle)
+        if int(root.CurrentProcessId) != info["pid"] or int(root.CurrentNativeWindowHandle) != handle:
+            return {"status": "stale_window"}
+        controls, truncated = walk_controls(root, ui, native, "", info["pid"], perf_counter() + SOFT_SECONDS)
+        return {"status": "ok", "controls": controls, "truncated": truncated}
+    except BackendUnavailable:
+        return {"status": "unavailable"}
+    except Exception:
+        return {"status": "error"}
+
+
 def dispatch(request, *, native=None, ui=None):
     """One bounded read-only worker operation; all exceptions become safe categories."""
     try:

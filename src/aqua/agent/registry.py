@@ -52,6 +52,10 @@ class Tool:
     confirm: Callable[[dict], str] | None = None
     # Tier 3 tools that stay unavailable until the user enables them.
     off_by_default: bool = False
+    # Arguments holding the user's own text (e.g. what to type); never sent off the PC.
+    private_args: tuple[str, ...] = ()
+    # Verify the final reply against this tool's result: return a corrected reply, or None.
+    review: Callable[[str, "ToolOutcome"], str | None] | None = None
 
     def tier_for(self, args: dict, context) -> int:
         tier = self.tier(args, context) if callable(self.tier) else self.tier

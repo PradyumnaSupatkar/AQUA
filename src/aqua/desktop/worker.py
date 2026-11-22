@@ -19,6 +19,9 @@ def main():
             if type(request) is dict and request.get("operation") == "set_control_text":
                 from .interaction import dispatch_interaction
                 result = dispatch_interaction(request)
+            elif type(request) is dict and request.get("operation") == "inspect_handle":
+                from .backend import inspect_handle
+                result = inspect_handle(request)
             else:
                 from .backend import dispatch
                 result = dispatch(request)

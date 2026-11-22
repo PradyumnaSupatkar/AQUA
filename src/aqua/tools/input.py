@@ -77,5 +77,5 @@ type_text = Tool(
         "app": {"type": "string", "description": "Window to type into, e.g. Notepad; omit for the app just opened",
                 "maxLength": 100}},
         "required": ["text"]},
-    run=_run, check=_check,
+    run=_run, check=_check, private_args=("text",),
 )

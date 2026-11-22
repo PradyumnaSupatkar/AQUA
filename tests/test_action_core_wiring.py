@@ -7,23 +7,11 @@ from unittest.mock import Mock, patch
 
 from aqua import chat, cli, handsfree
 from aqua.actions.tools import ActionState
-from aqua.agent.registry import DISRUPTIVE, Tool, ToolOutcome
 from aqua.brain.ollama import DEFAULT_CHAT_MODEL, ModelInfo
 from aqua.speech.recognizer import Transcript
-from aqua.tools import build_registry
 
 from action_core_helpers import call, make_engine
 from test_voice_handsfree import TAIL, Detector, Microphone, Vad, frame, utterance, wake_turn
-
-
-def shutdown_registry(ran):
-    registry = build_registry()
-    registry.register(Tool(
-        name="shutdown", group="power", tier=DISRUPTIVE, description="Shut down.",
-        parameters={"type": "object", "properties": {}},
-        confirm=lambda args: "Shut down the computer? Say yes or no.",
-        run=lambda args, ctx: ran.append("shutdown") or ToolOutcome("ok", "Shutting down.", done="started the shutdown")))
-    return registry
 
 
 class Offline(unittest.TestCase):
@@ -96,13 +84,12 @@ class TextChatEngineTests(Offline):
         self.client.stream_chat.assert_not_called()
 
     def test_clear_cancels_a_pending_confirmation(self):
-        ran = []
-        engine, _, _ = make_engine([call("shutdown")], "Okay.", registry=shutdown_registry(ran))
+        engine, desktop, _ = make_engine([call("power", action="shutdown")], "Okay.")
         self.use_engine(engine)
         status, output, _ = self.invoke(["shut down", "/clear", "yes", "/quit"], engine="new")
         self.assertEqual(status, 0)
         self.assertIn("Shut down the computer? Say yes or no.", output)
-        self.assertEqual(ran, [])
+        self.assertEqual(desktop.power, [])
 
     def test_engine_setup_failure_is_reported(self):
         manager = patch("aqua.agent.loop.build_engine", side_effect=OSError("The Windows desktop adapter needs Windows."))
@@ -158,16 +145,15 @@ class HandsfreeFollowUpTests(Offline):
         return status, output.getvalue(), errors.getvalue()
 
     def test_yes_without_the_wake_word_confirms_the_pending_action(self):
-        ran = []
-        engine, _, _ = make_engine([call("shutdown")], "Shutting down now.", registry=shutdown_registry(ran))
+        engine, desktop, _ = make_engine([call("power", action="sleep")], "Going to sleep now.")
         self.use_engine(engine)
         items = [*wake_turn(), *[frame(TAIL) for _ in range(handsfree.FOLLOW_UP_TAIL_FRAMES)], *utterance()]
-        status, output, errors = self.invoke(items, ["Hey Aqua, shut down the computer.", "Yes."])
+        status, output, errors = self.invoke(items, ["Hey Aqua, put the computer to sleep.", "Yes."])
         self.assertEqual((status, errors), (0, ""))
-        self.assertIn("Shut down the computer? Say yes or no.", output)
+        self.assertIn("Put the computer to sleep? Say yes or no.", output)
         self.assertIn("Listening for your answer...", output)
-        self.assertIn("Shutting down now.", output)
-        self.assertEqual(ran, ["shutdown"])
+        self.assertIn("Going to sleep now.", output)
+        self.assertEqual(desktop.power, [("sleep", 0)])
 
     def test_plain_action_reply_opens_no_follow_up(self):
         engine, desktop, _ = make_engine([call("volume", action="mute")], "Muted.")
@@ -179,7 +165,7 @@ class HandsfreeFollowUpTests(Offline):
         self.assertNotIn("Listening for your answer", output)
 
     def test_asked_question_checks_the_new_engine(self):
-        engine, _, _ = make_engine([call("shutdown")], registry=shutdown_registry([]))
+        engine, _, _ = make_engine([call("power", action="shutdown")])
         state = ActionState()
         self.assertFalse(handsfree._asked_question(Mock(text="Done."), state, engine))
         engine.respond("shut down")

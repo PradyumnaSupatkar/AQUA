@@ -1,13 +1,18 @@
-"""Milestone 1 tools for the new action core. Windows effects go through tools.adapter."""
+"""Tools for the new action core. Windows effects go through tools.adapter."""
 
 from aqua.agent.registry import Registry
 
 
 def build_registry() -> Registry:
-    from .apps import launch_app
+    """All milestone 1 and 2 tools."""
+    from .apps import close_app, force_quit_app, launch_app
     from .input import type_text
-    from .system import get_battery, get_time, lock_screen, media, volume
+    from .power import power
+    from .system import brightness, get_battery, get_time, lock_screen, media, volume
     from .undo import undo_last
-    from .windows import list_windows, window_action
-    return Registry((launch_app, type_text, undo_last, list_windows, window_action,
-                     get_time, get_battery, volume, media, lock_screen))
+    from .web import open_url, web_search
+    from .windows import inspect_window, list_windows, window_action
+    tools = [launch_app, type_text, undo_last, close_app, force_quit_app, list_windows, window_action,
+             inspect_window, get_time, get_battery, volume, media, brightness, lock_screen, power,
+             open_url, web_search]
+    return Registry(tools)

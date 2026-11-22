@@ -136,7 +136,7 @@ def _asked_question(result, state: ActionState, agent=None) -> bool:
     """A follow-up answer is expected only after a question or pending confirmation."""
     from aqua.voice.text import is_question
 
-    if state.pending_app is not None or (agent is not None and agent.pending is not None):
+    if state.pending_app is not None or (agent is not None and agent.awaiting_answer):
         return True
     text = getattr(result, "text", None)
     return isinstance(text, str) and is_question(text)
@@ -246,6 +246,17 @@ def run_handsfree(
                     if report_speech and not playing:
                         report_speech = False
                         chat._speech_diagnostics(speaker, wait=False)
+                    if agent is not None and not playing and not frontend.active:
+                        reminder = agent.countdown_announcement()
+                        if reminder is not None:
+                            # Spoken restart/shutdown countdown; the answer window then hears "cancel".
+                            print(f"Aqua: {reminder}", flush=True)
+                            if speaker is not None:
+                                speaker.feed(reminder)
+                                speaker.finish_turn()
+                            if follow_up:
+                                follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
+                            continue
                     if follow_up_due and not playing and not frontend.active:
                         if tail_frames > 0:
                             tail_frames -= 1

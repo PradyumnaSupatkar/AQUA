@@ -16,6 +16,7 @@ from aqua.brain.ollama import ChatEvent, GenerationSettings, OllamaError, Ollama
 
 from .confirm import ConfirmationGate, PendingAction
 from .context import ToolContext
+from .countdown import is_cancel
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
 from .registry import Registry, SchemaError, ToolOutcome, validate_arguments
@@ -35,18 +36,36 @@ _EXECUTED = frozenset({"ok", "unverified", "failed", "empty"})
 # only to catch a reply that says something happened when no tool did it; it
 # never authorizes or blocks an action.
 _CLAIMS = (
-    (re.compile(r"\b(?:opened|launched|started|brought)\b", re.I), {"launch_app", "window_action"}),
+    (re.compile(r"\b(?:opened|launched|started|brought)\b", re.I), {"launch_app", "window_action", "open_url",
+                                                                     "web_search"}),
     (re.compile(r"\b(?:typed|wrote|written|entered)\b", re.I), {"type_text"}),
     (re.compile(r"\b(?:muted|unmuted|lowered|raised|increased|decreased|turned\s+(?:the\s+)?(?:volume|sound|it)|"
-                r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume"}),
+                r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume", "brightness"}),
     (re.compile(r"\b(?:paused|resumed|skipped)\b", re.I), {"media"}),
     (re.compile(r"\blocked\b", re.I), {"lock_screen"}),
     (re.compile(r"\b(?:minimi[sz]ed|maximi[sz]ed|restored|focused|switched)\b", re.I), {"window_action", "undo_last"}),
-    (re.compile(r"\b(?:undid|undone|reverted|closed|put\s+\w+\s+back)\b", re.I), {"undo_last"}),
+    (re.compile(r"\b(?:undid|undone|reverted|put\s+\w+\s+back)\b", re.I), {"undo_last"}),
+    (re.compile(r"\bclosed\b", re.I), {"close_app", "undo_last", "force_quit_app"}),
+    (re.compile(r"\b(?:force[- ]quit|killed|terminated|ended)\b", re.I), {"force_quit_app"}),
+    (re.compile(r"\b(?:brightness\s+(?:is|has\s+been)\s+(?:now|set|turned)|dimmed|brightened)\b", re.I), {"brightness"}),
+    (re.compile(r"\b(?:restarting|shutting\s+down|signing\s+(?:you\s+)?out|signed\s+out|going\s+to\s+sleep|"
+                r"put\s+(?:the\s+)?(?:computer|pc)\s+to\s+sleep)\b", re.I), {"power"}),
+    (re.compile(r"\bsearched\b", re.I), {"web_search"}),
 )
+# Tools whose results are facts for the reply, not actions; their turns skip the claim check.
+_KNOWLEDGE_TOOLS = frozenset({"look_up"})
+# Tool result keys holding window titles and app names, kept for the look_up privacy guard.
+_OBSERVED_KEYS = ("app", "window", "title", "process")
 _NUDGE = ("[Aqua host: no tool was called for that, so it has not happened. If the user asked for an action, "
           "call the tool now. If you cannot, say plainly that you did not do it.]")
-
+# The model asked for permission itself, or claimed it cannot act, while a tool was shown.
+_ASKS_PERMISSION = re.compile(r"\b(?:would|do)\s+you\s+(?:like|want)\s+(?:me\s+)?to\b|\bshall\s+i\b|\bshould\s+i\b|"
+                              r"\bare\s+you\s+sure\b|\bproceed\b|\bconfirm\b", re.I)
+_CLAIMS_NO_ACCESS = re.compile(r"\bI\s+(?:cannot|can't|can\s+not|am\s+unable\s+to|am\s+not\s+able\s+to|"
+                               r"don't\s+have\s+(?:the\s+)?(?:ability|access|permission))\b|"
+                               r"\brequires?\s+system[- ]level\s+access\b", re.I)
+_ACT_NUDGE = ("[Aqua host: you have a tool for this request. Call it now. Do not ask for permission yourself: "
+              "Aqua asks the user when an action needs a yes.]")
 
 _TEXT_CALL = re.compile(r"^\s*(?:<tool_call>\s*)?(\{.*\})\s*(?:</tool_call>)?\s*$", re.S)
 
@@ -79,8 +98,12 @@ def strip_emoji(text: str) -> str:
 
 
 def first_sentence(text: str) -> str:
+    return first_sentences(text, 1)
+
+
+def first_sentences(text: str, count: int) -> str:
     text = " ".join(strip_emoji(text).split())
-    return _SENTENCE_END.split(text, 1)[0].strip() if text else ""
+    return " ".join(_SENTENCE_END.split(text, count)[:count]).strip() if text else ""
 
 
 def join_phrases(phrases: list[str]) -> str:
@@ -150,6 +173,7 @@ class _Turn:
     decisions: int = 0
     operations: list = field(default_factory=list)
     start: int = 0              # Index of this request's first tool exchange in ``messages``.
+    reviews: list = field(default_factory=list)  # (tool, outcome) whose results check the final reply
 
 
 class AgentEngine:
@@ -173,6 +197,44 @@ class AgentEngine:
     def clear(self) -> None:
         self.gate.clear()
         self.conversation.clear()
+
+    @property
+    def countdown_active(self) -> bool:
+        countdown = self.context.countdown
+        return countdown is not None and countdown.active(self.context.desktop.monotonic())
+
+    @property
+    def awaiting_answer(self) -> bool:
+        """A yes/no or a "cancel" is expected next (hands-free opens its follow-up window)."""
+        return self.pending is not None or self.countdown_active
+
+    def countdown_announcement(self) -> str | None:
+        """The next spoken countdown reminder, if one is due (polled by hands-free)."""
+        countdown = self.context.countdown
+        if countdown is None:
+            return None
+        now = self.context.desktop.monotonic()
+        if not countdown.active(now):
+            self.context.countdown = None
+            return None
+        return countdown.due_announcement(now)
+
+    def _cancel_countdown(self, text: str) -> str | None:
+        """Abort a running restart/shutdown countdown when the user says cancel."""
+        countdown = self.context.countdown
+        if countdown is None:
+            return None
+        if not countdown.active(self.context.desktop.monotonic()):
+            self.context.countdown = None
+            return None
+        if not is_cancel(text):
+            return None
+        self.context.countdown = None
+        try:
+            self.context.desktop.abort_shutdown()
+        except OSError:
+            return f"I could not cancel the {countdown.kind}. Run shutdown /a now to stop it."
+        return f"Cancelled the {countdown.kind}."
 
     # -- one user utterance -------------------------------------------------
 
@@ -198,6 +260,11 @@ class AgentEngine:
             return AgentTurnResult(ok, "".join(state["spoken"]).strip(), outcome, state["requests"],
                                    self.clock() - started, state["first"], state["completion"], stage, error, task)
 
+        cancelled = self._cancel_countdown(text)
+        if cancelled is not None:
+            emit(cancelled)
+            self._remember(text, cancelled)
+            return result("cancelled", "countdown", None)
         verdict, pending = self.gate.answer(text, self.clock())
         if verdict == "no" and pending is not None:
             emit("Okay, I won't.")
@@ -219,7 +286,7 @@ class AgentEngine:
             return self._loop(turn, text, emit, result, state)
 
         text = text.strip()
-        self.context.begin_request()
+        self.context.begin_request(text)
         names = select_tools(text, self.registry)
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
                     {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable())}]
@@ -232,7 +299,8 @@ class AgentEngine:
         first_new = len(turn.operations)  # Operations before this point were reported earlier.
         # A request that looks like a command is answered in one checked sentence,
         # so it is buffered; plain conversation streams live.
-        command_like = bool(turn.tool_names) and bool(matched_groups(turn.request))
+        command_like = bool(turn.tool_names) and any(self.registry.in_group(group)
+                                                     for group in matched_groups(turn.request))
         nudged = False
         while True:
             acted = bool(turn.operations)
@@ -263,9 +331,22 @@ class AgentEngine:
                         return result("error", "model", turn, ok=False, error="The model returned an empty reply.",
                                       status="error")
                 else:
-                    reply = first_sentence(content) if acted else " ".join(strip_emoji(content).split())
                     attempted = {op.tool for op in turn.operations if op.status != "invalid"}
-                    if turn.tool_names and unsupported_claim(reply, attempted):
+                    looked_up = bool(attempted & _KNOWLEDGE_TOOLS)
+                    # A looked-up answer may add one caveat ("...may be out of date").
+                    reply = (first_sentences(content, 2 if looked_up else 1) if acted
+                             else " ".join(strip_emoji(content).split()))
+                    for tool, outcome in turn.reviews:
+                        reply = tool.review(reply, outcome) or reply  # The tool's own check of the answer.
+                    if (not nudged and not acted and set(matched_groups(turn.request)) - {"knowledge"}
+                            and ((reply.rstrip().endswith("?") and _ASKS_PERMISSION.search(reply))
+                                 or _CLAIMS_NO_ACCESS.search(reply))):
+                        # The model asked for permission itself, or claimed it cannot act, while a
+                        # fitting tool was shown. Aqua's host asks the user when a yes is needed.
+                        nudged = True
+                        turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _ACT_NUDGE}]
+                        continue
+                    if turn.tool_names and not looked_up and unsupported_claim(reply, attempted):
                         if not nudged:
                             # The model said it did something no tool did. Ask once more.
                             nudged = True
@@ -276,6 +357,11 @@ class AgentEngine:
                     if not reply:
                         reply = join_phrases([op.done for op in turn.operations]) or (
                             "Done." if acted else "Sorry, I didn't get a reply. Please try again.")
+                    countdown = self.context.countdown
+                    if countdown is not None and countdown.fresh:
+                        countdown.fresh = False
+                        if "cancel" not in reply.casefold():
+                            reply += " Say cancel to stop it."
                     emit(reply, segment=True)
                 self._remember(utterance, "".join(state["spoken"]), turn)
                 return result("action" if acted else "answer", "complete", turn)
@@ -329,6 +415,9 @@ class AgentEngine:
             turn.messages.append(self._tool_message(tool.name, ToolOutcome("failed", f"Invalid arguments: {exc}")))
             turn.operations.append(Operation(tool.name, {}, "invalid", str(exc)))
             return None
+        for name in tool.private_args:
+            if isinstance(args.get(name), str):
+                self.context.typed.append(args[name])  # Kept for the look_up guard, even if not run.
         if any(op.tool == tool.name and op.args == args and op.status in {"ok", "unverified"} for op in turn.operations):
             # Small models sometimes repeat a finished step; never do the same thing twice in one request.
             turn.messages.append(self._tool_message(tool.name, ToolOutcome("ok", "Already done; not repeated.")))
@@ -350,6 +439,8 @@ class AgentEngine:
         outcome = self._run(tool, args)
         turn.messages.append(self._tool_message(tool.name, outcome))
         turn.operations.append(Operation(tool.name, args, outcome.status, outcome.message, outcome.done))
+        if tool.review is not None:
+            turn.reviews.append((tool, outcome))
         return None
 
     def _run(self, tool, args) -> ToolOutcome:
@@ -359,7 +450,21 @@ class AgentEngine:
             return ToolOutcome("failed", f"{tool.name} failed unexpectedly.")
         if outcome.undo is not None and outcome.succeeded:
             self.context.undo.push(outcome.undo)
+        if tool.group != "knowledge":
+            self._observe(outcome.data)
         return outcome
+
+    def _observe(self, data) -> None:
+        """Remember window titles and app names tools reported (look_up must not send them)."""
+        if isinstance(data, dict):
+            for key, value in data.items():
+                if key in _OBSERVED_KEYS:
+                    self.context.observe(value)
+                elif isinstance(value, (list, dict)):
+                    self._observe(value)
+        elif isinstance(data, list):
+            for item in data:
+                self._observe(item)
 
     def _model_round(self, messages, definitions, stream_to):
         """One model decision. Text streams live only before any tool has run;
@@ -434,7 +539,7 @@ class AgentEngine:
 
 def build_engine(client, *, model: str, settings: GenerationSettings, max_turns: int = 8,
                  max_chars: int = 12000, desktop=None, policy: Policy | None = None) -> AgentEngine:
-    """The real session engine: Windows adapter, app index, M1 tools."""
+    """The real session engine: Windows adapter, app index, all tools."""
     from aqua.tools import build_registry
     from aqua.tools.app_index import AppIndex
     if desktop is None:

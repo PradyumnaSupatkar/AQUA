@@ -6,6 +6,7 @@ from ctypes import wintypes
 import ntpath
 import os
 from pathlib import Path
+import threading
 import time
 import warnings
 
@@ -27,7 +28,9 @@ INPUT_KEYBOARD = 1
 KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_UNICODE = 0x1, 0x2, 0x4
 VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN = 0x10, 0x11, 0x12, 0x5B, 0x5C
 MEDIA_KEYS = {"play_pause": 0xB3, "next": 0xB0, "previous": 0xB1}
-PROCESS_QUERY_LIMITED_INFORMATION, SYNCHRONIZE = 0x1000, 0x00100000
+PROCESS_QUERY_LIMITED_INFORMATION, SYNCHRONIZE, PROCESS_TERMINATE = 0x1000, 0x00100000, 0x0001
+SHUTDOWN_EXE = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "shutdown.exe")
+POWER_DELAY_SECONDS = 3.0  # Sleep and sign-out wait this long so the spoken reply is heard first.
 DWMWA_CLOAKED = 14
 CLSCTX_ALL = 23
 TH32CS_SNAPPROCESS = 0x2
@@ -118,6 +121,77 @@ def _check(result: int, what: str) -> None:
         raise OSError(f"{what} failed (HRESULT 0x{result & 0xffffffff:08x})")
 
 
+def _wmi_query(query: str) -> list:
+    import pythoncom
+    import win32com.client
+    pythoncom.CoInitialize()
+    return list(win32com.client.GetObject(r"winmgmts:\\.\root\wmi").ExecQuery(query))
+
+
+# Windows.Media.Control (WinRT) through raw vtables; no extra package needed.
+_MEDIA_MANAGER = "Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager"
+IID_MANAGER_STATICS = "2050C4EE-11A0-57DE-AED7-C97C70338245"
+IID_ASYNC_INFO = "00000036-0000-0000-C000-000000000046"
+_PLAYBACK = {0: "stopped", 1: "stopped", 2: None, 3: "stopped", 4: "playing", 5: "paused"}
+
+
+def _read_media_state() -> str | None:
+    combase = ctypes.WinDLL("combase")
+    combase.RoInitialize.argtypes, combase.RoInitialize.restype = [ctypes.c_int], ctypes.c_long
+    combase.WindowsCreateString.argtypes = [wintypes.LPCWSTR, wintypes.UINT, ctypes.POINTER(ctypes.c_void_p)]
+    combase.WindowsCreateString.restype = ctypes.c_long
+    combase.WindowsDeleteString.argtypes, combase.WindowsDeleteString.restype = [ctypes.c_void_p], ctypes.c_long
+    combase.RoGetActivationFactory.argtypes = [ctypes.c_void_p, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p)]
+    combase.RoGetActivationFactory.restype = ctypes.c_long
+    combase.RoInitialize(1)  # Multithreaded; this is a private short-lived thread.
+    name = ctypes.c_void_p()
+    _check(combase.WindowsCreateString(_MEDIA_MANAGER, len(_MEDIA_MANAGER), ctypes.byref(name)), "Name the media manager")
+    held = []
+    try:
+        factory = ctypes.c_void_p()
+        _check(combase.RoGetActivationFactory(name, ctypes.byref(GUID.parse(IID_MANAGER_STATICS)),
+                                              ctypes.byref(factory)), "Open the media manager")
+        held.append(factory)
+        operation = ctypes.c_void_p()  # IAsyncOperation<Manager> from RequestAsync (slot 6).
+        _check(_vtable(factory, 6, ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(factory, ctypes.byref(operation)),
+               "Request the media manager")
+        held.append(operation)
+        info = ctypes.c_void_p()
+        _check(_vtable(operation, 0, ctypes.c_long, ctypes.POINTER(GUID), ctypes.POINTER(ctypes.c_void_p))(
+            operation, ctypes.byref(GUID.parse(IID_ASYNC_INFO)), ctypes.byref(info)), "Query async status")
+        held.append(info)
+        status, deadline = ctypes.c_int(0), time.monotonic() + 1.5
+        while True:
+            _check(_vtable(info, 7, ctypes.c_long, ctypes.POINTER(ctypes.c_int))(info, ctypes.byref(status)), "Wait")
+            if status.value != 0 or time.monotonic() > deadline:
+                break
+            time.sleep(.02)
+        if status.value != 1:
+            return None
+        manager = ctypes.c_void_p()  # GetResults (slot 8).
+        _check(_vtable(operation, 8, ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(operation, ctypes.byref(manager)),
+               "Read the media manager")
+        held.append(manager)
+        session = ctypes.c_void_p()  # GetCurrentSession (slot 6); null when no player is open.
+        _check(_vtable(manager, 6, ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(manager, ctypes.byref(session)),
+               "Read the media session")
+        if not session:
+            return "none"
+        held.append(session)
+        playback = ctypes.c_void_p()  # GetPlaybackInfo (slot 9).
+        _check(_vtable(session, 9, ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(session, ctypes.byref(playback)),
+               "Read playback info")
+        held.append(playback)
+        value = ctypes.c_int()  # get_PlaybackStatus (slot 7).
+        _check(_vtable(playback, 7, ctypes.c_long, ctypes.POINTER(ctypes.c_int))(playback, ctypes.byref(value)),
+               "Read playback status")
+        return _PLAYBACK.get(value.value)
+    finally:
+        for pointer in reversed(held):
+            _release(pointer)
+        combase.WindowsDeleteString(name)
+
+
 class Win32Desktop(Desktop):
     def __init__(self) -> None:
         if os.name != "nt":
@@ -163,6 +237,7 @@ class Win32Desktop(Desktop):
             (k.QueryFullProcessImageNameW, [wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
                                             ctypes.POINTER(wintypes.DWORD)], wintypes.BOOL),
             (k.GetSystemPowerStatus, [ctypes.POINTER(SYSTEM_POWER_STATUS)], wintypes.BOOL),
+            (k.TerminateProcess, [wintypes.HANDLE, wintypes.UINT], wintypes.BOOL),
             (k.CreateToolhelp32Snapshot, [wintypes.DWORD, wintypes.DWORD], wintypes.HANDLE),
             (k.Process32FirstW, [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32W)], wintypes.BOOL),
             (k.Process32NextW, [wintypes.HANDLE, ctypes.POINTER(PROCESSENTRY32W)], wintypes.BOOL),
@@ -447,6 +522,90 @@ class Win32Desktop(Desktop):
                    "Set mute")
         finally:
             _release(volume)
+
+    def media_state(self) -> str | None:
+        """Playback state from Windows' media session (the one in the volume flyout).
+        Read on a short-lived MTA thread; None when it cannot be read in 2 s."""
+        result = {}
+
+        def work():
+            try:
+                result["state"] = _read_media_state()
+            except Exception:
+                result["state"] = None
+        thread = threading.Thread(target=work, name="aqua-media-state", daemon=True)
+        thread.start()
+        thread.join(2.0)
+        return result.get("state")
+
+    def get_brightness(self) -> int | None:
+        try:
+            rows = _wmi_query("SELECT CurrentBrightness FROM WmiMonitorBrightness WHERE Active=TRUE")
+            return int(rows[0].CurrentBrightness) if rows else None
+        except Exception:
+            return None  # Desktop monitors usually have no WMI brightness.
+
+    def set_brightness(self, level: int) -> None:
+        try:
+            rows = _wmi_query("SELECT * FROM WmiMonitorBrightnessMethods WHERE Active=TRUE")
+            if not rows:
+                raise OSError("No adjustable display.")
+            for row in rows:
+                params = row.Methods_("WmiSetBrightness").InParameters.SpawnInstance_()
+                params.Properties_.Item("Timeout").Value = 0
+                params.Properties_.Item("Brightness").Value = max(0, min(100, int(level)))
+                row.ExecMethod_("WmiSetBrightness", params)
+        except OSError:
+            raise
+        except Exception as exc:
+            raise OSError("Windows did not change the brightness.") from exc
+
+    def terminate(self, pid: int) -> None:
+        if pid in self._own:
+            raise OSError("Aqua will not end its own process.")
+        process = self.kernel.OpenProcess(PROCESS_TERMINATE, False, pid)
+        if not process:
+            raise OSError("Access denied.")
+        try:
+            if not self.kernel.TerminateProcess(process, 1):
+                raise OSError("TerminateProcess failed.")
+        finally:
+            self.kernel.CloseHandle(process)
+
+    def _shutdown_exe(self, *args: str, allowed=(0,)) -> None:
+        import subprocess
+        completed = subprocess.run([SHUTDOWN_EXE, *args], shell=False, capture_output=True,
+                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), timeout=10)
+        if completed.returncode not in allowed:
+            raise OSError(f"shutdown.exe failed ({completed.returncode}).")
+
+    def schedule_shutdown(self, kind: str, seconds: int) -> None:
+        flag = {"restart": "/r", "shutdown": "/s"}[kind]
+        self._shutdown_exe(flag, "/t", str(int(seconds)), "/c", f"Aqua: {kind} in {seconds} seconds. Say cancel to stop it.")
+
+    def abort_shutdown(self) -> None:
+        self._shutdown_exe("/a", allowed=(0, 1116))  # 1116: nothing was scheduled.
+
+    def suspend(self) -> None:
+        powrprof = ctypes.WinDLL("powrprof")
+        powrprof.SetSuspendState.argtypes = [wintypes.BOOLEAN, wintypes.BOOLEAN, wintypes.BOOLEAN]
+        threading.Timer(POWER_DELAY_SECONDS, lambda: powrprof.SetSuspendState(False, False, False)).start()
+
+    def sign_out(self) -> None:
+        exit_windows = self.user.ExitWindowsEx
+        exit_windows.argtypes, exit_windows.restype = [wintypes.UINT, wintypes.DWORD], wintypes.BOOL
+        threading.Timer(POWER_DELAY_SECONDS, lambda: exit_windows(0, 0x80000000)).start()  # EWX_LOGOFF, planned
+
+    def open_url(self, url: str) -> None:
+        if not url.lower().startswith(("http://", "https://")):
+            raise OSError("Only web addresses can be opened.")
+        os.startfile(url)
+
+    def inspect(self, handle: int) -> dict:
+        """The existing read-only UIA walker, in its isolated worker process (5 s limit)."""
+        from aqua.desktop.session import run_worker
+        result = run_worker({"operation": "inspect_handle", "handle": int(handle)})
+        return result if isinstance(result, dict) else {"status": "error"}
 
     def media_key(self, key: str) -> None:
         code = MEDIA_KEYS[key]

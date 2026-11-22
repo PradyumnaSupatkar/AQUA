@@ -23,8 +23,9 @@ def tool(name="thing", tier=SAFE, **options):
 def milestone_one_shaped_registry():
     """Stub tools with the M1 names and groups, so selection is tested without aqua.tools."""
     groups = {"launch_app": "apps", "type_text": "input", "undo_last": "undo", "list_windows": "windows",
-              "window_action": "windows", "get_time": "system", "get_battery": "system", "volume": "system",
-              "media": "system", "lock_screen": "power"}
+              "window_action": "windows", "get_time": "system", "get_battery": "system", "volume": "audio",
+              "media": "audio", "lock_screen": "power", "look_up": "knowledge", "web_search": "web",
+              "brightness": "display"}
     return Registry([tool(name, group=group) for name, group in groups.items()])
 
 

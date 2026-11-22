@@ -1,0 +1,118 @@
+{
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "suite_sha256": "22503a5d7cc7cd2743164c7d83f3c007c9ff1570260359e51ecf834e8740cc7d",
+ "runs": 1,
+ "guards": "off: citation_strip",
+ "finished": "Run 2026-11-22 14:10 India Standard Time, 273 s",
+ "source_sha256": {
+  "src/aqua/agent/loop.py": "7f66d2398917f322750ddd14dd0f95e2b516f0b99d45f49523cc41a6a02c786b",
+  "src/aqua/agent/prompt.py": "e501f1542d013ccc04cf769acafe3cdf7f538ac34d8ae3428fa9c2ef9a36ad53",
+  "src/aqua/agent/selection.py": "e0dfd057c7f47acb1a6c821f6ee7209ce27e62cbb12be5abd7c58c7050a0fa60",
+  "src/aqua/tools/knowledge.py": "6c49ffe7806bf3d0a003c4c808b1fc5fe01b91f7a32ab7dfe1fa3332fc2aeb35"
+ },
+ "cases": 114,
+ "turns": 130,
+ "case_success": 0.8947368421052632,
+ "cases_passing_every_run": 102,
+ "turn_success": 0.9076923076923077,
+ "unwanted_actions": 6,
+ "unwanted_actions_on_no_action_requests": 2,
+ "unnecessary_confirmations": 1,
+ "wrong_refusals": 0,
+ "errors": 0,
+ "latency_seconds": {
+  "median": 1.8005,
+  "p90": 3.914,
+  "max": 7.14
+ },
+ "model_requests_per_turn": 1.7692307692307692,
+ "by_category": {
+  "asr": {
+   "passed": 5,
+   "of": 7
+  },
+  "blocked": {
+   "passed": 5,
+   "of": 6
+  },
+  "confirmation": {
+   "passed": 7,
+   "of": 8
+  },
+  "direct": {
+   "passed": 27,
+   "of": 27
+  },
+  "indirect": {
+   "passed": 5,
+   "of": 5
+  },
+  "lookup": {
+   "passed": 5,
+   "of": 5
+  },
+  "lookup-recent": {
+   "passed": 2,
+   "of": 2
+  },
+  "multi-step": {
+   "passed": 3,
+   "of": 5
+  },
+  "no-action": {
+   "passed": 15,
+   "of": 17
+  },
+  "polite": {
+   "passed": 4,
+   "of": 4
+  },
+  "privacy": {
+   "passed": 5,
+   "of": 5
+  },
+  "si-ambiguous": {
+   "passed": 2,
+   "of": 4
+  },
+  "si-direct": {
+   "passed": 3,
+   "of": 3
+  },
+  "si-implicit": {
+   "passed": 1,
+   "of": 1
+  },
+  "si-indirect": {
+   "passed": 1,
+   "of": 1
+  },
+  "si-literal": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-observation": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-paraphrase": {
+   "passed": 4,
+   "of": 5
+  },
+  "si-unsupported": {
+   "passed": 1,
+   "of": 2
+  },
+  "undo": {
+   "passed": 3,
+   "of": 3
+  }
+ },
+ "failure_causes": {
+  "action not taken (model only talked)": 4,
+  "unwanted action on a no-action request": 4,
+  "reply check failed": 2,
+  "wrong target or arguments": 1,
+  "wrong outcome (confirm/decline/cancel flow)": 1
+ }
+}

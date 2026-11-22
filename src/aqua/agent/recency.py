@@ -27,7 +27,7 @@ def claims_not_happened(reply: str) -> bool:
     return bool(_NOT_YET.search(reply))
 
 
-def beyond_model_memory(question: str, reply: str, now: datetime) -> bool:
+def beyond_model_memory(question: str, reply: str, now: datetime, *, knowledge_cutoff: bool = True) -> bool:
     """The model should look this up instead of answering from training data."""
-    return (mentions_recent(question, now) or any(year > MODEL_KNOWLEDGE_YEAR for year in _years(question))
-            or bool(_NOT_YET.search(reply)))
+    after_training = knowledge_cutoff and any(year > MODEL_KNOWLEDGE_YEAR for year in _years(question))
+    return mentions_recent(question, now) or after_training or bool(_NOT_YET.search(reply))

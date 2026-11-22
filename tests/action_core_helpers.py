@@ -61,12 +61,13 @@ class Clock:
         return self.value
 
 
-def make_engine(*rounds, desktop=None, registry=None, policy=None, clock=None):
+def make_engine(*rounds, desktop=None, registry=None, policy=None, clock=None, guards=None):
     desktop = desktop if desktop is not None else FakeDesktop()
     model = ScriptedModel(*rounds)
     context = ToolContext(desktop=desktop, apps=AppIndex(desktop.app_entries, clock=desktop.monotonic),
                           policy=policy if policy is not None else Policy())
     engine = AgentEngine(model, model="test-model", settings=GenerationSettings(),
                          registry=registry if registry is not None else build_registry(),
-                         context=context, clock=clock if clock is not None else Clock(), now=lambda: FIXED_NOW)
+                         context=context, clock=clock if clock is not None else Clock(), now=lambda: FIXED_NOW,
+                         **({} if guards is None else {"guards": guards}))
     return engine, desktop, model

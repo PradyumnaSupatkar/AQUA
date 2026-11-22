@@ -66,9 +66,9 @@ def matched_groups(text: str) -> tuple[str, ...]:
                  if _PATTERNS[group].search(text) or (group == "web" and _DOMAIN.search(text)))
 
 
-def select_tools(text: str, registry) -> tuple[str, ...]:
+def select_tools(text: str, registry, *, negation_guard: bool = True) -> tuple[str, ...]:
     """The core tools plus every group whose keywords appear, capped at eight."""
-    if wants_no_action(text):
+    if negation_guard and wants_no_action(text):
         return ()
     names = [name for name in CORE_TOOLS if registry.get(name) is not None]
     for group in matched_groups(text):

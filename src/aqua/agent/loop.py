@@ -17,6 +17,7 @@ from aqua.brain.ollama import ChatEvent, GenerationSettings, OllamaError, Ollama
 from .confirm import ConfirmationGate, PendingAction
 from .context import ToolContext
 from .countdown import is_cancel
+from .guards import DEFAULT_GUARDS, Guards
 from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
@@ -191,8 +192,9 @@ class _Turn:
 class AgentEngine:
     def __init__(self, client, *, model: str, settings: GenerationSettings, registry: Registry,
                  context: ToolContext, conversation: Conversation | None = None,
-                 clock=perf_counter, now=None) -> None:
+                 clock=perf_counter, now=None, guards: Guards = DEFAULT_GUARDS) -> None:
         self.client, self.model, self.settings = client, model, settings
+        self.guards = guards  # Host guards; all on outside evaluation runs.
         self.registry, self.context = registry, context
         self.conversation = conversation if conversation is not None else Conversation(system_prompt=SYSTEM_PROMPT)
         self.gate = ConfirmationGate()
@@ -299,7 +301,7 @@ class AgentEngine:
 
         text = text.strip()
         self.context.begin_request(text)
-        names = select_tools(text, self.registry)
+        names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard)
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
                     {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable())}]
         return self._loop(_Turn(text, names, messages, start=len(messages)), text, emit, result, state)
@@ -349,8 +351,10 @@ class AgentEngine:
                     reply = (first_sentences(content, 2 if looked_up else 1) if acted
                              else " ".join(strip_emoji(content).split()))
                     can_look_up = "look_up" in turn.tool_names and not looked_up
-                    recent = beyond_model_memory(turn.request, reply, self.now())
-                    if not nudged and can_look_up and (recent or _WIKI_CLAIM.search(reply)):
+                    recent = beyond_model_memory(turn.request, reply, self.now(),
+                                                 knowledge_cutoff=self.guards.knowledge_cutoff)
+                    cited = self.guards.citation_strip and bool(_WIKI_CLAIM.search(reply))
+                    if not nudged and can_look_up and (recent or cited):
                         # Recent events, or a Wikipedia citation without a look-up: look it up first.
                         # Only look_up is offered for this one retry, so the model cannot just talk again.
                         nudged = True
@@ -366,10 +370,11 @@ class AgentEngine:
                         reply = "I couldn't find that on Wikipedia, so I don't know."  # Not a stale-memory guess.
                     for tool, outcome in turn.reviews:
                         reply = tool.review(reply, outcome) or reply  # The tool's own check of the answer.
-                    if not looked_up and _WIKI_CLAIM.search(reply):
+                    if self.guards.citation_strip and not looked_up and _WIKI_CLAIM.search(reply):
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
-                    if (not nudged and not acted and set(matched_groups(turn.request)) - {"knowledge"}
+                    if (self.guards.cant_retry and not nudged and not acted
+                            and set(matched_groups(turn.request)) - {"knowledge"}
                             and ((reply.rstrip().endswith("?") and _ASKS_PERMISSION.search(reply))
                                  or _CLAIMS_NO_ACCESS.search(reply))):
                         # The model asked for permission itself, or claimed it cannot act, while a
@@ -377,7 +382,8 @@ class AgentEngine:
                         nudged = True
                         turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _ACT_NUDGE}]
                         continue
-                    if turn.tool_names and not looked_up and unsupported_claim(reply, attempted):
+                    if (self.guards.claim_retry and turn.tool_names and not looked_up
+                            and unsupported_claim(reply, attempted)):
                         if not nudged:
                             # The model said it did something no tool did. Ask once more.
                             nudged = True
@@ -414,7 +420,8 @@ class AgentEngine:
                     emit((done + " " if done else "") + question, segment=True)
                     self._remember(utterance, "".join(state["spoken"]))
                     return result(kind, kind, turn, status="waiting")
-            self._remind(turn)
+            if self.guards.restate_request:
+                self._remind(turn)
 
     def _undoable(self) -> str | None:
         record = self.context.undo.peek()

@@ -23,7 +23,7 @@ GROUP_KEYWORDS = {
     "power": ("lock", "sleep", "restart", "reboot", "shut down", "shutdown", "sign out", "log off", "log out",
               "turn off the computer", "turn off my computer", "turn off the pc", "power off"),
     "web": ("search", "google", "website", "web site", "site", "browse", "browser", "url", "link", "http",
-            "https", "web", "online"),
+            "https", "web", "online", "youtube", "amazon", "github"),
     "knowledge": ("who", "what", "when", "where", "which", "why", "how many", "how much", "how old", "how tall",
                   "how long", "how far", "champion", "championship", "championships", "won", "win", "winner",
                   "population", "capital", "born", "died", "founded", "invented", "discovered", "president",

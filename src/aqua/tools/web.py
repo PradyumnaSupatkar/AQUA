@@ -10,6 +10,14 @@ from aqua.agent.registry import SAFE, Tool, ToolOutcome
 
 # DuckDuckGo fits a privacy-first assistant; the query goes only to the browser.
 SEARCH_URL = "https://duckduckgo.com/?q={}"
+# Site searches: fixed https templates; only the URL-encoded query is filled in.
+SITE_SEARCH = {
+    "youtube": "https://www.youtube.com/results?search_query={}",
+    "google": "https://www.google.com/search?q={}",
+    "wikipedia": "https://en.wikipedia.org/w/index.php?search={}",
+    "amazon": "https://www.amazon.com/s?k={}",
+    "github": "https://github.com/search?q={}",
+}
 _HOST = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", re.IGNORECASE)
 
 
@@ -89,13 +97,18 @@ def _open(args: dict, context: ToolContext) -> ToolOutcome:
     return ToolOutcome("ok", f"Opened {host} in {where}.{note}", done=f"opened {host}", data={"url": url})
 
 
+def search_url(query: str, site: str | None = None) -> str:
+    return SITE_SEARCH.get(site or "", SEARCH_URL).format(quote_plus(" ".join(query.split())))
+
+
 def _search(args: dict, context: ToolContext) -> ToolOutcome:
-    query = " ".join(args["query"].split())
-    where, note = _open_in(SEARCH_URL.format(quote_plus(query)), args, context)
+    query, site = " ".join(args["query"].split()), args.get("site")
+    where, note = _open_in(search_url(query, site), args, context)
     if where is None:
         return ToolOutcome("failed", "The browser could not be opened.")
-    return ToolOutcome("ok", f"Opened a web search for {query!r} in {where}.{note}",
-                       done=f"searched the web for {query}")
+    on = f" on {site.capitalize() if site != 'youtube' else 'YouTube'}" if site else ""
+    return ToolOutcome("ok", f"Opened a search for {query!r}{on} in {where}.{note}",
+                       done=f"searched{on or ' the web'} for {query}")
 
 
 open_url = Tool(
@@ -114,6 +127,10 @@ web_search = Tool(
                  "For spoken facts use look_up."),
     parameters={"type": "object", "properties": {
         "query": {"type": "string", "description": "What to search for", "minLength": 1, "maxLength": 300},
+        "site": {"type": "string", "enum": list(SITE_SEARCH),
+                 "description": "Search on this site, e.g. youtube for 'search X on YouTube'; omit for the web"},
         "browser": BROWSER_PARAMETER},
         "required": ["query"]},
-    run=_search, check=_check_browser, describe=lambda args: f"search the web for {args['query']}")
+    run=_search, check=_check_browser,
+    describe=lambda args: f"search {args['site']} for {args['query']}" if args.get("site")
+    else f"search the web for {args['query']}")

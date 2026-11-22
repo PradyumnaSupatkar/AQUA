@@ -125,5 +125,27 @@ class BrightnessUndoTests(unittest.TestCase):
         self.assertEqual(len(model.requests), 1)
 
 
+class SiteSearchTests(unittest.TestCase):
+    def test_site_urls_are_fixed_templates_with_an_encoded_query(self):
+        from aqua.tools.web import search_url
+        self.assertEqual(search_url("Sidemen Sunday", "youtube"),
+                         "https://www.youtube.com/results?search_query=Sidemen+Sunday")
+        self.assertEqual(search_url("a&b=c/../x", "google"), "https://www.google.com/search?q=a%26b%3Dc%2F..%2Fx")
+        self.assertEqual(search_url("rust", "github"), "https://github.com/search?q=rust")
+        self.assertTrue(search_url("pizza").startswith("https://duckduckgo.com/?q="))
+
+    def test_search_on_youtube_through_the_engine(self):
+        engine, desktop, _ = make_engine([call("web_search", query="Sidemen Sunday", site="youtube")],
+                                         "Searched YouTube for Sidemen Sunday.")
+        engine.respond("search Sidemen Sunday on YouTube")
+        self.assertEqual(desktop.opened_urls, ["https://www.youtube.com/results?search_query=Sidemen+Sunday"])
+
+    def test_unknown_site_is_a_schema_error_not_a_url(self):
+        from aqua.agent.registry import SchemaError, validate_arguments
+        schema = build_registry().get("web_search").parameters
+        with self.assertRaises(SchemaError):
+            validate_arguments(schema, {"query": "x", "site": "evil.example", "request": "asked"})
+
+
 if __name__ == "__main__":
     unittest.main()

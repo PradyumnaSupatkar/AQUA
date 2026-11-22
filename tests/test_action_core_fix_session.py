@@ -103,30 +103,37 @@ class FollowUpTests(unittest.TestCase):
         self.assertEqual(selected_groups("turn the volume down", ("system",)), ("audio",))
         self.assertEqual(selected_groups("hello", ()), ())
 
-    def test_stale_yes_after_sign_out_question_is_checked(self):
-        engine, desktop, _ = make_engine([call("power", action="sign_out")], "It is 3 PM.",
-                                         "Signing you out of Windows now.", "Signing you out now.")
+    def test_stale_yes_after_sign_out_question_never_acts(self):
+        engine, desktop, model = make_engine([call("power", action="sign_out")], "It is 3 PM.")
         engine.respond("sign me out")
         engine.respond("what time is it")
         result = engine.respond("yes")  # Stale: no pending action any more.
         self.assertEqual(desktop.power, [])
-        self.assertEqual(result.text, "Sorry, I couldn't do that.")
+        self.assertEqual(result.text, "There's nothing waiting for a yes.")
 
 
 class BareAnswerTests(unittest.TestCase):
-    def test_bare_no_with_nothing_pending_never_acts(self):
-        engine, desktop, model = make_engine("It does sound quiet.", [call("volume", action="up")], "Okay.")
+    def test_bare_no_with_nothing_pending_gets_a_host_reply(self):
+        engine, desktop, model = make_engine("It does sound quiet.")
         engine.respond("it's very quiet in here")
         result = engine.respond("no")
-        self.assertEqual(model.requests[-1]["tools"], [])
+        self.assertEqual((result.text, len(model.requests)), ("Okay, there's nothing to cancel.", 1))
         self.assertEqual(desktop.volume, 50)
-        self.assertEqual(result.task.operations[0].status, "invalid")
 
-    def test_bare_yes_with_nothing_pending_gets_read_only_tools(self):
-        engine, _, model = make_engine("The volume is at 50%.", "Okay.")
+    def test_bare_yes_with_nothing_pending_gets_a_host_reply(self):
+        engine, _, model = make_engine("The volume is at 50%.", "The volume is at 50%.")
         engine.respond("turn it up?")
+        before = len(model.requests)
+        result = engine.respond("yes")
+        self.assertEqual(result.text, "There's nothing waiting for a yes.")
+        self.assertEqual(len(model.requests), before)  # The "yes" never reached the model.
+
+    def test_yes_to_aquas_own_question_reaches_the_model_without_action_tools(self):
+        engine, _, model = make_engine("Would you like a joke?", "Why did the PC sneeze? It had a virus.")
+        engine.respond("tell me something fun")
         engine.respond("yes")
         self.assertFalse(set(model.requests[-1]["tools"]) & ACTION_TOOLS)
+        self.assertEqual(len(model.requests), 2)
 
     def test_status_reading_is_offered_for_questions_not_commands(self):
         registry = build_registry()

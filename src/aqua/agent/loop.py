@@ -410,9 +410,16 @@ class AgentEngine:
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
         bare = classify_reply(text)
+        if bare is not None and not self._asked_after:
+            # A bare yes/no with nothing pending and no question from Aqua before it: the host
+            # answers, and the model never sees it (so it can never act on it).
+            reply = "There's nothing waiting for a yes." if bare == "yes" else "Okay, there's nothing to cancel."
+            emit(reply)
+            self._remember(text, reply)
+            return result("answer", "nothing-pending", None)
         if bare is not None:
-            # A bare yes/no with nothing pending answers no host question, so it can never act:
-            # "no" gets no tools, "yes" only read-only ones.
+            # A yes/no to Aqua's own conversational question ("Would you like a joke?"): the
+            # model answers it, but it can never act on it ("no": no tools, "yes": read-only).
             names = () if bare == "no" else tuple(n for n in names if self._read_only(n))
         groups = selected_groups(text, self._last_groups) if names else ()
         self._last_groups = groups

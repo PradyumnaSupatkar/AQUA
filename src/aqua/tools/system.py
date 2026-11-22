@@ -8,6 +8,18 @@ from aqua.agent.registry import READ, SAFE, Tool, ToolOutcome, UndoRecord
 
 VOLUME_STEP = 10
 BRIGHTNESS_STEP = 10
+_MEDIA_ASK = {"pause": "pause the playback", "play": "resume the playback",
+              "play_pause": "press play/pause", "next": "skip to the next track",
+              "previous": "go back to the previous track"}
+
+
+def _describe_level(name: str, args: dict) -> str:
+    action = args["action"]
+    if action in {"mute", "unmute"}:
+        return f"{action} the sound"
+    if action == "set":
+        return f"set the {name} to {args.get('level', '?')}%"
+    return f"turn the {name} {action}"
 _MEDIA_DONE = {"play_pause": "pressed play/pause", "pause": "paused the playback", "play": "resumed the playback",
                "next": "skipped to the next track", "previous": "went back to the previous track"}
 
@@ -134,7 +146,7 @@ volume = Tool(
         "level": {"type": "integer", "minimum": 0, "maximum": 100,
                   "description": "Target level for set, or step size for up/down (default 10)"}},
         "required": ["action"]},
-    run=_volume, check=_volume_check)
+    run=_volume, check=_volume_check, describe=lambda args: _describe_level("volume", args))
 
 media = Tool(
     name="media", group="audio", tier=SAFE,
@@ -142,7 +154,7 @@ media = Tool(
     parameters={"type": "object", "properties": {
         "action": {"type": "string", "enum": ["pause", "play", "play_pause", "next", "previous"]}},
         "required": ["action"]},
-    run=_media)
+    run=_media, describe=lambda args: _MEDIA_ASK[args['action']])
 
 brightness = Tool(
     name="brightness", group="display", tier=SAFE,
@@ -152,12 +164,11 @@ brightness = Tool(
         "level": {"type": "integer", "minimum": 0, "maximum": 100,
                   "description": "Target level for set, or step size for up/down (default 10)"}},
         "required": ["action"]},
-    run=_brightness, check=_brightness_check)
+    run=_brightness, check=_brightness_check, describe=lambda args: _describe_level("brightness", args))
 
 # With no arguments at all, Qwen3 4B proposes lock_screen two or more times per
-# reply (sometimes until the call limit); one required flag makes it call once.
+# reply (sometimes until the call limit); the required "request" argument, added
+# to every action tool by the registry, makes it call once.
 lock_screen = Tool(
     name="lock_screen", group="power", tier=SAFE, description="Lock the Windows screen.",
-    parameters={"type": "object", "properties": {"now": {"type": "boolean", "description": "true to lock now"}},
-                "required": ["now"]},
-    run=_lock)
+    parameters={"type": "object", "properties": {}}, run=_lock, describe=lambda args: "lock the screen")

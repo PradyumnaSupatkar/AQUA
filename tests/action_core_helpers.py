@@ -15,6 +15,11 @@ FIXED_NOW = datetime(2026, 11, 22, 15, 42, tzinfo=timezone.utc)
 
 
 def call(name, **arguments):
+    """A scripted tool call. Action tools need ``request``; it defaults to "asked"
+    (read-only tools drop it), and ``request=None`` leaves it out."""
+    arguments.setdefault("request", "asked")
+    if arguments["request"] is None:
+        del arguments["request"]
     return {"function": {"name": name, "arguments": arguments}}
 
 

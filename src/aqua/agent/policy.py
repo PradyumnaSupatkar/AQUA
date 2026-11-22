@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import re
 
-from .registry import DESTRUCTIVE, DISRUPTIVE, SAFE, Tool
+from .registry import DESTRUCTIVE, DISRUPTIVE, SAFE, Tool, unsure_question
 
 RUN, CONFIRM, DENY, CLARIFY = "run", "confirm", "deny", "clarify"
 
@@ -93,6 +93,9 @@ class Policy:
         if tier >= DISRUPTIVE:
             question = tool.confirm(args) if tool.confirm is not None else f"Run {tool.name}? Say yes or no."
             return Decision(CONFIRM, tier, question=question)
+        if args.get("request") == "unsure":
+            # The model was not sure the user asked for this: ask, never act on a guess.
+            return Decision(CONFIRM, tier, question=unsure_question(tool, args))
         return Decision(RUN, tier)
 
 

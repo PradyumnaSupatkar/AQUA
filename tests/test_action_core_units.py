@@ -231,7 +231,7 @@ class UndoStackTests(unittest.TestCase):
 
 class PromptTests(unittest.TestCase):
     def test_system_prompt_is_short_static_and_has_no_clock(self):
-        self.assertLess(len(SYSTEM_PROMPT), 1600)
+        self.assertLess(len(SYSTEM_PROMPT), 2000)
         self.assertNotIn("2026", SYSTEM_PROMPT)
         self.assertIn("ONE short sentence", SYSTEM_PROMPT)
         self.assertIn("no emoji", SYSTEM_PROMPT)

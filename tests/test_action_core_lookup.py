@@ -254,25 +254,6 @@ class LookUpEngineTests(unittest.TestCase):
         self.assertNotIn("look_up", model.requests[0]["tools"])
 
 
-class PermissionNudgeTests(unittest.TestCase):
-    def test_model_asking_for_permission_is_told_to_call_the_tool(self):
-        engine, desktop, model = make_engine("Would you like me to restart the computer?",
-                                             [call("power", action="restart")])
-        result = engine.respond("restart the computer")
-        self.assertIn("Do not ask for permission yourself", model.requests[1]["messages"][-1]["content"])
-        self.assertEqual((result.outcome, result.text), ("confirm", "Restart the computer? Say yes or no."))
-
-    def test_false_cannot_is_retried(self):
-        engine, desktop, _ = make_engine("I cannot change the brightness.", [call("brightness", action="up")], "Brighter.")
-        engine.respond("make the screen brighter")
-        self.assertEqual(desktop.brightness, 80)
-
-    def test_plain_questions_are_not_nudged(self):
-        engine, _, model = make_engine("Would you like a joke?")
-        self.assertEqual(engine.respond("tell me something fun").text, "Would you like a joke?")
-        self.assertEqual(len(model.requests), 1)
-
-
 class NoLookupFlagTests(unittest.TestCase):
     def invoke(self, argv, target):
         with patch(f"aqua.cli.{target}", return_value=0) as run, redirect_stdout(StringIO()), \

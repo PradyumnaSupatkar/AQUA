@@ -273,8 +273,11 @@ class LoopBehaviourTests(unittest.TestCase):
 
     def test_plain_text_tool_call_is_accepted_only_for_visible_tools(self):
         from aqua.agent.loop import parse_text_tool_call
+        # A plain-text call carries no request argument, so the host asks before acting.
         engine, desktop, _ = make_engine('{"name": "volume", "arguments": {"action": "mute"}}', "Muted.")
-        self.assertEqual(engine.respond("mute").text, "Muted.")
+        self.assertEqual(engine.respond("mute").text, "Mute the sound? Say yes or no.")
+        self.assertFalse(desktop.muted)
+        self.assertEqual(engine.respond("yes").text, "Muted.")
         self.assertTrue(desktop.muted)
         visible = ("volume",)
         self.assertEqual(parse_text_tool_call('<tool_call>{"name": "volume", "arguments": {}}</tool_call>', visible),

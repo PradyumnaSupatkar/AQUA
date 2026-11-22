@@ -11,7 +11,7 @@ from dataclasses import dataclass, fields, replace
 class Guards:
     negation_guard: bool = True     # "don't ..." / hypotheticals get no tools (selection)
     claim_retry: bool = True        # a reply claiming an action no tool did: one retry, then an honest reply
-    cant_retry: bool = True         # asking permission or "I can't" while a fitting tool is shown: one retry
+    cant_retry: bool = True         # the model's own "Would you like me to ...?" becomes a host confirmation
     citation_strip: bool = True     # "According to Wikipedia" without a look-up: retry, then the citation is removed
     knowledge_cutoff: bool = True   # years after the model's training (2024) mean: look it up
     restate_request: bool = True    # each tool result restates the request so multi-step requests finish

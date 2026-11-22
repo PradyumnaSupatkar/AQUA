@@ -11,4 +11,5 @@ def _undo(args: dict, context: ToolContext) -> ToolOutcome:
 undo_last = Tool(
     name="undo_last", group="undo", tier=SAFE,
     description="Undo Aqua's most recent action (volume, window change, or an app it opened). Use for 'undo that'.",
-    parameters={"type": "object", "properties": {}}, run=_undo)
+    parameters={"type": "object", "properties": {}}, run=_undo,
+    describe=lambda args: "undo the last action")

@@ -75,7 +75,7 @@ open_url = Tool(
     parameters={"type": "object", "properties": {
         "url": {"type": "string", "description": "Web address", "minLength": 3, "maxLength": 2000}},
         "required": ["url"]},
-    run=_open, check=_check_url)
+    run=_open, check=_check_url, describe=lambda args: f"open {args['url']}")
 
 web_search = Tool(
     name="web_search", group="web", tier=SAFE,
@@ -83,4 +83,4 @@ web_search = Tool(
     parameters={"type": "object", "properties": {
         "query": {"type": "string", "description": "What to search for", "minLength": 1, "maxLength": 300}},
         "required": ["query"]},
-    run=_search)
+    run=_search, describe=lambda args: f"search the web for {args['query']}")

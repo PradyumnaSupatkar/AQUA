@@ -5,7 +5,7 @@ validated data; nothing the model sends can change a tool's tier.
 """
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import json
 
 READ, SAFE, DISRUPTIVE, DESTRUCTIVE = 0, 1, 2, 3
@@ -56,6 +56,8 @@ class Tool:
     private_args: tuple[str, ...] = ()
     # Verify the final reply against this tool's result: return a corrected reply, or None.
     review: Callable[[str, "ToolOutcome"], str | None] | None = None
+    # Short phrase for a host question, e.g. "lock the screen" -> "Lock the screen? Say yes or no."
+    describe: Callable[[dict], str] | None = None
 
     def tier_for(self, args: dict, context) -> int:
         tier = self.tier(args, context) if callable(self.tier) else self.tier
@@ -139,6 +141,30 @@ def validate_arguments(schema: dict, arguments) -> dict:
     return result
 
 
+# Every action tool (tier 1 and above) takes this required argument. "unsure" makes
+# the host ask the user first, so a hint or a question never acts on its own.
+REQUEST_PARAMETER = {
+    "type": "string", "enum": ["asked", "unsure"],
+    "description": ("asked: the user directly asked for this action now. unsure: it is only a hint, an idea "
+                    "or a question; Aqua asks the user first."),
+}
+
+
+def with_request(tool: Tool) -> Tool:
+    """The tool with the required ``request`` argument added (action tools only)."""
+    if callable(tool.tier) or tool.tier < SAFE or "request" in tool.parameters.get("properties", {}):
+        return tool
+    parameters = dict(tool.parameters)
+    parameters["properties"] = {**parameters.get("properties", {}), "request": REQUEST_PARAMETER}
+    parameters["required"] = [*parameters.get("required", ()), "request"]
+    return replace(tool, parameters=parameters)
+
+
+def unsure_question(tool: Tool, args: dict) -> str:
+    phrase = tool.describe(args) if tool.describe is not None else f"run {tool.name.replace('_', ' ')}"
+    return phrase[:1].upper() + phrase[1:] + "? Say yes or no."
+
+
 class Registry:
     def __init__(self, tools=()) -> None:
         self._tools: dict[str, Tool] = {}
@@ -150,7 +176,7 @@ class Registry:
             raise ValueError(f"Tool {tool.name} is already registered.")
         if tool.parameters.get("type") != "object":
             raise ValueError(f"Tool {tool.name} parameters must be an object schema.")
-        self._tools[tool.name] = tool
+        self._tools[tool.name] = with_request(tool)
 
     def get(self, name: str) -> Tool | None:
         return self._tools.get(name) if isinstance(name, str) else None

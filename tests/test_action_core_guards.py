@@ -40,11 +40,12 @@ class GuardSwitchTests(unittest.TestCase):
         self.assertEqual(len(model.requests), 1)
 
     def test_cant_retry(self):
-        on, _, model = make_engine("I cannot change the brightness.", "Still cannot.")
-        on.respond("make the screen brighter")
-        self.assertEqual(len(model.requests), 2)
-        off, _, model = make_engine("I cannot change the brightness.", guards=without("cant_retry"))
-        off.respond("make the screen brighter")
+        # On: the model's own offer becomes a host confirmation. Off: its question is just spoken.
+        on, desktop, model = make_engine("Would you like me to lock the screen?", [call("lock_screen")])
+        self.assertEqual(on.respond("how do I lock my screen?").outcome, "confirm")
+        self.assertFalse(desktop.locked)
+        off, _, model = make_engine("Would you like me to lock the screen?", guards=without("cant_retry"))
+        self.assertEqual(off.respond("how do I lock my screen?").outcome, "answer")
         self.assertEqual(len(model.requests), 1)
 
     def test_citation_strip(self):

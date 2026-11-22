@@ -185,7 +185,7 @@ close_app = Tool(
     parameters={"type": "object", "properties": {
         "app": {"type": "string", "description": "App name, e.g. Notepad", "minLength": 1, "maxLength": 100}},
         "required": ["app"]},
-    run=_close, check=_check_close)
+    run=_close, check=_check_close, describe=lambda args: f"close {args['app']}")
 
 force_quit_app = Tool(
     name="force_quit_app", group="apps", tier=DISRUPTIVE,
@@ -193,7 +193,7 @@ force_quit_app = Tool(
     parameters={"type": "object", "properties": {
         "app": {"type": "string", "description": "App name, e.g. Notepad", "minLength": 1, "maxLength": 100}},
         "required": ["app"]},
-    run=_force, check=_check_force,
+    run=_force, check=_check_force, describe=lambda args: f"force quit {args['app']}",
     confirm=lambda args: f"Force quit {args['app']}? Unsaved work will be lost. Say yes or no.")
 
 
@@ -203,5 +203,5 @@ launch_app = Tool(
     parameters={"type": "object", "properties": {
         "app": {"type": "string", "description": "App name as the user said it", "minLength": 1, "maxLength": 100}},
         "required": ["app"]},
-    run=_run, tier=SAFE, check=_check,
+    run=_run, tier=SAFE, check=_check, describe=lambda args: f"open {args['app']}",
 )

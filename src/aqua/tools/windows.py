@@ -9,6 +9,8 @@ from .apps import window_matches_app
 MAX_LISTED = 12
 ACTIONS = ("focus", "minimise", "maximise", "restore")
 _SPELLING = {"minimize": "minimise", "maximize": "maximise"}
+_DESCRIBE = {"focus": "bring {} to the front", "minimise": "minimise {}", "maximise": "maximise {}",
+             "restore": "restore {}"}
 _PAST = {"focus": "brought {} to the front", "minimise": "minimised {}", "maximise": "maximised {}",
          "restore": "restored {}"}
 
@@ -124,6 +126,6 @@ window_action = Tool(
         "window": {"type": "string", "description": "App name or window title, e.g. Notepad", "minLength": 1,
                    "maxLength": 100}},
         "required": ["action", "window"]},
-    run=_action,
+    run=_action, describe=lambda args: _DESCRIBE[_SPELLING.get(args['action'], args['action'])].format(args['window']),
 )
 

@@ -10,6 +10,18 @@ from .apps import window_matches_app
 from .windows import find_windows, label
 
 MAX_TEXT = 1000
+READBACK_CHARS = 200  # Longer text is read back shortened, with its word count.
+
+
+def readback(text: str) -> str:
+    if len(text) <= READBACK_CHARS:
+        return text
+    return text[:READBACK_CHARS].rsplit(" ", 1)[0] + f"... ({len(text.split())} words)"
+
+
+def describe_typing(args: dict) -> str:
+    target = f" into {args['app']}" if args.get("app") else ""
+    return f"type '{readback(args['text'])}'{target}"
 
 
 def _launched_window(context: ToolContext, app: str | None) -> Window | None:
@@ -77,5 +89,5 @@ type_text = Tool(
         "app": {"type": "string", "description": "Window to type into, e.g. Notepad; omit for the app just opened",
                 "maxLength": 100}},
         "required": ["text"]},
-    run=_run, check=_check, private_args=("text",),
+    run=_run, check=_check, private_args=("text",), describe=lambda args: describe_typing(args),
 )

@@ -60,14 +60,40 @@ _KNOWLEDGE_TOOLS = frozenset({"look_up"})
 _OBSERVED_KEYS = ("app", "window", "title", "process")
 _NUDGE = ("[Aqua host: no tool was called for that, so it has not happened. If the user asked for an action, "
           "call the tool now. If you cannot, say plainly that you did not do it.]")
-# The model asked for permission itself, or claimed it cannot act, while a tool was shown.
+# The model offered an action itself ("Would you like me to ...?"). The host turns the
+# offer into a real pending confirmation instead of letting the model act on it.
 _ASKS_PERMISSION = re.compile(r"\b(?:would|do)\s+you\s+(?:like|want)\s+(?:me\s+)?to\b|\bshall\s+i\b|\bshould\s+i\b|"
-                              r"\bare\s+you\s+sure\b|\bproceed\b|\bconfirm\b", re.I)
-_CLAIMS_NO_ACCESS = re.compile(r"\bI\s+(?:cannot|can't|can\s+not|am\s+unable\s+to|am\s+not\s+able\s+to|"
-                               r"don't\s+have\s+(?:the\s+)?(?:ability|access|permission))\b|"
-                               r"\brequires?\s+system[- ]level\s+access\b", re.I)
-_ACT_NUDGE = ("[Aqua host: you have a tool for this request. Call it now. Do not ask for permission yourself: "
-              "Aqua asks the user when an action needs a yes.]")
+                              r"\bwant\s+me\s+to\b", re.I)
+_OFFER_NOTE = ("[Aqua host: the user has not answered your question yet. If it offers one specific action, call "
+               "that tool now with request \"unsure\": Aqua asks the user and only acts on a yes. If it offers no "
+               "specific action, repeat your answer.]")
+_QUESTION = re.compile(r"[^.!?]*\?\s*")
+
+
+def statement_part(text: str) -> str:
+    """The reply without its questions ("Spotify is popular. Want me to open it?" -> "Spotify is popular.")."""
+    return " ".join(_QUESTION.sub(" ", text).split())
+
+
+def _names_request(raw_args) -> bool:
+    if isinstance(raw_args, str):
+        try:
+            raw_args = json.loads(raw_args) if raw_args.strip() else {}
+        except ValueError:
+            return True  # Malformed: the schema check reports it.
+    return not isinstance(raw_args, dict) or raw_args.get("request") not in (None, "")
+
+
+def _with_unsure(raw_args):
+    """Model arguments with request forced to "unsure" (an offer is never a direct request)."""
+    if isinstance(raw_args, str):
+        try:
+            raw_args = json.loads(raw_args) if raw_args.strip() else {}
+        except ValueError:
+            return raw_args  # Left for the schema check to report.
+    if not isinstance(raw_args, dict):
+        return raw_args
+    return {**raw_args, "request": "unsure"}
 # Citing a source that was never consulted is a false claim too.
 _WIKI_CLAIM = re.compile(r"\b(?:according\s+to|from|on)\s+wikipedia\b,?\s*|\bwikipedia\s+(?:says|states|reports|lists)"
                          r"\b(?:\s+that)?,?\s*", re.I)
@@ -187,6 +213,7 @@ class _Turn:
     operations: list = field(default_factory=list)
     start: int = 0              # Index of this request's first tool exchange in ``messages``.
     reviews: list = field(default_factory=list)  # (tool, outcome) whose results check the final reply
+    offer_mode: bool = False    # The model is naming the tool for its own offer; calls become "unsure".
 
 
 class AgentEngine:
@@ -316,6 +343,7 @@ class AgentEngine:
         command_like = bool(turn.tool_names) and any(self.registry.in_group(group)
                                                      for group in matched_groups(turn.request))
         nudged = False
+        offer = None  # (the model's offer text, whether it was already spoken)
         while True:
             acted = bool(turn.operations)
             live = not acted and not command_like
@@ -339,6 +367,18 @@ class AgentEngine:
                 if text_call is not None:
                     calls, content = [text_call], ""
             if not calls:
+                if offer is None and not nudged and not acted and self._is_offer(turn, content):
+                    # One round for the model to name the exact tool of its offer; that call is
+                    # forced to "unsure", so a plain "yes" from the user runs it, never the model.
+                    offer, nudged = (" ".join(strip_emoji(content).split()), live), True
+                    turn.offer_mode, command_like = True, True
+                    turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _OFFER_NOTE}]
+                    continue
+                if offer is not None:
+                    if not offer[1]:
+                        emit(offer[0], segment=True)  # No specific action: keep the model's own question.
+                    self._remember(utterance, "".join(state["spoken"]), turn)
+                    return result("answer", "complete", turn)
                 if live:
                     if not "".join(state["spoken"]).strip():
                         emit("Sorry, I didn't get a reply. Please try again.")
@@ -373,15 +413,6 @@ class AgentEngine:
                     if self.guards.citation_strip and not looked_up and _WIKI_CLAIM.search(reply):
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
-                    if (self.guards.cant_retry and not nudged and not acted
-                            and set(matched_groups(turn.request)) - {"knowledge"}
-                            and ((reply.rstrip().endswith("?") and _ASKS_PERMISSION.search(reply))
-                                 or _CLAIMS_NO_ACCESS.search(reply))):
-                        # The model asked for permission itself, or claimed it cannot act, while a
-                        # fitting tool was shown. Aqua's host asks the user when a yes is needed.
-                        nudged = True
-                        turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _ACT_NUDGE}]
-                        continue
                     if (self.guards.claim_retry and turn.tool_names and not looked_up
                             and unsupported_claim(reply, attempted)):
                         if not nudged:
@@ -417,11 +448,18 @@ class AgentEngine:
                 if stop is not None:
                     kind, question = stop
                     done = join_phrases([op.done for op in turn.operations[first_new:]])
-                    emit((done + " " if done else "") + question, segment=True)
+                    lead = statement_part(offer[0]) if offer is not None and not offer[1] else ""
+                    emit(" ".join(part for part in (done, lead, question) if part), segment=True)
                     self._remember(utterance, "".join(state["spoken"]))
                     return result(kind, kind, turn, status="waiting")
             if self.guards.restate_request:
                 self._remind(turn)
+
+    def _is_offer(self, turn: _Turn, content: str) -> bool:
+        """The model asked the user whether to do something while action tools were shown."""
+        text = " ".join(strip_emoji(content).split())
+        return (self.guards.cant_retry and bool(turn.tool_names) and text.endswith("?")
+                and bool(_ASKS_PERMISSION.search(text)))
 
     def _undoable(self) -> str | None:
         record = self.context.undo.peek()
@@ -447,6 +485,10 @@ class AgentEngine:
             turn.messages.append(self._tool_message(str(name), ToolOutcome("failed", f"Unknown tool {name}.")))
             turn.operations.append(Operation(str(name), {}, "invalid", "unknown tool"))
             return None
+        if "request" in tool.parameters.get("properties", {}) and (turn.offer_mode or not _names_request(raw_args)):
+            # An offer is never a direct request, and a call that does not say whether the user
+            # asked for it is treated as unsure: the host asks instead of guessing.
+            raw_args = _with_unsure(raw_args)
         try:
             args = validate_arguments(tool.parameters, raw_args)
         except SchemaError as exc:

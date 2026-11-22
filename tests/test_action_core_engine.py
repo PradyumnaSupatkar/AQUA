@@ -275,7 +275,8 @@ class LoopBehaviourTests(unittest.TestCase):
         from aqua.agent.loop import parse_text_tool_call
         # A plain-text call carries no request argument, so the host asks before acting.
         engine, desktop, _ = make_engine('{"name": "volume", "arguments": {"action": "mute"}}', "Muted.")
-        self.assertEqual(engine.respond("mute").text, "Mute the sound? Say yes or no.")
+        # A direct command ("mute") is asked for whatever the model wrote; this one is not direct.
+        self.assertEqual(engine.respond("hmm, mute I guess").text, "Mute the sound? Say yes or no.")
         self.assertFalse(desktop.muted)
         self.assertEqual(engine.respond("yes").text, "Muted.")
         self.assertTrue(desktop.muted)

@@ -46,7 +46,7 @@ class RequestArgumentTests(unittest.TestCase):
 
     def test_a_call_without_request_is_treated_as_unsure(self):
         engine, desktop, _ = make_engine([call("volume", action="mute", request=None)])
-        self.assertEqual(engine.respond("mute").outcome, "confirm")
+        self.assertEqual(engine.respond("I guess mute, maybe").outcome, "confirm")  # Not a direct command.
         self.assertFalse(desktop.muted)
 
     def test_direct_requests_still_act_immediately(self):

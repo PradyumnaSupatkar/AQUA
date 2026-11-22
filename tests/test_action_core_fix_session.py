@@ -145,7 +145,8 @@ class BareAnswerTests(unittest.TestCase):
 
 class ToolTextTests(unittest.TestCase):
     def test_written_out_tool_call_is_never_spoken(self):
-        engine, desktop, _ = make_engine('<tool_call>\n{"name": "web_search", "arguments": {"query": "pizza"}}\n</tool_call>')
+        text = '<tool_call>\n{"name": "web_search", "arguments": {"query": "pizza"}}\n</tool_call>'
+        engine, desktop, _ = make_engine(text, text)  # Asked once for plain words, then "Okay."
         spoken = []
         result = engine.respond("Don't open Chrome", on_text=spoken.append)
         self.assertEqual(result.text, "Okay.")

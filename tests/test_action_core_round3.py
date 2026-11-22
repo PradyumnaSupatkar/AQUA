@@ -211,5 +211,81 @@ class DictationAcrossQuestionTests(unittest.TestCase):
         self.assertIsNone(engine._awaiting_text)
 
 
+LOCK_TEXT = '<tool_call>{"name": "lock_screen", "arguments": {"request": "asked"}}</tool_call>'
+
+
+class HiddenToolTextTests(unittest.TestCase):
+    def test_written_call_to_a_hidden_action_becomes_a_host_question(self):
+        engine, desktop, _ = make_engine(LOCK_TEXT, "Locked.")
+        spoken = []
+        asked = engine.respond("hmm, tell me something nice", on_text=spoken.append)
+        self.assertEqual(asked.text, "Lock the screen? Say yes or no.")
+        self.assertNotIn("tool_call", "".join(spoken))
+        self.assertFalse(desktop.locked)
+        engine.respond("yes")
+        self.assertTrue(desktop.locked)
+
+    def test_buffered_reply_with_text_before_the_call_is_never_shown(self):
+        engine, desktop, _ = make_engine("Sure. " + LOCK_TEXT)
+        result = engine.respond("open Notepad")  # Command-like: buffered, and lock_screen was not shown.
+        self.assertNotIn("tool_call", result.text)
+        self.assertEqual(result.text, "Lock the screen? Say yes or no.")
+        self.assertFalse(desktop.locked)
+
+    def test_after_dont_requests_the_model_is_asked_for_plain_words(self):
+        engine, desktop, model = make_engine(LOCK_TEXT, "Okay, I won't lock it.")
+        result = engine.respond("don't lock the screen")
+        self.assertEqual(result.text, "Okay, I won't lock it.")
+        self.assertFalse(model.requests[1]["tools"])
+        self.assertFalse(desktop.locked)
+        self.assertIsNone(engine.pending)
+
+    def test_a_second_written_call_ends_in_okay(self):
+        engine, _, _ = make_engine('{"name": "nope_tool", "arguments": {}}', LOCK_TEXT)
+        result = engine.respond("hello there")
+        self.assertEqual(result.text, "Okay.")
+
+    def test_a_hidden_read_only_tool_may_run(self):
+        engine, _, _ = make_engine('<tool_call>{"name": "get_time", "arguments": {}}</tool_call>', "It's noon.")
+        result = engine.respond("hello, nice weather")
+        self.assertEqual(result.text, "It's noon.")
+        self.assertEqual(result.task.operations[0].tool, "get_time")
+
+    def test_tool_text_is_not_kept_in_history(self):
+        engine, _, _ = make_engine(LOCK_TEXT, '{"name": "x"}')
+        engine.respond("don't do anything, just chat")
+        self.assertNotIn("tool_call", str(engine.conversation.history))
+        self.assertNotIn('"name"', str(engine.conversation.history))
+
+
+class DirectCommandTests(unittest.TestCase):
+    def test_direct_commands_are_recognised(self):
+        from aqua.agent.loop import direct_command
+        for text in ("lock the screen", "Lock the screen.", "please lock my computer", "could you lock the screen?",
+                     "would you be able to mute the sound", "don't forget to open Notepad", "Hey Aqua, pause it"):
+            self.assertTrue(direct_command(text), text)
+        for text in ("should I lock the screen?", "what does locking do?", "the volume, lock things, whatever",
+                     "I might lock it later", "is the screen locked?"):
+            self.assertFalse(direct_command(text), text)
+
+    def test_lock_the_screen_runs_even_when_the_model_says_unsure(self):
+        for request in ("unsure", None):
+            engine, desktop, _ = make_engine([call("lock_screen", request=request)], "Locked the screen.")
+            result = engine.respond("lock the screen")
+            self.assertTrue(desktop.locked, request)
+            self.assertEqual(result.outcome, "action")
+
+    def test_unclear_requests_still_ask(self):
+        engine, desktop, _ = make_engine([call("lock_screen", request="unsure")], "Fine.")
+        result = engine.respond("I guess lock the screen, maybe?")
+        self.assertEqual(result.outcome, "confirm")
+        self.assertFalse(desktop.locked)
+
+    def test_disruptive_tools_still_confirm(self):
+        engine, desktop, _ = make_engine([call("power", action="shutdown", request="unsure")], "Fine.")
+        self.assertEqual(engine.respond("shut down the computer").outcome, "confirm")
+        self.assertEqual(desktop.power, [])
+
+
 if __name__ == "__main__":
     unittest.main()

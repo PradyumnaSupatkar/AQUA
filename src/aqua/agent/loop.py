@@ -115,6 +115,34 @@ def _names_request(raw_args) -> bool:
     return not isinstance(raw_args, dict) or raw_args.get("request") not in (None, "")
 
 
+# A direct command: an imperative verb first, after polite openers ("could you", "please",
+# "don't forget to"). "lock the screen" is asked for, whatever the model marked it.
+_POLITE_LEAD = re.compile(
+    r"^(?:(?:hey|hi|ok|okay)\s+aqua\b[,\s]*)?(?:(?:please|kindly|just|now|quickly)\s+|"
+    r"(?:could|can|would|will)\s+you\s+(?:please\s+)?(?:be\s+able\s+to\s+)?|don'?t\s+forget\s+to\s+|"
+    r"go\s+ahead\s+and\s+|i\s+(?:want|need)\s+you\s+to\s+)*", re.I)
+_DIRECT_VERB = re.compile(
+    r"(?:open|launch|start|lock|mute|unmute|turn|set|close|quit|exit|minimi[sz]e|maximi[sz]e|restore|bring|switch|"
+    r"pause|play|resume|skip|search|undo|raise|lower|dim|brighten|increase|decrease|type|write|put|show|go)\b", re.I)
+
+
+def direct_command(request: str) -> bool:
+    text = request.strip().casefold().replace("’", "'")
+    return bool(_DIRECT_VERB.match(text[_POLITE_LEAD.match(text).end():]))
+
+
+def _with_request(raw_args, value: str):
+    """Model arguments with request set to ``value``."""
+    if isinstance(raw_args, str):
+        try:
+            raw_args = json.loads(raw_args) if raw_args.strip() else {}
+        except ValueError:
+            return raw_args  # Left for the schema check to report.
+    if not isinstance(raw_args, dict):
+        return raw_args
+    return {**raw_args, "request": value}
+
+
 def _with_unsure(raw_args):
     """Model arguments with request forced to "unsure" (an offer is never a direct request)."""
     if isinstance(raw_args, str):
@@ -137,13 +165,24 @@ def _recent_nudge(now: datetime) -> str:
             "and it may well have happened already. Call look_up now with a short query and answer from its result.]")
 
 
+_PLAIN_NUDGE = ("[Aqua host: No tool can be called for this. Answer the user in plain words, in one or two "
+                "sentences, without writing any tool call.]")
 _TEXT_CALL = re.compile(r"^\s*(?:<tool_call>\s*)?(\{.*\})\s*(?:</tool_call>)?\s*$", re.S)
+
+
+def looks_like_tool_text(content: str) -> bool:
+    """A reply that is (or contains) a written-out tool call; never displayed or spoken."""
+    text = (content or "").lstrip()
+    return "<tool_call>" in text or "</tool_call>" in text or text.startswith(_TOOL_TEXT)
 
 
 def parse_text_tool_call(content: str, visible: tuple[str, ...]) -> dict | None:
     """Qwen sometimes writes a tool call as plain JSON instead of a native call.
     Accept only a whole-reply JSON object naming a tool shown for this request."""
-    match = _TEXT_CALL.match(content or "")
+    content = content or ""
+    if "<tool_call>" in content:
+        content = content[content.index("<tool_call>"):]  # "Sure. <tool_call>{...}": the call part.
+    match = _TEXT_CALL.match(content)
     if not match:
         return None
     try:
@@ -452,6 +491,7 @@ class AgentEngine:
         nudged = False
         already = ""  # Text of this reply already streamed before a held claim
         offer = None  # (the model's offer text, whether it was already spoken)
+        plain = False  # The model was asked for plain words after a written-out tool call.
         while True:
             acted = bool(turn.operations)
             live = not acted and not command_like
@@ -479,11 +519,27 @@ class AgentEngine:
                 text_call = parse_text_tool_call(content, turn.tool_names)
                 if text_call is not None:
                     calls, content = [text_call], ""
-                elif held and live:
-                    # A written-out call to a tool that is not available: never speak it.
-                    emit("Okay.")
-                    self._remember(utterance, "Okay.", turn)
-                    return result("answer", "complete", turn)
+                elif held or looks_like_tool_text(content):
+                    # A written-out call to a tool that was not shown: never displayed or spoken.
+                    hidden = parse_text_tool_call(content, self.registry.names)
+                    if hidden is not None and not plain and self._may_surface(turn):
+                        name = hidden["function"]["name"]
+                        turn.tool_names = (name, *turn.tool_names)[:MAX_VISIBLE_TOOLS]
+                        definitions = self.registry.definitions(turn.tool_names)
+                        if not self._read_only(name):
+                            # An action the request did not select: the host asks first, as for an offer.
+                            turn.offer_mode, command_like = True, True
+                        calls, content = [hidden], ""
+                    elif not nudged:
+                        # Ask once for a plain answer, with no tools to call.
+                        nudged, plain, live, command_like, definitions = True, True, False, True, None
+                        turn.messages += [{"role": "assistant", "content": ""},
+                                          {"role": "user", "content": _PLAIN_NUDGE}]
+                        continue
+                    else:
+                        emit("Okay.", segment=True)
+                        self._remember(utterance, "Okay.", turn)
+                        return result("answer", "complete", turn)
             if not calls:
                 if offer is None and not nudged and not acted and self._is_offer(turn, content):
                     # One round for the model to name the exact tool of its offer; that call is
@@ -606,6 +662,17 @@ class AgentEngine:
             if self.guards.restate_request:
                 self._remind(turn)
 
+    def _commanded(self, turn: _Turn, tool) -> bool:
+        """The request is a direct command for this tool's group ("lock the screen")."""
+        return (direct_command(turn.request) and tool.group in matched_groups(turn.request)
+                and not (self.guards.negation_guard and wants_no_action(turn.request)))
+
+    def _may_surface(self, turn: _Turn) -> bool:
+        """A written call to a tool that was not shown may become a host question (or a read):
+        not after "don't ..." requests or a bare yes/no, which must never lead to an action."""
+        return classify_reply(turn.request) is None and not (
+            self.guards.negation_guard and wants_no_action(turn.request))
+
     _ANSWER_FILLER = frozenset({"in", "into", "to", "on", "use", "the", "open", "it", "please", "window", "app",
                                 "thanks", "thank", "you", "just"})
 
@@ -675,10 +742,15 @@ class AgentEngine:
             turn.messages.append(self._tool_message(str(name), ToolOutcome("failed", f"Unknown tool {name}.")))
             turn.operations.append(Operation(str(name), {}, "invalid", "unknown tool"))
             return None
-        if "request" in tool.parameters.get("properties", {}) and (turn.offer_mode or not _names_request(raw_args)):
-            # An offer is never a direct request, and a call that does not say whether the user
-            # asked for it is treated as unsure: the host asks instead of guessing.
-            raw_args = _with_unsure(raw_args)
+        if "request" in tool.parameters.get("properties", {}):
+            if not turn.offer_mode and self._commanded(turn, tool):
+                # "lock the screen": the user asked for exactly this, so it is never "unsure"
+                # (the tier still decides whether the host asks first).
+                raw_args = _with_request(raw_args, "asked")
+            elif turn.offer_mode or not _names_request(raw_args):
+                # An offer is never a direct request, and a call that does not say whether the user
+                # asked for it is treated as unsure: the host asks instead of guessing.
+                raw_args = _with_unsure(raw_args)
         try:
             args = validate_arguments(tool.parameters, raw_args)
         except SchemaError as exc:
@@ -742,6 +814,8 @@ class AgentEngine:
     def _risky(self, sentence: str) -> bool:
         """A sentence that claims or promises an action; while streaming it is held back
         until the claim check has run, because spoken words cannot be taken back."""
+        if "<tool_call" in sentence or '"name"' in sentence:
+            return True  # A written-out tool call after some text is never spoken either.
         return self.guards.claim_retry and (unsupported_claim(sentence, set()) or bool(_PROMISE.search(sentence)))
 
     def _model_round(self, messages, definitions, stream_to):
@@ -830,6 +904,8 @@ class AgentEngine:
         results, so later requests show the model that actions happen through tools."""
         if not user_text.strip() or not reply.strip():
             return
+        if looks_like_tool_text(reply):
+            reply = "Okay."  # Raw tool-call text never enters history (the model would copy it).
         exchanges = [] if turn is None else self._exchanges(turn)
         try:
             if not exchanges:

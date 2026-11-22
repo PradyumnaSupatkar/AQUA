@@ -82,6 +82,15 @@ def wants_explanation(text: str) -> bool:
     return bool(_EXPLAIN.search(text.replace("’", "'")))
 
 
+_QUESTION_START = re.compile(r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:what|how|is|are|was|does|do|which|why|when|where)\b",
+                             re.IGNORECASE)
+
+
+def asks_question(text: str) -> bool:
+    text = text.replace("’", "'").strip()
+    return text.endswith("?") or bool(_QUESTION_START.search(text))
+
+
 def matched_groups(text: str) -> tuple[str, ...]:
     text = text.replace("’", "'")
     return tuple(group for group in GROUP_ORDER
@@ -110,7 +119,9 @@ def select_tools(text: str, registry, *, negation_guard: bool = True, question_g
         for name in registry.in_group(group):
             if name not in names:
                 names.append(name)
-    if set(groups) & _STATUS_GROUPS and registry.get("device_status") is not None:
+    if set(groups) & _STATUS_GROUPS and registry.get("device_status") is not None and asks_question(text):
+        # Only a status question ("what's the volume?") needs the reading; for a command
+        # ("it's too loud") the model then just reports the state instead of acting.
         names.append("device_status")
     if not groups:
         # No keyword matched (misheard words, unusual phrasing): offer the likely actions

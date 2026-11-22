@@ -14,7 +14,7 @@ from aqua.brain.conversation import Conversation
 from aqua.brain.filtering import AnswerChannelGuard
 from aqua.brain.ollama import ChatEvent, GenerationSettings, OllamaError, OllamaProtocolError
 
-from .confirm import ConfirmationGate, PendingAction
+from .confirm import ConfirmationGate, PendingAction, classify_reply
 from .context import ToolContext
 from .countdown import is_cancel
 from .guards import DEFAULT_GUARDS, Guards
@@ -369,6 +369,11 @@ class AgentEngine:
         self.context.begin_request(text, self._asked_after)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
+        bare = classify_reply(text)
+        if bare is not None:
+            # A bare yes/no with nothing pending answers no host question, so it can never act:
+            # "no" gets no tools, "yes" only read-only ones.
+            names = () if bare == "no" else tuple(n for n in names if self._read_only(n))
         groups = selected_groups(text, self._last_groups) if names else ()
         self._last_groups = groups
         not_done = tuple(dict.fromkeys(action.summary for action in self.gate.take_dropped() if action.summary))
@@ -520,6 +525,10 @@ class AgentEngine:
         text = " ".join(strip_emoji(content).split())
         return (self.guards.cant_retry and (bool(turn.tool_names) or turn.explain) and text.endswith("?")
                 and bool(_ASKS_PERMISSION.search(text)))
+
+    def _read_only(self, name: str) -> bool:
+        tool = self.registry.get(name)
+        return tool is not None and not callable(tool.tier) and tool.tier == 0
 
     def _undoable(self) -> str | None:
         record = self.context.undo.peek()

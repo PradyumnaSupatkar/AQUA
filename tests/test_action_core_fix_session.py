@@ -113,6 +113,29 @@ class FollowUpTests(unittest.TestCase):
         self.assertEqual(result.text, "Sorry, I couldn't do that.")
 
 
+class BareAnswerTests(unittest.TestCase):
+    def test_bare_no_with_nothing_pending_never_acts(self):
+        engine, desktop, model = make_engine("It does sound quiet.", [call("volume", action="up")], "Okay.")
+        engine.respond("it's very quiet in here")
+        result = engine.respond("no")
+        self.assertEqual(model.requests[-1]["tools"], [])
+        self.assertEqual(desktop.volume, 50)
+        self.assertEqual(result.task.operations[0].status, "invalid")
+
+    def test_bare_yes_with_nothing_pending_gets_read_only_tools(self):
+        engine, _, model = make_engine("The volume is at 50%.", "Okay.")
+        engine.respond("turn it up?")
+        engine.respond("yes")
+        self.assertFalse(set(model.requests[-1]["tools"]) & ACTION_TOOLS)
+
+    def test_status_reading_is_offered_for_questions_not_commands(self):
+        registry = build_registry()
+        self.assertIn("device_status", select_tools("what's the volume at?", registry))
+        self.assertIn("device_status", select_tools("is the music playing", registry))
+        for command in ("it's too loud", "turn it up and play the music", "it's way too bright in here"):
+            self.assertNotIn("device_status", select_tools(command, registry), command)
+
+
 class ToolTextTests(unittest.TestCase):
     def test_written_out_tool_call_is_never_spoken(self):
         engine, desktop, _ = make_engine('<tool_call>\n{"name": "web_search", "arguments": {"query": "pizza"}}\n</tool_call>')

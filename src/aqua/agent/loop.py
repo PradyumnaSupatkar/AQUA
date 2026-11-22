@@ -297,6 +297,7 @@ class AgentEngine:
         self.gate = ConfirmationGate()
         self._last_groups: tuple = ()  # A follow-up with no keyword ("check again") reuses these.
         self._asked_after: tuple = ()  # Requests that ended in a question from Aqua (newest last).
+        self._awaiting_text: str | None = None  # Dictation waiting for the answer to "Which app?".
         self.clock = clock
         self.now = now if now is not None else (lambda: datetime.now().astimezone())
 
@@ -408,6 +409,12 @@ class AgentEngine:
 
         text = text.strip()
         self.context.begin_request(text, self._asked_after)
+        awaiting, self._awaiting_text = self._awaiting_text, None
+        app = self._named_app(text) if awaiting is not None else None
+        if app is not None:
+            # "write meeting at noon" -> "Which app?" -> "Notepad": the host opens (or brings
+            # forward) that app and types the kept text, so the dictation cannot get lost.
+            return self._type_into_answer(text, awaiting, app, emit, result)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
         bare = classify_reply(text)
@@ -599,6 +606,40 @@ class AgentEngine:
             if self.guards.restate_request:
                 self._remind(turn)
 
+    _ANSWER_FILLER = frozenset({"in", "into", "to", "on", "use", "the", "open", "it", "please", "window", "app",
+                                "thanks", "thank", "you", "just"})
+
+    def _named_app(self, text: str) -> str | None:
+        """The installed app a short answer names ("Notepad", "in notepad please"), if any."""
+        words = [w for w in re.sub(r"[^\w\s+#]", " ", text.casefold()).split() if w not in self._ANSWER_FILLER]
+        if not words or len(words) > 3:
+            return None
+        for name in (" ".join(words), "".join(words)):  # Speech splits names: "note pad".
+            match = self.context.apps.find(name)
+            if match.kind == "found" and match.entry is not None:
+                return match.entry.name
+        return None
+
+    def _type_into_answer(self, text: str, dictation: str, app: str, emit, result) -> AgentTurnResult:
+        turn = _Turn(text, ("launch_app", "type_text"), [], groups=("apps", "input"))
+        self._last_groups = turn.groups
+        for name, args in (("launch_app", {"app": app}), ("type_text", {"text": dictation, "app": app})):
+            call = {"function": {"name": name, "arguments": {**args, "request": "asked"}}}
+            turn.messages.append({"role": "assistant", "content": "", "tool_calls": [call]})
+            stop = self._handle_call(turn, name, call["function"]["arguments"])
+            if stop is not None:
+                emit(" ".join(part for part in (join_phrases([op.done for op in turn.operations]), stop[1]) if part))
+                self._remember(text, stop[1], turn)
+                return result(stop[0], stop[0], turn, status="waiting")
+            if turn.operations[-1].status not in {"ok", "unverified", "duplicate"}:
+                break
+        done = join_phrases([op.done for op in turn.operations])
+        failed = next((op.message for op in turn.operations if op.status not in {"ok", "unverified", "duplicate"}), "")
+        reply = " ".join(part for part in (done, failed) if part) or "Sorry, I couldn't do that."
+        emit(reply)
+        self._remember(text, reply, turn)
+        return result("action" if done else "answer", "complete", turn)
+
     def _is_offer(self, turn: _Turn, content: str) -> bool:
         """The model asked the user whether to do something while action tools were shown."""
         text = " ".join(strip_emoji(content).split())
@@ -658,6 +699,8 @@ class AgentEngine:
             turn.operations.append(Operation(tool.name, args, "denied", decision.reason))
             return None
         if decision.action == CLARIFY:
+            if tool.name == "type_text" and not args.get("app"):
+                self._awaiting_text = args["text"]  # Typed once the user names the app.
             turn.messages.pop()  # The question replaces this call; the user's answer is a new request.
             return "clarify", decision.question
         if decision.action == CONFIRM:

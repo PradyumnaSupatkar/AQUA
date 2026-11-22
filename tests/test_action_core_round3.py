@@ -174,5 +174,42 @@ class InsertionCheckTests(unittest.TestCase):
         self.assertEqual(result.task.operations[0].status, "ok")
 
 
+class DictationAcrossQuestionTests(unittest.TestCase):
+    def _asked(self, *rounds):
+        engine, desktop, model = make_engine([call("type_text", text="meeting at noon")], *rounds)
+        asked = engine.respond("write meeting at noon")
+        self.assertEqual(asked.text, "Which app should I type that into?")
+        return engine, desktop, model
+
+    def test_named_app_is_opened_and_the_kept_text_typed(self):
+        engine, desktop, model = self._asked()
+        result = engine.respond("notepad")
+        self.assertEqual(desktop.launched, ["Notepad"])
+        self.assertEqual(list(desktop.text.values()), ["meeting at noon"])
+        self.assertEqual(result.text, "Opened Notepad and typed your text.")
+        self.assertEqual(len(model.requests), 1)  # The host did it; the model could not drop the text.
+
+    def test_spoken_variants_name_the_app(self):
+        engine, desktop, _ = self._asked()
+        engine.respond("in the note pad please")
+        self.assertEqual(list(desktop.text.values()), ["meeting at noon"])
+
+    def test_an_open_window_is_reused(self):
+        desktop = FakeDesktop()
+        notepad = desktop.add_window("Untitled - Notepad", "notepad.exe", front=False)
+        desktop.focus(1)
+        engine, _, _ = make_engine([call("type_text", text="meeting at noon")], desktop=desktop)
+        engine.respond("write meeting at noon")
+        engine.respond("Notepad")
+        self.assertEqual((desktop.launched, desktop.text), ([], {notepad.handle: "meeting at noon"}))
+
+    def test_anything_else_goes_to_the_model_and_the_text_is_dropped(self):
+        engine, desktop, model = self._asked("Okay, never mind.")
+        engine.respond("actually forget it, what time is it")
+        self.assertEqual(desktop.typed, [])
+        self.assertEqual(len(model.requests), 2)
+        self.assertIsNone(engine._awaiting_text)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -596,9 +596,19 @@ class Win32Desktop(Desktop):
         exit_windows.argtypes, exit_windows.restype = [wintypes.UINT, wintypes.DWORD], wintypes.BOOL
         threading.Timer(POWER_DELAY_SECONDS, lambda: exit_windows(0, 0x80000000)).start()  # EWX_LOGOFF, planned
 
-    def open_url(self, url: str) -> None:
+    def open_url(self, url: str, browser: AppEntry | None = None) -> None:
         if not url.lower().startswith(("http://", "https://")):
             raise OSError("Only web addresses can be opened.")
+        executable = browser.executable if browser is not None else None
+        if executable and executable.casefold().endswith(".exe") and os.path.isfile(executable):
+            shell32 = ctypes.WinDLL("shell32")
+            shell32.ShellExecuteW.argtypes = [wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.LPCWSTR,
+                                              wintypes.LPCWSTR, ctypes.c_int]
+            shell32.ShellExecuteW.restype = ctypes.c_void_p
+            # The URL is the browser's only argument, quoted; no shell is involved.
+            if (shell32.ShellExecuteW(None, "open", executable, '"' + url.replace('"', "%22") + '"', None, 1) or 0) <= 32:
+                raise OSError("The browser could not be started.")
+            return
         os.startfile(url)
 
     def inspect(self, handle: int) -> dict:

@@ -43,44 +43,77 @@ def normalize_url(value: str) -> str | None:
     return parts.geturl()
 
 
+BROWSER_PARAMETER = {"type": "string", "description": "Browser to use if the user named one, e.g. Chrome; "
+                     "omit for the default browser", "maxLength": 60}
+
+
+def _browser(args: dict, context: ToolContext):
+    """(installed browser entry or None, note for the reply)."""
+    name = args.get("browser")
+    if not name:
+        return None, ""
+    match = context.apps.find(name)
+    if match.entry is None:
+        return None, f" {name} was not found, so the default browser was used."
+    return match.entry, ""
+
+
+def _check_browser(args: dict, context: ToolContext):
+    entry, _note = _browser(args, context)
+    if entry is not None and context.policy.blocked(name=entry.name, executable=entry.executable or entry.target):
+        return deny(f"{entry.name} is blocked by Aqua's safety settings.")
+    return None
+
+
 def _check_url(args: dict, context: ToolContext):
     if normalize_url(args["url"]) is None:
         return deny("Only web addresses (http or https) can be opened, never files or local paths.")
-    return None
+    return _check_browser(args, context)
+
+
+def _open_in(url: str, args: dict, context: ToolContext):
+    entry, note = _browser(args, context)
+    try:
+        context.desktop.open_url(url, entry)
+    except OSError:
+        return None, note
+    return (entry.name if entry is not None else "the browser"), note
 
 
 def _open(args: dict, context: ToolContext) -> ToolOutcome:
     url = normalize_url(args["url"])
-    try:
-        context.desktop.open_url(url)
-    except OSError:
+    where, note = _open_in(url, args, context)
+    if where is None:
         return ToolOutcome("failed", "The browser could not be opened.")
     host = urlsplit(url).hostname
-    return ToolOutcome("ok", f"Opened {host} in the browser.", done=f"opened {host}", data={"url": url})
+    return ToolOutcome("ok", f"Opened {host} in {where}.{note}", done=f"opened {host}", data={"url": url})
 
 
 def _search(args: dict, context: ToolContext) -> ToolOutcome:
     query = " ".join(args["query"].split())
-    try:
-        context.desktop.open_url(SEARCH_URL.format(quote_plus(query)))
-    except OSError:
+    where, note = _open_in(SEARCH_URL.format(quote_plus(query)), args, context)
+    if where is None:
         return ToolOutcome("failed", "The browser could not be opened.")
-    return ToolOutcome("ok", f"Opened a web search for {query!r} in the browser.",
+    return ToolOutcome("ok", f"Opened a web search for {query!r} in {where}.{note}",
                        done=f"searched the web for {query}")
 
 
 open_url = Tool(
     name="open_url", group="web", tier=SAFE,
-    description="Open a website in the default browser, e.g. youtube.com.",
+    description="Open a website, e.g. youtube.com, in the default browser or the one the user named.",
     parameters={"type": "object", "properties": {
-        "url": {"type": "string", "description": "Web address", "minLength": 3, "maxLength": 2000}},
+        "url": {"type": "string", "description": "Web address", "minLength": 3, "maxLength": 2000},
+        "browser": BROWSER_PARAMETER},
         "required": ["url"]},
     run=_open, check=_check_url, describe=lambda args: f"open {args['url']}")
 
 web_search = Tool(
     name="web_search", group="web", tier=SAFE,
-    description="Search the web in the default browser (shows results on screen; for spoken facts use look_up).",
+    description=("Search the web and show the results, in the default browser or the one the user named "
+                 "(e.g. 'search for X in Chrome'). Searching never means typing into a browser window. "
+                 "For spoken facts use look_up."),
     parameters={"type": "object", "properties": {
-        "query": {"type": "string", "description": "What to search for", "minLength": 1, "maxLength": 300}},
+        "query": {"type": "string", "description": "What to search for", "minLength": 1, "maxLength": 300},
+        "browser": BROWSER_PARAMETER},
         "required": ["query"]},
-    run=_search, describe=lambda args: f"search the web for {args['query']}")
+    run=_search, check=_check_browser, describe=lambda args: f"search the web for {args['query']}")

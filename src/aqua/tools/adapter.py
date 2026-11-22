@@ -115,8 +115,8 @@ class Desktop(ABC):
 
     # Web and observation (milestone 2)
     @abstractmethod
-    def open_url(self, url: str) -> None:
-        """Open an http(s) URL in the default browser."""
+    def open_url(self, url: str, browser: AppEntry | None = None) -> None:
+        """Open an http(s) URL in ``browser``, or the default browser when None."""
     @abstractmethod
     def inspect(self, handle: int) -> dict:
         """Read-only UI Automation snapshot: {"status", "controls": [...], "truncated"}."""

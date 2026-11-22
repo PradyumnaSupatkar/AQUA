@@ -61,6 +61,7 @@ class FakeDesktop(Desktop):
         self.power: list[tuple[str, int]] = []
         self.scheduled: str | None = None
         self.opened_urls: list[str] = []
+        self.url_browsers: list[str | None] = []  # None: the default browser
         self.controls: dict[int, list[dict]] = {}
         self.clock = 0.0
         self._pending: list[tuple[float, Window]] = []
@@ -204,8 +205,9 @@ class FakeDesktop(Desktop):
     def sign_out(self) -> None:
         self.power.append(("sign_out", 0))
 
-    def open_url(self, url: str) -> None:
+    def open_url(self, url: str, browser=None) -> None:
         self.opened_urls.append(url)
+        self.url_browsers.append(browser.name if browser is not None else None)
 
     def inspect(self, handle: int) -> dict:
         if self.window(handle) is None:

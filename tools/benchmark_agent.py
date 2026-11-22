@@ -104,6 +104,10 @@ def effects(before: dict, desktop: FakeDesktop) -> list[str]:
             out.append(f"maximise:{title}")
         elif (was_min and not now[3]) or (was_max and not now[4]):
             out.append(f"restore:{title}")
+    # Windows opened during the turn start normal; report it if one ended minimised or maximised.
+    for handle, (title, _process, _pid, minimized, maximized) in after["windows"].items():
+        if handle not in before["windows"] and (minimized or maximized):
+            out.append(f"{'minimise' if minimized else 'maximise'}:{title}")
     return [effect.casefold() for effect in out]
 
 

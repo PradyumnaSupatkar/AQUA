@@ -17,7 +17,13 @@ TERMINALS = frozenset({"windowsterminal.exe", "conhost.exe", "openconsole.exe", 
 APPS_FOLDER = "shell:::{4234d49b-0245-4df3-b780-3893943456e1}"
 MAX_WINDOWS_SCANNED = 512
 MAX_SHORTCUTS = 3000
-TYPE_CHUNK = 16
+# Typing pace. Windows 11 Notepad (WinUI) turns rapid or queued Unicode packets into
+# repeats of the last character ("Hello aaaaaaaaa") and drops Shift on queued real keys;
+# live tests: 12 ms steps were exact 6/6, 5 ms steps 2/6.
+KEY_STEP_SECONDS = .012
+READY_SECONDS = 6.0         # Longest wait for a new window's editor to accept keys
+FOCUS_READY_SECONDS = 2.0   # ... and for an existing window after focusing it
+STEADY_SECONDS = .6         # The title must stop changing this long (session tabs restoring)
 
 # Win32 constants
 GW_OWNER, GA_ROOT = 4, 2
@@ -92,6 +98,24 @@ IID_IAudioEndpointVolume = "5CDF2C82-841E-4546-9722-0CF74078229A"
 def utf16_units(character: str) -> list[int]:
     data = character.encode("utf-16-le")
     return [int.from_bytes(data[i:i + 2], "little") for i in range(0, len(data), 2)]
+
+
+def key_plan(text: str, scan) -> list[tuple]:
+    """How to type each character: ("key", vk, shift) for a key on the keyboard layout
+    (``scan(ch)`` is VkKeyScanEx: low byte vk, high byte modifiers), else ("unicode", ch).
+
+    Real key presses survive a busy target; Unicode packets do not. Tab and anything that
+    needs Ctrl or Alt (AltGr) is sent as Unicode so no shortcut or focus change can fire.
+    """
+    plan = []
+    for ch in text:
+        code = scan(ch) if ch not in "\t\r\n" else -1
+        vk, mods = code & 0xFF, (code >> 8) & 0xFF
+        if code == -1 or vk in (0, 0xFF) or mods & ~1:
+            plan.append(("unicode", ch))
+        else:
+            plan.append(("key", vk, bool(mods & 1)))
+    return plan
 
 
 def unicode_inputs(text: str):
@@ -229,6 +253,12 @@ class Win32Desktop(Desktop):
             (u.GetAsyncKeyState, [ctypes.c_int], ctypes.c_short),
             (u.LockWorkStation, [], wintypes.BOOL),
             (u.WaitForInputIdle, [wintypes.HANDLE, wintypes.DWORD], wintypes.DWORD),
+            (u.SendMessageTimeoutW, [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM, wintypes.UINT,
+                                     wintypes.UINT, ctypes.POINTER(ctypes.c_size_t)], ctypes.c_size_t),
+            (u.VkKeyScanExW, [wintypes.WCHAR, ctypes.c_void_p], ctypes.c_short),
+            (u.GetKeyboardLayout, [wintypes.DWORD], ctypes.c_void_p),
+            (u.MapVirtualKeyExW, [wintypes.UINT, wintypes.UINT, ctypes.c_void_p], wintypes.UINT),
+            (u.GetKeyState, [ctypes.c_int], ctypes.c_short),
             (k.GetCurrentThreadId, [], wintypes.DWORD),
             (k.GetCurrentProcessId, [], wintypes.DWORD),
             (k.GetConsoleWindow, [], wintypes.HWND),
@@ -418,6 +448,8 @@ class Win32Desktop(Desktop):
             raise OSError("That window has already closed.")
 
     def wait_ready(self, handle: int) -> None:
+        """Wait until a new window can take keystrokes: input idle, its editor focused, the
+        window answering at once and its title steady (Notepad restores session tabs first)."""
         pid = wintypes.DWORD()
         self.user.GetWindowThreadProcessId(handle, ctypes.byref(pid))
         process = self.kernel.OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
@@ -426,7 +458,42 @@ class Win32Desktop(Desktop):
                 self.user.WaitForInputIdle(process, 3000)
             finally:
                 self.kernel.CloseHandle(process)
-        time.sleep(.5)  # New editors often take a moment before keystrokes land.
+        self._editor_ready(handle, READY_SECONDS)
+
+    def _answers(self, handle: int, timeout_ms: int = 500) -> float | None:
+        """Seconds the window's thread took to answer WM_NULL, or None if it did not."""
+        result = ctypes.c_size_t()
+        started = time.perf_counter()
+        ok = self.user.SendMessageTimeoutW(handle, 0, 0, 0, 0x0002, timeout_ms, ctypes.byref(result))
+        return time.perf_counter() - started if ok else None
+
+    def _focused_editor_pid(self) -> int | None:
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                from pywinauto.uia_defines import IUIA
+            element = IUIA().iuia.GetFocusedElement()
+            if element is None or element.CurrentControlType not in (50004, 50030):  # Edit, Document
+                return None
+            return int(element.CurrentProcessId)
+        except Exception:
+            return None
+
+    def _editor_ready(self, handle: int, seconds: float) -> bool:
+        pid = wintypes.DWORD()
+        self.user.GetWindowThreadProcessId(handle, ctypes.byref(pid))
+        deadline, title, steady = time.monotonic() + seconds, None, time.monotonic()
+        while time.monotonic() < deadline:
+            current = self._window(handle, handle)
+            now_title = current.title if current else None
+            if now_title != title:
+                title, steady = now_title, time.monotonic()
+            took = self._answers(handle)
+            if (self._focused_editor_pid() == pid.value and took is not None and took < .05
+                    and time.monotonic() - steady >= STEADY_SECONDS):
+                return True
+            time.sleep(.1)
+        return False
 
     def is_terminal(self, window: Window) -> bool:
         console = self._root(self.kernel.GetConsoleWindow())
@@ -440,20 +507,53 @@ class Win32Desktop(Desktop):
                 self.user.GetAsyncKeyState(key) & 0x8000 for key in (VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN)):
             time.sleep(.05)
 
+    def _send(self, *events) -> bool:
+        inputs = (INPUT * len(events))()
+        for item, (vk, scan, flags) in zip(inputs, events):
+            item.type = INPUT_KEYBOARD
+            item.ki = KEYBDINPUT(vk, scan, flags, 0, 0)
+        return self.user.SendInput(len(inputs), inputs, ctypes.sizeof(INPUT)) == len(inputs)
+
     def type_text(self, handle: int, text: str) -> int:
+        """Type one character at a time, paced, as real key presses where the keyboard
+        layout has the character (Shift as needed, Caps Lock accounted for), else as Unicode.
+        Never presses Enter; stops as soon as focus leaves the window."""
         self._wait_for_modifiers()
+        self._editor_ready(handle, FOCUS_READY_SECONDS)
+        layout = self.user.GetKeyboardLayout(self.user.GetWindowThreadProcessId(handle, None))
+        caps = bool(self.user.GetKeyState(0x14) & 1)
+        shift_scan = self.user.MapVirtualKeyExW(VK_SHIFT, 0, layout)
+        step = KEY_STEP_SECONDS
         typed = 0
-        for start in range(0, len(text), TYPE_CHUNK):
+        for ch, item in zip(text, key_plan(text, lambda c: self.user.VkKeyScanExW(c, layout))):
             if self._root(self.user.GetForegroundWindow()) != handle:
                 break
-            chunk = text[start:start + TYPE_CHUNK]
-            inputs = unicode_inputs(chunk)
-            sent = self.user.SendInput(len(inputs), inputs, ctypes.sizeof(INPUT))
-            if sent != len(inputs):
+            if item[0] == "unicode":
+                sent = True
+                for unit in utf16_units(ch):
+                    sent = sent and self._send((0, unit, KEYEVENTF_UNICODE))
+                    time.sleep(step / 2)
+                    sent = sent and self._send((0, unit, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP))
+                self._answers(handle, 1000)
+            else:
+                _kind, vk, shift = item
+                shift = shift ^ (caps and ch.isalpha())
+                scan = self.user.MapVirtualKeyExW(vk, 0, layout)
+                sent = True
+                if shift:
+                    sent = self._send((VK_SHIFT, shift_scan, 0))
+                    time.sleep(step)
+                sent = sent and self._send((vk, scan, 0))
+                time.sleep(step / 2)
+                sent = sent and self._send((vk, scan, KEYEVENTF_KEYUP))
+                if shift:
+                    time.sleep(step / 2)
+                    sent = self._send((VK_SHIFT, shift_scan, KEYEVENTF_KEYUP)) and sent
+            if not sent:
                 break
-            typed += len(chunk)
-            time.sleep(.01)
-        time.sleep(.15)  # Let the app process the queued keystrokes before readback.
+            typed += 1
+            time.sleep(step)
+        time.sleep(.3)  # Let the app finish processing before readback.
         return typed
 
     def read_focused_text(self) -> str | None:

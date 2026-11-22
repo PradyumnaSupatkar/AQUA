@@ -52,6 +52,46 @@ def _covered(words: list[str], phrases) -> bool:
     return cover(0) is True
 
 
+_YES_WORDS = ("yes", "yeah", "yep", "yup", "sure", "okay")
+_NO_WORDS = ("no", "nope", "nah")
+# Real words one edit away from yes/no are not typos ("now" is closer to "do it now" than to "no").
+_REAL_WORDS = {"now", "new", "nor", "not", "yet", "yen", "yew", "ye", "nap", "noon", "know", "yell", "yeast"}
+
+
+def _collapse(word: str) -> str:
+    """Repeated letters as one: "yess" -> "yes", "noo" -> "no", "okk" -> "ok"."""
+    return re.sub(r"(.)\1+", r"\1", word)
+
+
+def _one_edit(a: str, b: str) -> bool:
+    """Within one insertion, deletion, substitution or swap of neighbours."""
+    if a == b:
+        return True
+    if abs(len(a) - len(b)) > 1:
+        return False
+    if len(a) == len(b):
+        diff = [i for i in range(len(a)) if a[i] != b[i]]
+        return len(diff) == 1 or (len(diff) == 2 and diff[1] == diff[0] + 1
+                                  and a[diff[0]] == b[diff[1]] and a[diff[1]] == b[diff[0]])
+    short, long_ = (a, b) if len(a) < len(b) else (b, a)
+    return any(long_[:i] + long_[i + 1:] == short for i in range(len(long_)))
+
+
+def _fuzzy(word: str) -> str | None:
+    """A typo'd one-word answer ("ys", "yse", "yess", "noo"). A "yes" needs a word of 2+ letters
+    that starts with y; a wrong "no" only cancels, so it is the more forgiving side."""
+    if word in _REAL_WORDS or _collapse(word) in _REAL_WORDS:
+        return None
+    word = _collapse(word)
+    if word in ("ok", "okay", "okey"):
+        return "yes"
+    if word.startswith("y") and len(word) >= 2 and any(_one_edit(word, yes) for yes in _YES_WORDS):
+        return "yes"
+    if word.startswith("n") and any(_one_edit(word, no) for no in _NO_WORDS):
+        return "no"
+    return None
+
+
 def classify_reply(text: str) -> str | None:
     """Return "yes", "no", or None when the reply is something else."""
     if not isinstance(text, str):
@@ -63,6 +103,9 @@ def classify_reply(text: str) -> str | None:
         return "no"
     if _covered(words, _YES):
         return "yes"
+    meaningful = [word for word in words if word not in _FILLER]
+    if len(meaningful) == 1:
+        return _fuzzy(meaningful[0])
     return None
 
 

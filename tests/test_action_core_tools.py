@@ -204,10 +204,18 @@ class TypeTextTests(unittest.TestCase):
         self.assertEqual(type_text.run({"text": "hi"}, ctx).status, "ok")
         self.assertEqual(desktop.text[word.handle], "hi")
 
-    def test_line_breaks_and_control_characters_are_refused(self):
+    def test_line_breaks_are_read_back_as_one_line_and_control_characters_refused(self):
         ctx = context()
-        for text in ("line one\nline two", "a\rb", "bell\x07"):
-            self.assertEqual(decide(type_text, {"text": text, "app": "notepad"}, ctx).action, DENY)
+        ctx.desktop.add_window("Untitled - Notepad", "notepad.exe")
+        for text in ("line one\nline two", "a\rb"):
+            decision = decide(type_text, {"text": text, "app": "notepad"}, ctx)
+            self.assertEqual(decision.action, "confirm", text)
+            self.assertIn("never press Enter", decision.question)
+        self.assertIn("'line one line two'", decide(type_text, {"text": "line one\nline two", "app": "notepad"}, ctx).question)
+        self.assertEqual(decide(type_text, {"text": "bell\x07", "app": "notepad"}, ctx).action, DENY)
+        outcome = type_text.run({"text": "line one\nline two", "app": "notepad"}, ctx)
+        self.assertEqual(outcome.status, "ok")
+        self.assertEqual(list(ctx.desktop.text.values()), ["line one line two"])  # No line break typed.
 
     def test_never_types_into_terminals(self):
         desktop = FakeDesktop()

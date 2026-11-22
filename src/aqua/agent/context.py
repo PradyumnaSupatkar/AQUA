@@ -29,10 +29,13 @@ class ToolContext:
     observed: set[str] = field(default_factory=set)
     typed: list[str] = field(default_factory=list)
     request: str = ""           # The current user request (stays on this PC).
+    # Earlier requests this one answers (Aqua asked a question in between), for grounding.
+    earlier: tuple[str, ...] = ()
 
-    def begin_request(self, request: str = "") -> None:
+    def begin_request(self, request: str = "", earlier: tuple[str, ...] = ()) -> None:
         self.launches.clear()
         self.request = request
+        self.earlier = tuple(earlier)
 
     def observe(self, *values) -> None:
         for value in values:

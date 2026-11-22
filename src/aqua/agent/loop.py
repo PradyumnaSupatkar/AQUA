@@ -79,7 +79,9 @@ _NUDGE = ("[Aqua host: no tool was called for that, so it has not happened. If t
 # The model offered an action itself ("Would you like me to ...?"). The host turns the
 # offer into a real pending confirmation instead of letting the model act on it.
 _ASKS_PERMISSION = re.compile(r"\b(?:would|do)\s+you\s+(?:like|want)\s+(?:me\s+)?to\b|\bshall\s+i\b|\bshould\s+i\b|"
-                              r"\bwant\s+me\s+to\b", re.I)
+                              r"\bwant\s+me\s+to\b|\bgo\s+ahead\?|\bproceed\?|\bshall\s+we\b|"
+                              r"\b(?:is\s+that|that's|sound|does\s+that\s+sound)\s+(?:ok|okay|alright|all\s+right|good|fine)\?|"
+                              r"\b(?:ok|okay)\?\s*$|\bready\?\s*$", re.I)
 _OFFER_NOTE = ("[Aqua host: the user has not answered your question yet. If it offers one specific action, call "
                "that tool now with request \"unsure\": Aqua asks the user and only acts on a yes. If it offers no "
                "specific action, repeat your answer.]")
@@ -143,9 +145,18 @@ def parse_text_tool_call(content: str, visible: tuple[str, ...]) -> dict | None:
     return {"function": {"name": name, "arguments": arguments}}
 
 
-def unsupported_claim(reply: str, attempted: set[str]) -> bool:
-    """True when the reply claims an action that no attempted tool in this turn covers."""
-    return any(pattern.search(reply) and not (tools & attempted) for pattern, tools in _CLAIMS)
+_NEGATION = re.compile(r"\b(?:not|never|no|nothing|cannot|unable|failed|blocked)\b|n't\b", re.I)
+
+
+def unsupported_claim(reply: str, succeeded: set[str]) -> bool:
+    """True when a sentence of the reply claims something no successful tool call this turn
+    backs. Negated sentences ("couldn't open it", "nothing was typed") are not claims."""
+    for sentence in _SENTENCE_END.split(" ".join(reply.split())):
+        if _NEGATION.search(sentence):
+            continue
+        if any(pattern.search(sentence) and not (tools & succeeded) for pattern, tools in _CLAIMS):
+            return True
+    return False
 
 
 def strip_emoji(text: str) -> str:
@@ -244,6 +255,7 @@ class AgentEngine:
         self.conversation = conversation if conversation is not None else Conversation(system_prompt=SYSTEM_PROMPT)
         self.gate = ConfirmationGate()
         self._last_groups: tuple = ()  # A follow-up with no keyword ("check again") reuses these.
+        self._asked_after: tuple = ()  # Requests that ended in a question from Aqua (newest last).
         self.clock = clock
         self.now = now if now is not None else (lambda: datetime.now().astimezone())
 
@@ -299,6 +311,14 @@ class AgentEngine:
     # -- one user utterance -------------------------------------------------
 
     def respond(self, text: str, *, on_text=None) -> AgentTurnResult:
+        result = self._respond(text, on_text=on_text)
+        # When Aqua ended with a question, the next request answers it: keep this request (and
+        # what it answered) so dictated text in it still counts as the user's own words.
+        asked = result.outcome in {"clarify", "confirm"} or result.text.rstrip().endswith("?")
+        self._asked_after = ((*self._asked_after[-1:], text.strip()) if asked else ())
+        return result
+
+    def _respond(self, text: str, *, on_text=None) -> AgentTurnResult:
         started = self.clock()
         state = {"requests": 0, "first": None, "completion": None, "spoken": []}
 
@@ -346,7 +366,7 @@ class AgentEngine:
             return self._loop(turn, text, emit, result, state)
 
         text = text.strip()
-        self.context.begin_request(text)
+        self.context.begin_request(text, self._asked_after)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
         groups = selected_groups(text, self._last_groups) if names else ()
@@ -424,6 +444,8 @@ class AgentEngine:
                                       status="error")
                 else:
                     attempted = {op.tool for op in turn.operations if op.status != "invalid"}
+                    succeeded = {op.tool for op in turn.operations if op.status in {"ok", "unverified", "empty",
+                                                                                     "duplicate"}}
                     looked_up = bool(attempted & _KNOWLEDGE_TOOLS)
                     # A looked-up answer may add one caveat ("...may be out of date").
                     reply = (first_sentences(content, 2 if looked_up else 1) if acted
@@ -452,7 +474,7 @@ class AgentEngine:
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
                     if (self.guards.claim_retry and turn.tool_names and not looked_up
-                            and unsupported_claim(reply, attempted)):
+                            and unsupported_claim(reply, succeeded)):
                         if not nudged:
                             # The model said it did something no tool did. Ask once more.
                             nudged = True

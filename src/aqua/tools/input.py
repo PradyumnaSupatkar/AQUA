@@ -41,40 +41,65 @@ def _target(args: dict, context: ToolContext) -> Window | None:
     app = args.get("app")
     if app:
         return _launched_window(context, app) or next(iter(find_windows(context.desktop, app, titles=False)), None)
-    window = _launched_window(context, None)
+    window = _launched_window(context, None) or _named_in_request(context)
     if window is not None:
         return window
     front = context.desktop.foreground()
     return None if front is None or context.desktop.is_terminal(front) else front
 
 
+def _named_in_request(context: ToolContext) -> Window | None:
+    """An open window whose app the user named ("... into the notepad window"), front-most first,
+    for when the model left out the app."""
+    tokens = _plain(" ".join((*context.earlier, context.request))).split()
+    words = f" {' '.join(tokens)} "
+    joined = {"".join(tokens[i:i + n]) for n in (2, 3) for i in range(len(tokens) - n + 1)}
+    for window in context.desktop.windows():
+        if context.desktop.is_terminal(window):
+            continue
+        names = {window.process.rsplit(".", 1)[0].casefold(), _plain(label(window))}
+        if any(name and (f" {name} " in words or name.replace(" ", "") in joined) for name in names):
+            return window
+    return None
+
+
 def _check(args: dict, context: ToolContext):
     text = args["text"]
-    if "\n" in text or "\r" in text:
-        return deny("Aqua never presses Enter, so it cannot type line breaks. Type it as one line instead.")
-    if any(ord(c) < 32 and c != "\t" or ord(c) == 127 for c in text):
+    if any((ord(c) < 32 and c not in "\t\r\n") or ord(c) == 127 for c in text):
         return deny("The text contains control characters.")
     if not args.get("app") and _target(args, context) is None:
         return clarify("Which app should I type that into?")
-    if not dictated(text, context.request):
+    target = f" into {args['app']}" if args.get("app") else ""
+    if "\n" in text or "\r" in text:
+        # Aqua never presses Enter: line breaks become spaces, and the user hears it first.
+        return ask(f"That has line breaks and I never press Enter, so I'll type it as one line{target}: "
+                   f"'{readback(one_line(text))}'. Go ahead?")
+    if not dictated(text, context.request, context.earlier):
         # Text the model wrote (a poem, an email) is read back first; dictation is typed at once.
-        target = f" into {args['app']}" if args.get("app") else ""
         return ask(f"I'll type{target}: '{readback(text)}'. Go ahead?")
     return None
+
+
+def one_line(text: str) -> str:
+    """Line breaks as single spaces; nothing ever presses Enter. Other text is unchanged."""
+    if "\n" not in text and "\r" not in text:
+        return text
+    return " ".join(part.strip() for part in text.replace("\r", "\n").split("\n") if part.strip())
 
 
 def _plain(text: str) -> str:
     return " ".join(re.sub(r"[^\w\s]", " ", text.casefold().replace("’", "'").replace("'", "")).split())
 
 
-def dictated(text: str, request: str) -> bool:
-    """The text to type is the user's own words (ignoring case, punctuation and spacing)."""
+def dictated(text: str, request: str, earlier: tuple[str, ...] = ()) -> bool:
+    """The text to type is the user's own words (ignoring case, punctuation and spacing), in
+    this request or one it answers ("write X into notepad" -> "Which app?" -> "Notepad")."""
     words = _plain(text)
-    return bool(words) and f" {words} " in f" {_plain(request)} "
+    return bool(words) and any(f" {words} " in f" {_plain(said)} " for said in (request, *earlier))
 
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
-    desktop, text = context.desktop, args["text"]
+    desktop, text = context.desktop, one_line(args["text"])
     window = _target(args, context)
     if window is None:
         return ToolOutcome("failed", f"No open window matches {args.get('app')}. Open the app first, then type.")
@@ -90,6 +115,10 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
         detail = "Nothing was typed" if typed == 0 else f"Only {typed} of {len(text)} characters were typed"
         return ToolOutcome("failed", f"{detail} because focus moved away from {name}.")
     readback = desktop.read_focused_text()
+    if readback is not None and text not in readback:
+        # The editor can be read and the exact text is not there: say so, never claim success.
+        return ToolOutcome("failed", f"The text did not arrive correctly in {name}; please check it.",
+                           data={"window": name})
     if readback is not None and text in readback:
         return ToolOutcome("ok", f"Typed the text into {name}.", done="typed your text", data={"window": name})
     return ToolOutcome("unverified", f"Typed the text into {name} (not verified).", done="typed your text",

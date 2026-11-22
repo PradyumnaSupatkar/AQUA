@@ -366,6 +366,10 @@ def load_suite(extra: bool = False, long: bool = False) -> tuple[dict, list[dict
     cases = list(suite["cases"])
     if extra:
         extra_suite, extra_digest = frozen("cases-extra")
+        overrides = extra_suite.get("overrides", {})
+        # Recorded expectation changes for frozen cases; cases.json itself is never edited.
+        cases = [{**case, "turns": overrides[case["id"]]["turns"]} if case["id"] in overrides else case
+                 for case in cases]
         cases += extra_suite["cases"]
         digest += f" + extra {extra_digest}"
     if long:

@@ -298,7 +298,8 @@ extra = [
     C("extra-dictation-now", "extra-composed", [T("write meeting at noon into Notepad",
                                                   E([typed("notepad", "meeting at noon")], outcome=["action"]))],
       windows=[NOTEPAD]),
-    C("extra-offer-programming-yes", "extra-offer", [T("I feel like programming", OFFERED, E(["launch:visual studio code"])),
+    C("extra-offer-programming-yes", "extra-offer", [T("I feel like programming", OFFERED, ASKS,
+                                                       E(["launch:visual studio code"])),
                                                      T("yes", E(["launch:visual studio code"]), NONE)]),
     C("extra-offer-notes-no", "extra-offer", [T("I'd like somewhere to jot down a few thoughts", OFFERED, ASKS),
                                               T("no", NONE)]),
@@ -307,9 +308,21 @@ extra = [
 ]
 extra_ids = [c["id"] for c in extra]
 assert len(extra_ids) == len(set(extra_ids)) and not set(extra_ids) & set(ids), "duplicate ids"
-extra_suite = {"version": 1, "name": "agent-v1-extra", "extends": "cases.json",
+# Expectation changes (round 3): recorded here so cases.json stays byte-identical. The harness
+# applies "overrides" to the frozen cases whenever this file is loaded.
+OVERRIDES = {
+    "cant-hear": {"turns": [T("I can't hear anything", E(["mute:off"], allow=["volume:up=.*"]), ASKS,
+                              E(outcome=["confirm"], reply_any=[r"unmute|sound|volume"]))],
+                  "reason": "An unmute offer (host yes/no question) is an acceptable answer to 'I can't hear anything'."},
+}
+EXPECTATION_CHANGES = [
+    "extra-offer-programming-yes, extra-offer-notes-no, extra-offer-quiet-no: a clarifying question with options "
+    "is accepted on the first turn (the programming case gained the ASKS alternative; the other two had it).",
+    "cant-hear (frozen case, overridden here): an unmute offer as a host yes/no question is accepted.",
+]
+extra_suite = {"version": 2, "name": "agent-v1-extra", "extends": "cases.json",
                "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
-               "cases": extra}
+               "expectation_changes": EXPECTATION_CHANGES, "overrides": OVERRIDES, "cases": extra}
 extra_data = (json.dumps(extra_suite, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
 (OUT / "cases-extra.json").write_bytes(extra_data)
 (OUT / "cases-extra.sha256").write_bytes((hashlib.sha256(extra_data).hexdigest() + "\n").encode())

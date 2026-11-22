@@ -1,8 +1,51 @@
 {
- "version": 1,
+ "version": 2,
  "name": "agent-v1-extra",
  "extends": "cases.json",
  "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
+ "expectation_changes": [
+  "extra-offer-programming-yes, extra-offer-notes-no, extra-offer-quiet-no: a clarifying question with options is accepted on the first turn (the programming case gained the ASKS alternative; the other two had it).",
+  "cant-hear (frozen case, overridden here): an unmute offer as a host yes/no question is accepted."
+ ],
+ "overrides": {
+  "cant-hear": {
+   "turns": [
+    {
+     "text": "I can't hear anything",
+     "expect": [
+      {
+       "effects": [
+        "mute:off"
+       ],
+       "allow": [
+        "volume:up=.*"
+       ]
+      },
+      {
+       "effects": [],
+       "outcome": [
+        "answer",
+        "clarify"
+       ],
+       "reply_any": [
+        "\\?"
+       ]
+      },
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "unmute|sound|volume"
+       ]
+      }
+     ]
+    }
+   ],
+   "reason": "An unmute offer (host yes/no question) is an acceptable answer to 'I can't hear anything'."
+  }
+ },
  "cases": [
   {
    "id": "extra-poem-yes",
@@ -249,6 +292,16 @@
        "effects": [],
        "outcome": [
         "confirm"
+       ]
+      },
+      {
+       "effects": [],
+       "outcome": [
+        "answer",
+        "clarify"
+       ],
+       "reply_any": [
+        "\\?"
        ]
       },
       {

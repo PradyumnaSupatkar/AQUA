@@ -59,6 +59,19 @@ class ExtraSuiteAndCompareTests(unittest.TestCase):
         self.assertIn("+ extra", digest)
         self.assertEqual(len(bench.load_suite()[1]), len(suite["cases"]))
 
+    def test_recorded_overrides_apply_only_with_the_extra_file(self):
+        frozen = {c["id"]: c for c in bench.load_suite()[1]}
+        with_extra = {c["id"]: c for c in bench.load_suite(extra=True)[1]}
+        extra = json.loads((SUITE / "cases-extra.json").read_bytes())
+        self.assertIn("cant-hear", extra["overrides"])
+        self.assertTrue(extra["expectation_changes"])
+        self.assertEqual(len(frozen["cant-hear"]["turns"][0]["expect"]), 2)
+        self.assertEqual(len(with_extra["cant-hear"]["turns"][0]["expect"]), 3)
+        offer = {**turn(outcome="confirm", reply="Unmute the sound? Say yes or no."), "case": "cant-hear",
+                 "category": "indirect", "run": 0, "turn": 0}
+        self.assertTrue(bench.rescore([offer], list(with_extra.values()))[0]["passed"])
+        self.assertFalse(bench.rescore([offer], list(frozen.values()))[0]["passed"])
+
     def test_host_question_counts_as_asking_only_in_the_lenient_score(self):
         expect = [{"effects": ["launch:visual studio code"]},
                   {"effects": [], "outcome": ["answer", "clarify"], "reply_any": [r"\?"]}]

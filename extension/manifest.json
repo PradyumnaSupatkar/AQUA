@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Aqua Browser Bridge",
+  "version": "0.1.0",
+  "description": "Lets the Aqua assistant on this PC control YouTube playback. Local only: talks to Aqua through native messaging, never the network.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiwdWKGFiGWQvcLInYli0nun0wleajKvwzq2j2Rkmh/ZcBq4rX76mDKEKteadsdeD3bgAY9XWHMwnK5HEbUHPksb1HyxnlqQlhAnufVZrXb/tFApfNeQAgkqUtrUnhHKacBP/x/B5flcmJZW4L2X2embMQ1h/WIH1UuQzFtGgK6MeQoWwMPKNEPOcPXdacVoEo0yDy35rHsMOMLh7KOMbae6JrT1tLfcr1hTlQhJ/BTNkiy2WZ2/qaYrErsh8p/4R1qJjy/klN+ThlbtfT+TplKOu1njTP+fECVpO0ABrpYhbLgLgsNpq0zGpKiT6xBZNH98VCfPR/zngQ0fWI0O1/wIDAQAB",
+  "minimum_chrome_version": "121",
+  "permissions": ["nativeMessaging", "scripting"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "background": {"service_worker": "background.js"}
+}

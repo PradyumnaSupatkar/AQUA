@@ -110,6 +110,13 @@ def statement_part(text: str) -> str:
     return " ".join(_QUESTION.sub(" ", text).split())
 
 
+def without_unbacked_claims(text: str, succeeded: set[str]) -> str:
+    """The text without sentences claiming an action no tool of this request performed, e.g. an
+    earlier turn's "I have typed 'this is a test' into Notepad" recapped as if it were new."""
+    kept = [s for s in _SENTENCE_END.split(" ".join(text.split())) if s and not unsupported_claim(s, succeeded)]
+    return " ".join(kept)
+
+
 def _names_request(raw_args) -> bool:
     if isinstance(raw_args, str):
         try:
@@ -643,7 +650,11 @@ class AgentEngine:
                     # forced to "unsure", so a plain "yes" from the user runs it, never the model.
                     # A promise to a request that was not a command ("I'd like somewhere to jot
                     # down thoughts" -> "I'll open Notepad") is an offer too, never a reason to act.
-                    offer, nudged = (" ".join(strip_emoji(content).split()), live, promised), True
+                    # Claims of actions no tool did in this request (an earlier turn's typing recapped as
+                    # new) never reach the user, not even as the lead-in to an offer.
+                    said = " ".join(strip_emoji(content).split())
+                    offer_text = (without_unbacked_claims(said, set()) if self.guards.claim_retry else said)
+                    offer, nudged = (offer_text, live and offer_text == said, promised), True
                     turn.offer_mode, command_like = True, True
                     # The offer round may name any action the request could involve, even after an
                     # explanation-only question: every call it makes is "unsure", so the host asks.
@@ -660,7 +671,7 @@ class AgentEngine:
                         safe = plain and not looks_like_tool_text(plain) and not self._risky(plain)
                         emit(plain if safe else "Okay.", segment=True)
                     elif not offer[1]:
-                        emit(offer[0], segment=True)  # No specific action: keep the model's own question.
+                        emit(offer[0] or "Okay.", segment=True)  # No specific action: keep the model's question.
                     self._remember(utterance, "".join(state["spoken"]), turn)
                     return result("answer", "complete", turn)
                 if live:

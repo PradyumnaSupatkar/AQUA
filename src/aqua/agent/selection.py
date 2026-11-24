@@ -34,9 +34,10 @@ GROUP_KEYWORDS = {
     "browser": ("youtube", "you tube", "video", "videos", "captions", "caption", "subtitles", "subtitle", "cc",
                 "fullscreen", "full screen", "quality", "resolution", "1080p", "720p", "480p", "1440p", "4k",
                 "playback speed", "speed", "faster", "slower", "skip ad", "skip the ad", "skip this ad", "ad",
-                "ads", "what's playing", "what is playing", "now playing", "playing", "rewind", "fast forward",
+                "ads", "what's playing", "what is playing", "now playing", "rewind", "fast forward",
                 "seek", "jump to", "go back", "first one", "second one", "third one", "fourth one", "fifth one",
-                "result", "results", "next video", "previous video", "channel", "pause", "play", "resume"),
+                "result", "results", "next video", "previous video", "channel"),
+    # Bare "pause"/"play" stay with the media keys (which pause YouTube too); "pause the video" adds youtube.
 }
 GROUP_ORDER = ("apps", "input", "browser", "windows", "system", "audio", "display", "power", "web", "knowledge",
                "undo")

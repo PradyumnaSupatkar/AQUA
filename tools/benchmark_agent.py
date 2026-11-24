@@ -30,6 +30,7 @@ from aqua.agent.policy import Policy  # noqa: E402
 from aqua.agent.prompt import SYSTEM_PROMPT  # noqa: E402
 from aqua.brain.conversation import Conversation  # noqa: E402
 from aqua.brain.ollama import DEFAULT_CHAT_MODEL, GenerationSettings, OllamaClient  # noqa: E402
+from aqua.browser.fake import FakeBrowserBridge  # noqa: E402
 from aqua.tools import build_registry  # noqa: E402
 from aqua.tools.adapter import AppEntry, Battery  # noqa: E402
 from aqua.tools.app_index import AppIndex  # noqa: E402
@@ -247,6 +248,22 @@ def replay_tool_history(conversation: Conversation, turns) -> None:
         conversation.complete_last_turn(reply)
 
 
+def make_bridge(spec: dict | None) -> FakeBrowserBridge | None:
+    """The fake browser bridge for a YouTube case (setup.youtube), or None: not set up at all."""
+    if spec is None:
+        return None
+    bridge = FakeBrowserBridge(connected=spec.get("connected", True), browsers=tuple(spec.get("browsers", ("chrome",))))
+    for tab in spec.get("tabs", ()):
+        tab = dict(tab)
+        for key in ("results", "qualities"):
+            if key in tab:
+                tab[key] = [tuple(item) if isinstance(item, list) else item for item in tab[key]]
+        if "qualities" in tab:
+            tab["qualities"] = tuple(tab["qualities"])
+        bridge.add_tab(**tab)
+    return bridge
+
+
 def run_case(case: dict, suite: dict, client, model: str, settings, guards, run: int) -> list[dict]:
     setup = case.get("setup", {})
     desktop = make_desktop(suite, setup)
@@ -256,11 +273,14 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
     for user, assistant in setup.get("history", ()):
         conversation.commit(user, assistant)
     replay_tool_history(conversation, setup.get("tool_history", ()))
+    bridge = make_bridge(setup.get("youtube"))
+    context.browser = bridge
     engine = AgentEngine(client, model=model, settings=settings, registry=build_registry(wikipedia=wiki),
                          context=context, conversation=conversation, guards=guards)
     rows = []
     for index, spec in enumerate(case["turns"]):
         before, wiki.sent, wiki.pages = snapshot(desktop), [], []
+        youtube_before = len(bridge.effects) if bridge is not None else 0
         started = perf_counter()
         error, result = None, None
         try:
@@ -273,7 +293,9 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
             "reply": result.text if result else "", "outcome": result.outcome if result else "error",
             "operations": [{"tool": op.tool, "args": op.args, "status": op.status}
                            for op in (result.task.operations if result and result.task else ())],
-            "effects": effects(before, desktop), "sent": list(wiki.sent),
+            "effects": effects(before, desktop) + ([e.casefold() for e in bridge.effects[youtube_before:]]
+                                                   if bridge is not None else []),
+            "sent": list(wiki.sent),
             "pages": [{"title": p["title"], "extract": p["extract"]} for p in wiki.pages],
             "requests": result.requests if result else 0, "seconds": round(perf_counter() - started, 3),
             "error": error,
@@ -354,7 +376,7 @@ def report(summary: dict, rows: list[dict], meta: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def load_suite(extra: bool = False, long: bool = False) -> tuple[dict, list[dict], str]:
+def load_suite(extra: bool = False, long: bool = False, youtube: bool = False) -> tuple[dict, list[dict], str]:
     """The frozen suite (and optionally cases-extra.json / cases-long.json); each must match its SHA-256."""
     def frozen(name: str) -> tuple[dict, str]:
         data = (SUITE / f"{name}.json").read_bytes()
@@ -376,6 +398,10 @@ def load_suite(extra: bool = False, long: bool = False) -> tuple[dict, list[dict
         long_suite, long_digest = frozen("cases-long")
         cases += long_suite["cases"]
         digest += f" + long {long_digest}"
+    if youtube:
+        youtube_suite, youtube_digest = frozen("cases-youtube")
+        cases += youtube_suite["cases"]
+        digest += f" + youtube {youtube_digest}"
     return suite, cases, digest
 
 
@@ -467,7 +493,9 @@ def main(argv=None) -> int:
                         help="turn one host guard off (evaluation only); repeatable")
     parser.add_argument("--extra", action="store_true", help="also run benchmarks/agent-v1/cases-extra.json")
     parser.add_argument("--long", action="store_true", help="also run the long-session variants (cases-long.json)")
-    parser.add_argument("--only-added", action="store_true", help="run only the --extra/--long cases")
+    parser.add_argument("--youtube", action="store_true",
+                        help="also run the YouTube cases (cases-youtube.json) against a fake browser bridge")
+    parser.add_argument("--only-added", action="store_true", help="run only the --extra/--long/--youtube cases")
     parser.add_argument("--compare", nargs=2, metavar=("BASE", "NEW"),
                         help="no model run: write NEW-report.md comparing two saved runs")
     args = parser.parse_args(argv)
@@ -477,7 +505,7 @@ def main(argv=None) -> int:
             compare(base_stem, new_stem, args.extra, args.long).encode("utf-8"))
         print(f"wrote {new_stem}-report.md")
         return 0
-    suite, cases, digest = load_suite(args.extra, args.long)
+    suite, cases, digest = load_suite(args.extra, args.long, args.youtube)
     if args.only_added:
         frozen_ids = {case["id"] for case in suite["cases"]}
         cases = [c for c in cases if c["id"] not in frozen_ids]

@@ -17,6 +17,29 @@ def turn(**fields):
     return {**base, **fields}
 
 
+class YouTubeSuiteTests(unittest.TestCase):
+    def test_youtube_cases_are_frozen_and_load(self):
+        data = (SUITE / "cases-youtube.json").read_bytes()
+        self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-youtube.sha256").read_text().strip())
+        _suite, cases, digest = bench.load_suite(youtube=True)
+        youtube = [case for case in cases if case["category"] == "youtube"]
+        self.assertTrue(10 <= len(youtube) <= 15)
+        self.assertIn("+ youtube", digest)
+
+    def test_bridge_from_setup_and_its_effects(self):
+        _suite, cases, _ = bench.load_suite(youtube=True)
+        two = next(case for case in cases if case["id"] == "yt-two-browsers")
+        bridge = bench.make_bridge(two["setup"]["youtube"])
+        bridge.youtube("pause", {})
+        self.assertEqual(bridge.effects, ["youtube:brave:pause"])
+        self.assertIsNone(bench.make_bridge(None))
+        offline = bench.make_bridge({"connected": False})
+        self.assertEqual(offline.connected, ())
+        quality = next(case for case in cases if case["id"] == "yt-quality-missing")
+        bridge = bench.make_bridge(quality["setup"]["youtube"])
+        self.assertEqual(bridge.youtube("quality", {"quality": "2160p"})["available"], ["1080p", "720p", "480p"])
+
+
 class SuiteIntegrityTests(unittest.TestCase):
     def test_suite_is_frozen_and_well_formed(self):
         data = (SUITE / "cases.json").read_bytes()

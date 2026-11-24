@@ -95,7 +95,8 @@ class StreamingHoldTests(unittest.TestCase):
         spoken = []
         result = engine.respond("hello there, my notes thing", on_text=spoken.append)
         self.assertEqual(desktop.launched, [])
-        self.assertEqual(result.text, "Sorry, I didn't manage to do that.")
+        # Not a command: the promise became an offer round, which named nothing (round 4).
+        self.assertEqual(result.text, "Okay.")
         self.assertNotIn("I will open", "".join(spoken))
 
     def test_ordinary_chat_streams_every_sentence(self):

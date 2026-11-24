@@ -166,5 +166,61 @@ class HonestWebReplyTests(unittest.TestCase):
         self.assertFalse(web_mismatch("Opened Brave.", [Operation("launch_app", {}, "ok", "Opened Brave.")]))
 
 
+class PromiseOfferTests(unittest.TestCase):
+    """Round 3 benchmark regression: 'I'd like somewhere to jot down a few thoughts' opened Notepad."""
+
+    def test_a_promise_to_a_wish_becomes_a_host_question(self):
+        engine, desktop, model = make_engine("I can open Notepad for you so you can jot them down.",
+                                             [call("launch_app", app="Notepad", request="asked")])
+        asked = engine.respond("I'd like somewhere to jot down a few thoughts")
+        self.assertEqual(asked.outcome, "confirm")
+        self.assertEqual(asked.text, "Open Notepad? Say yes or no.")
+        self.assertNotIn("call the tool now", model.requests[1]["messages"][-1]["content"])
+        engine.respond("no")
+        self.assertEqual(desktop.launched, [])
+
+    def test_an_offer_back_to_a_polite_command_is_nudged_to_act(self):
+        engine, desktop, model = make_engine("I would be able to open Chrome for you. Would you like me to do that now?",
+                                             [call("launch_app", app="Chrome")])
+        result = engine.respond("would you be able to open Chrome?")
+        self.assertEqual(desktop.launched, ["Google Chrome"])
+        self.assertEqual(result.outcome, "action")
+        self.assertIn("call the tool now", model.requests[1]["messages"][-1]["content"])
+
+    def test_negated_requests_are_never_offers(self):
+        engine, desktop, model = make_engine("I will not open Chrome.")
+        engine.respond("don't open Chrome")
+        self.assertEqual((desktop.launched, len(model.requests)), ([], 1))
+
+
+class HowToTests(unittest.TestCase):
+    def test_a_refusal_to_a_how_to_question_becomes_the_steps(self):
+        engine, desktop, _ = make_engine("I don't know how to lock the screen.")
+        result = engine.respond("how do I lock my screen?")
+        self.assertEqual(result.text, "Press Windows + L. I can also lock it for you if you want.")
+        self.assertFalse(desktop.locked)
+
+    def test_a_real_explanation_is_kept(self):
+        engine, _, _ = make_engine("Press Windows and L together.")
+        self.assertEqual(engine.respond("how do I lock my screen?").text, "Press Windows and L together.")
+
+    def test_an_explanation_with_a_promise_keeps_the_steps_and_asks(self):
+        engine, desktop, _ = make_engine("Press Windows + L. I can also lock it for you.",
+                                         [call("lock_screen", request="unsure")])
+        asked = engine.respond("how do I lock my screen?")
+        self.assertEqual(asked.text, "Press Windows + L. Lock the screen? Say yes or no.")
+        self.assertFalse(desktop.locked)
+
+    def test_refusal_detection(self):
+        from aqua.agent.howto import is_refusal
+        self.assertTrue(is_refusal("I don't know how to lock the screen."))
+        self.assertTrue(is_refusal("I'm not sure how to do that."))
+        self.assertFalse(is_refusal("Press Windows + L."))
+
+    def test_prompt_asks_for_steps(self):
+        from aqua.agent.prompt import SYSTEM_PROMPT
+        self.assertIn("answer them with the steps", SYSTEM_PROMPT)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -18,6 +18,7 @@ from .confirm import ConfirmationGate, PendingAction, classify_reply
 from .context import ToolContext
 from .countdown import is_cancel
 from .guards import DEFAULT_GUARDS, Guards
+from .howto import how_to_answer, is_refusal
 from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
@@ -82,7 +83,7 @@ _NUDGE = ("[Aqua host: no tool was called for that, so it has not happened. If t
           "call the tool now. If you cannot, say plainly that you did not do it.]")
 # "I'll open Notepad for you" with no tool call: a promise is not an action.
 _PROMISE = re.compile(
-    r"\b(?:i'?ll|i\s+will|let\s+me|i'?m\s+going\s+to|i\s+am\s+going\s+to|i\s+can\s+do\s+that)\b[^.?!]{0,40}?"
+    r"\b(?:i'?ll|i\s+will|let\s+me|i'?m\s+going\s+to|i\s+am\s+going\s+to|i\s+can(?!['’]t|not)(?:\s+also)?)\b[^.?!]{0,40}?"
     r"\b(?:open|launch|start|type|write|put|mute|unmute|turn|set|lock|close|quit|minimi[sz]e|maximi[sz]e|restore|"
     r"bring|switch|pause|play|resume|skip|search|undo|adjust|raise|lower|reduce|increase|dim|brighten|do\s+that|"
     r"do\s+it)\b", re.I)
@@ -603,10 +604,21 @@ class AgentEngine:
                         self._remember(utterance, "Okay.", turn)
                         return result("answer", "complete", turn)
             if not calls:
-                if offer is None and not nudged and not acted and self._is_offer(turn, content):
+                asks = offer is None and not nudged and not acted and self._is_offer(turn, content)
+                promised = offer is None and not nudged and not acted and not asks and self._promise_offer(turn, content)
+                if (asks or promised) and not turn.explain and self._commanded_request(turn):
+                    # "would you be able to open Chrome?" answered "Would you like me to?": the user
+                    # already asked, so one nudge to do it now instead of asking back.
+                    nudged, command_like = True, True
+                    turn.messages += [{"role": "assistant", "content": content},
+                                      {"role": "user", "content": _PROMISE_NUDGE}]
+                    continue
+                if asks or promised:
                     # One round for the model to name the exact tool of its offer; that call is
                     # forced to "unsure", so a plain "yes" from the user runs it, never the model.
-                    offer, nudged = (" ".join(strip_emoji(content).split()), live), True
+                    # A promise to a request that was not a command ("I'd like somewhere to jot
+                    # down thoughts" -> "I'll open Notepad") is an offer too, never a reason to act.
+                    offer, nudged = (" ".join(strip_emoji(content).split()), live, promised), True
                     turn.offer_mode, command_like = True, True
                     # The offer round may name any action the request could involve, even after an
                     # explanation-only question: every call it makes is "unsure", so the host asks.
@@ -617,7 +629,12 @@ class AgentEngine:
                     turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _OFFER_NOTE}]
                     continue
                 if offer is not None:
-                    if not offer[1]:
+                    if offer[2]:
+                        # A promise that named no action: never repeat it; say the new reply if it is safe.
+                        plain = " ".join(strip_emoji(content).split())
+                        safe = plain and not looks_like_tool_text(plain) and not self._risky(plain)
+                        emit(plain if safe else "Okay.", segment=True)
+                    elif not offer[1]:
                         emit(offer[0], segment=True)  # No specific action: keep the model's own question.
                     self._remember(utterance, "".join(state["spoken"]), turn)
                     return result("answer", "complete", turn)
@@ -656,6 +673,13 @@ class AgentEngine:
                         reply = "I couldn't find that on Wikipedia, so I don't know."  # Not a stale-memory guess.
                     for tool, outcome in turn.reviews:
                         reply = tool.review(reply, outcome) or reply  # The tool's own check of the answer.
+                    if turn.explain and is_refusal(reply):
+                        # "how do I lock my screen?" -> "I don't know how": give the steps instead.
+                        wider = select_tools(turn.request, self.registry, negation_guard=self.guards.negation_guard,
+                                             question_guard=False, previous=turn.groups)
+                        groups = matched_groups(turn.request)
+                        named = [n for n in wider if self.registry.get(n).group in groups]  # Not the fallback set.
+                        reply = how_to_answer(named) or reply
                     if web_mismatch(reply, turn.operations):
                         # "Searched on YouTube" when the tool searched DuckDuckGo: say what really happened.
                         reply = host_summary([op.done for op in turn.operations if op.done])
@@ -716,7 +740,13 @@ class AgentEngine:
                 if stop is not None:
                     kind, question = stop
                     done = join_phrases([op.done for op in turn.operations[first_new:]])
-                    lead = statement_part(offer[0]) if offer is not None and not offer[1] else ""
+                    lead = ""
+                    if offer is not None and offer[2]:
+                        # "Press Windows + L. I can lock it for you." keeps the explanation, not the promise.
+                        lead = " ".join(s for s in _SENTENCE_END.split(offer[0])
+                                        if s.strip() and not self._risky(s) and s.strip() not in already)
+                    elif offer is not None and not offer[1]:
+                        lead = statement_part(offer[0])
                     emit(" ".join(part for part in (done, lead, question) if part), segment=True)
                     self._remember(utterance, "".join(state["spoken"]))
                     return result(kind, kind, turn, status="waiting")
@@ -757,6 +787,17 @@ class AgentEngine:
         emit(reply, segment=True)
         self._remember(utterance, reply, turn)
         return result("action", "host-reply", turn)
+
+    def _commanded_request(self, turn: _Turn) -> bool:
+        """The request is a direct command (polite forms included), not negated."""
+        return direct_command(turn.request) and not (self.guards.negation_guard and wants_no_action(turn.request))
+
+    def _promise_offer(self, turn: _Turn, content: str) -> bool:
+        """The model promised an action ("I'll open Notepad for you") without a tool call."""
+        text = " ".join(strip_emoji(content).split())
+        return (self.guards.claim_retry and self.guards.cant_retry and (bool(turn.tool_names) or turn.explain)
+                and bool(_PROMISE.search(text)) and classify_reply(turn.request) is None
+                and not (self.guards.negation_guard and wants_no_action(turn.request)))
 
     def _commanded(self, turn: _Turn, tool) -> bool:
         """The request is a direct command for this tool's group ("lock the screen")."""

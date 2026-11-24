@@ -89,6 +89,18 @@ class ActionTests(unittest.TestCase):
         self.assertIn("Available: 1080p, 720p", result["message"])
         self.assertEqual(bridge.effects, [])
 
+    def test_the_users_words_correct_the_models_arguments(self):
+        # Real-model benchmark: "watch this video in 4k" was sent as 1080p, and a search came without a query.
+        engine, _, model, bridge = engine_with([call("youtube", action="quality", quality="1080p")],
+                                               "4K isn't available; the best is 1080p.",
+                                               qualities=("1080p", "720p"))
+        engine.respond("watch this video in 4k")
+        self.assertIn("2160p is not available", tool_results(model)[0]["message"])
+        self.assertEqual(bridge.effects, [])
+        engine, _, model, bridge = engine_with([call("youtube", action="search")])
+        engine.respond("search youtube for lofi hip hop")
+        self.assertEqual((bridge.effects, len(model.requests)), (["youtube:chrome:search=lofi hip hop"], 1))
+
     def test_search_then_play_the_second_one(self):
         engine, _, _, bridge = engine_with([call("youtube", action="search", query="lofi hip hop")],
                                            [call("youtube", action="play_result", n=2)])

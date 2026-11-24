@@ -61,6 +61,32 @@ def quality_label(value: str) -> str | None:
     return text if text in QUALITY_LABELS else None
 
 
+_QUALITY_IN_REQUEST = re.compile(r"\b(\d{3,4}\s?p|[248]k|full\s+hd)\b", re.I)
+_SEARCH_IN_REQUEST = re.compile(
+    r"\b(?:search|look\s+up|look\s+for|find)\s+(?:(?:on\s+)?(?:you\s?tube)\s+)?(?:for\s+)?(?P<q>.+?)"
+    r"(?:\s+(?:on|in)\s+you\s?tube)?\s*[.!?]*$", re.I)
+
+
+def _grounded(args: dict, context) -> dict:
+    """The model's arguments, corrected by the user's own words: a quality the request names
+    ("watch this in 4k") wins over the model's pick, and a missing search query comes from
+    the request ("search youtube for lofi hip hop")."""
+    request = getattr(context, "request", "") or ""
+    args = dict(args)
+    if args.get("action") == "quality":
+        named = _QUALITY_IN_REQUEST.search(request)
+        label = quality_label(named.group(1)) if named else None
+        if label:
+            args["quality"] = label
+    if args.get("action") == "search" and not str(args.get("query", "")).strip():
+        found = _SEARCH_IN_REQUEST.search(request)
+        if found:
+            query = re.sub(r"^(?:on\s+)?you\s?tube\s+(?:for\s+)?", "", found.group("q"), flags=re.I).strip()
+            if query:
+                args["query"] = query[:300]
+    return args
+
+
 def _tier(args: dict, _context) -> int:
     return READ if args.get("action") == "now_playing" else SAFE
 
@@ -94,8 +120,8 @@ def _payload(args: dict) -> dict | str:
     return {}
 
 
-def _check(args: dict, _context):
-    payload = _payload(args)
+def _check(args: dict, context):
+    payload = _payload(_grounded(args, context))
     return deny(payload) if isinstance(payload, str) else None
 
 
@@ -160,6 +186,7 @@ def _untrusted(result: dict) -> dict:
 
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
+    args = _grounded(args, context)
     action, payload = args["action"], _payload(args)
     bridge = getattr(context, "browser", None)
     from aqua.browser.bridge import BridgeError, BridgeUnavailable

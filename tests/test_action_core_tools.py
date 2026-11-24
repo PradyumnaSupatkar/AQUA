@@ -176,7 +176,7 @@ class TypeTextTests(unittest.TestCase):
         launch_app.run({"app": "notepad"}, ctx)
         self.assertEqual(decide(type_text, {"text": "Hello I am Aqua"}, ctx).action, "run")
         outcome = type_text.run({"text": "Hello I am Aqua"}, ctx)
-        self.assertEqual((outcome.status, outcome.done), ("ok", "typed your text"))
+        self.assertEqual((outcome.status, outcome.done), ("ok", "typed your text into Notepad"))
         self.assertEqual(ctx.desktop.text[ctx.launches[-1].handle], "Hello I am Aqua")
 
     def test_named_target_is_focused_first(self):

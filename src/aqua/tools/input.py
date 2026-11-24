@@ -186,7 +186,8 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
         return ToolOutcome("failed", f"The text did not arrive correctly in {name}; please check it.",
                            data={"window": name})
     if readback is not None:
-        return ToolOutcome("ok", f"Typed the text into {name}.", done="typed your text", data={"window": name})
+        return ToolOutcome("ok", f"Typed the text into {name}.", done=f"typed your text into {name}",
+                           data={"window": name})
     return ToolOutcome("unverified", f"Typed the text into {name} (not verified).", done="typed your text",
                        data={"window": name})
 

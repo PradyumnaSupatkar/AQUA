@@ -29,7 +29,7 @@ class MustWorkScenarios(unittest.TestCase):
         result = engine.respond("Open Notepad and write Hello I am Aqua", on_text=spoken.append)
         self.assertEqual(result.text, "Opened Notepad and typed your text.")
         self.assertEqual("".join(spoken), result.text)
-        self.assertEqual((result.ok, result.outcome, result.requests), (True, "action", 3))
+        self.assertEqual((result.ok, result.outcome, result.requests), (True, "action", 2))  # Host-written reply.
         self.assertEqual(desktop.launched, ["Notepad"])
         self.assertEqual(list(desktop.text.values()), ["Hello I am Aqua"])
         self.assertEqual([op.status for op in result.task.operations], ["ok", "ok"])
@@ -190,7 +190,7 @@ class LoopBehaviourTests(unittest.TestCase):
 
     def test_reply_after_tools_is_one_sentence_without_emoji(self):
         engine, _, _ = make_engine([call("volume", action="mute")], "Muted! 🔇 Let me know if you need more. 😊")
-        self.assertEqual(engine.respond("mute").text, "Muted!")
+        self.assertEqual(engine.respond("mute and tell me when it's done").text, "Muted!")
 
     def test_ambiguous_app_asks_a_question_and_launches_nothing(self):
         from aqua.tools.adapter import AppEntry
@@ -212,7 +212,7 @@ class LoopBehaviourTests(unittest.TestCase):
         rounds = [[call("volume", action="up", level=2 * i + 1), call("volume", action="up", level=2 * i + 2)]
                   for i in range(10)]  # Distinct calls, so none is skipped as a repeat.
         engine, desktop, model = make_engine(*rounds)
-        result = engine.respond("volume up a lot")
+        result = engine.respond(", ".join(["volume up"] * 13))  # More steps than the budget allows.
         self.assertEqual(sum(op.status == "ok" for op in result.task.operations), MAX_OPERATIONS)
         self.assertEqual(result.outcome, "limit")
         self.assertIn("too many steps", result.text)
@@ -222,7 +222,7 @@ class LoopBehaviourTests(unittest.TestCase):
 
     def test_model_error_reports_what_already_happened(self):
         engine, desktop, _ = make_engine([call("volume", action="mute")], OllamaConnectionError("Ollama went away."))
-        result = engine.respond("mute")
+        result = engine.respond("mute and then tell me a joke")  # Two steps: the model is asked again.
         self.assertFalse(result.ok)
         self.assertEqual(result.text, "Muted the sound.")
         self.assertEqual(result.error, "Ollama went away.")
@@ -252,10 +252,10 @@ class LoopBehaviourTests(unittest.TestCase):
         self.assertEqual(len(model.requests[1]["messages"]), 2)
 
     def test_unbacked_claim_gets_one_retry_then_an_honest_reply(self):
-        engine, desktop, model = make_engine("The sound has been muted.", [call("volume", action="mute")], "Muted.")
+        engine, desktop, model = make_engine("The sound has been muted.", [call("volume", action="mute")])
         result = engine.respond("mute")
         self.assertTrue(desktop.muted)
-        self.assertEqual(result.text, "Muted.")
+        self.assertEqual(result.text, "Muted the sound.")
         self.assertIn("no tool was called", model.requests[1]["messages"][-1]["content"])
         engine, desktop, _ = make_engine("The screen is locked.", "The screen is locked now.")
         result = engine.respond("lock my screen")
@@ -291,7 +291,7 @@ class LoopBehaviourTests(unittest.TestCase):
         engine, desktop, model = make_engine([call("lock_screen", now=True), call("lock_screen", now=True)], "Locked.")
         result = engine.respond("lock my screen")
         self.assertEqual([op.status for op in result.task.operations], ["ok", "duplicate"])
-        self.assertEqual(results(model)[1]["message"], "Already done; not repeated.")
+        self.assertEqual(len(model.requests), 1)  # All done: the host wrote the reply.
 
     def test_results_restate_the_request_until_it_is_finished(self):
         engine, _, model = make_engine([call("launch_app", app="notepad")], [call("type_text", text="hi")], "Done.")
@@ -301,16 +301,16 @@ class LoopBehaviourTests(unittest.TestCase):
         self.assertIn("call the tool for it now", reminder)
 
     def test_action_turns_keep_their_tool_calls_in_history(self):
-        engine, _, model = make_engine([call("volume", action="down")], "Volume down.", [call("undo_last")], "Undone.")
-        engine.respond("turn the volume down")
+        engine, _, model = make_engine([call("volume", action="down")], [call("undo_last")], "Undone.")
+        engine.respond("turn the volume down")  # Host-written reply: "Turned the volume down to 40%."
         engine.respond("undo that")
         history = model.requests[-1]["messages"]
         roles = [m["role"] for m in history]
         self.assertEqual(roles[:5], ["system", "user", "assistant", "tool", "assistant"])
         self.assertEqual(history[2]["tool_calls"][0]["function"]["name"], "volume")
         self.assertNotIn("next", json.loads(history[3]["content"]))  # Reminders are not kept.
-        self.assertEqual(history[4]["content"], "Volume down.")
-        undo_request = model.requests[2]["messages"][-1]["content"]
+        self.assertEqual(history[4]["content"], "Turned the volume down to 40%.")
+        undo_request = model.requests[1]["messages"][-1]["content"]
         self.assertIn("undo_last would undo: the volume change", undo_request)
 
     def test_already_open_app_is_focused_not_relaunched(self):

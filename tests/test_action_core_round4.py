@@ -97,5 +97,74 @@ class SiteSearchFillTests(unittest.TestCase):
         self.assertEqual(desktop.opened_urls, ["https://youtube.com"])
 
 
+class HostReplyTests(unittest.TestCase):
+    def test_finished_actions_are_reported_by_the_host_without_another_model_call(self):
+        desktop = browser_desktop()
+        engine, _, model = make_engine([call("launch_app", app="Brave"), call("open_url", url="youtube.com")],
+                                       desktop=desktop)
+        result = engine.respond("open brave browser and open youtube.com")
+        self.assertEqual(result.text, "Opened Brave and YouTube.")
+        self.assertEqual((len(model.requests), result.stage), (1, "host-reply"))
+
+    def test_site_search_reply_names_the_site_and_query(self):
+        engine, _, model = make_engine([call("web_search", query="sidemen sunday", site="youtube")])
+        self.assertEqual(engine.respond("search sidemen sunday on youtube").text, "Searched YouTube for sidemen sunday.")
+        self.assertEqual(len(model.requests), 1)
+
+    def test_open_site_and_search_is_one_step_covering_both(self):
+        engine, desktop, model = make_engine([call("web_search", query="sidemen sunday")])
+        result = engine.respond("open youtube and search sidemen sunday")
+        self.assertEqual(result.text, "Searched YouTube for sidemen sunday.")
+        self.assertEqual(len(model.requests), 1)
+
+    def test_steps_left_still_go_to_the_model(self):
+        engine, _, model = make_engine([call("launch_app", app="Chrome")],
+                                       "I have opened Chrome. I can't delete files.")
+        result = engine.respond("Open Chrome and delete my files.")
+        self.assertEqual(len(model.requests), 2)
+        self.assertIn("can't delete files", result.text)
+
+    def test_readings_failures_and_look_ups_are_answered_by_the_model(self):
+        engine, _, model = make_engine([call("get_battery")], "The battery is at 76%.")
+        self.assertEqual(engine.respond("how much battery is left").text, "The battery is at 76%.")
+        self.assertEqual(len(model.requests), 2)
+        engine, _, model = make_engine([call("launch_app", app="Nonexistent App")], "I couldn't find that app.")
+        engine.respond("open nonexistent app")
+        self.assertEqual(len(model.requests), 2)
+
+    def test_opening_an_app_only_to_type_is_not_the_whole_request(self):
+        desktop = FakeDesktop()
+        notepad = desktop.add_window("notes.txt - Notepad", "notepad.exe", front=False)
+        engine, _, model = make_engine([call("launch_app", app="notepad")], [call("type_text", text="hi")],
+                                       desktop=desktop)
+        result = engine.respond("write hi in notepad")
+        self.assertEqual(desktop.text, {notepad.handle: "hi"})
+        self.assertEqual(result.text, "Brought Notepad to the front and typed your text into Notepad.")
+
+    def test_helpers(self):
+        from aqua.agent.loop import host_summary, steps_asked
+        self.assertEqual(steps_asked("mute"), 1)
+        self.assertEqual(steps_asked("open brave browser and open youtube.com"), 2)
+        self.assertEqual(steps_asked("open notepad type hello"), 2)  # No "and": the verbs count.
+        self.assertEqual(host_summary(["opened Notepad", "typed your text into Notepad"]),
+                         "Opened Notepad and typed your text.")
+        self.assertEqual(host_summary(["opened Brave", "opened YouTube"]), "Opened Brave and YouTube.")
+
+
+class HonestWebReplyTests(unittest.TestCase):
+    def test_a_reply_naming_the_wrong_site_is_replaced_by_the_facts(self):
+        engine, _, _ = make_engine([call("web_search", query="sidemen sunday")],
+                                   "I searched on YouTube for sidemen sunday.")
+        result = engine.respond("search sidemen sunday and tell me what you find")
+        self.assertEqual(result.text, "Searched the web for sidemen sunday.")
+
+    def test_a_reply_naming_the_wrong_browser_is_replaced(self):
+        from aqua.agent.loop import Operation, web_mismatch
+        ops = [Operation("open_url", {}, "ok", "Opened youtube.com in the browser.", "opened YouTube")]
+        self.assertTrue(web_mismatch("Opened YouTube in Brave.", ops))
+        self.assertFalse(web_mismatch("Opened YouTube.", ops))
+        self.assertFalse(web_mismatch("Opened Brave.", [Operation("launch_app", {}, "ok", "Opened Brave.")]))
+
+
 if __name__ == "__main__":
     unittest.main()

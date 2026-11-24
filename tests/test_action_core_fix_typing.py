@@ -60,7 +60,7 @@ class TypingFlowTests(unittest.TestCase):
         self.assertEqual(asked.detail, POEM)
         self.assertEqual(desktop.typed, [])
         self.assertTrue(engine.awaiting_answer)  # Hands-free opens its answer window.
-        self.assertEqual(engine.respond("yes").text, "Typed the poem into Notepad.")
+        self.assertEqual(engine.respond("yes").text, "Typed your text into Notepad.")  # Host-written after the yes.
         self.assertEqual(desktop.text, {notepad.handle: POEM})
 
     def test_poem_declined_types_nothing(self):

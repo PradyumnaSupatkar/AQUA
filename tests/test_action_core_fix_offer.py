@@ -51,7 +51,7 @@ class RequestArgumentTests(unittest.TestCase):
 
     def test_direct_requests_still_act_immediately(self):
         engine, desktop, _ = make_engine([call("volume", action="mute")], "Muted.")
-        self.assertEqual(engine.respond("mute").text, "Muted.")
+        self.assertEqual(engine.respond("mute").text, "Muted the sound.")
         self.assertTrue(desktop.muted)
 
 

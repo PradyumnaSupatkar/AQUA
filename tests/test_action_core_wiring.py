@@ -103,7 +103,7 @@ class TextChatEngineTests(Offline):
         engine, _, _ = make_engine([call("volume", action="mute")], "Muted.")
         self.use_engine(engine)
         _status, output, _ = self.invoke(["mute", "/quit"], engine="new", diagnostics=True)
-        self.assertIn("Engine: new; chat requests 2; outcome action", output)
+        self.assertIn("Engine: new; chat requests 1; outcome action; stage host-reply", output)
         self.assertIn("volume=ok", output)
 
 

@@ -68,10 +68,10 @@ class GuardSwitchTests(unittest.TestCase):
 
     def test_restate_request(self):
         on, _, model = make_engine([call("volume", action="mute")], "Muted.")
-        on.respond("mute")
+        on.respond("mute and then tell me a joke")
         self.assertIn("next", json.loads(model.tool_results()[-1]["content"]))
         off, _, model = make_engine([call("volume", action="mute")], "Muted.", guards=without("restate_request"))
-        off.respond("mute")
+        off.respond("mute and then tell me a joke")
         self.assertNotIn("next", json.loads(model.tool_results()[-1]["content"]))
 
 

@@ -38,7 +38,7 @@ class PoliteRequestTests(unittest.TestCase):
 
     def test_promises_after_a_real_action_are_fine(self):
         engine, desktop, _ = make_engine([call("launch_app", app="Notepad")], "Opened Notepad; I'll keep it open.")
-        self.assertEqual(engine.respond("open Notepad").text, "Opened Notepad; I'll keep it open.")
+        self.assertEqual(engine.respond("open Notepad and tell me a joke").text, "Opened Notepad; I'll keep it open.")
 
 
 class PartialRequestTests(unittest.TestCase):
@@ -107,15 +107,15 @@ class StreamingHoldTests(unittest.TestCase):
 
 class BrightnessUndoTests(unittest.TestCase):
     def test_brightness_change_is_undoable_and_undo_is_offered(self):
-        engine, desktop, model = make_engine([call("brightness", action="down")], "Brightness is now 60%.",
+        engine, desktop, model = make_engine([call("brightness", action="down")],
                                              "No action was requested.", [call("undo_last")], "")
         engine.respond("turn the brightness down")
         self.assertEqual(desktop.brightness, 60)
         self.assertEqual(engine.context.undo.peek().description, "the brightness change")
         result = engine.respond("undo that")
-        self.assertIn("undo_last", model.requests[2]["tools"])
-        self.assertIn("undo_last would undo: the brightness change", model.requests[2]["messages"][-1]["content"])
-        self.assertIn("call undo_last now", model.requests[3]["messages"][-1]["content"])  # The nudge.
+        self.assertIn("undo_last", model.requests[1]["tools"])
+        self.assertIn("undo_last would undo: the brightness change", model.requests[1]["messages"][-1]["content"])
+        self.assertIn("call undo_last now", model.requests[2]["messages"][-1]["content"])  # The nudge.
         self.assertEqual(desktop.brightness, 70)
         self.assertEqual(result.text, "Put the brightness back to 70%.")
 

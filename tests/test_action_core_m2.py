@@ -120,7 +120,7 @@ class PowerCountdownTests(unittest.TestCase):
         self.assertEqual(desktop.power, [("restart", 30), ("abort", 0)])
         self.assertIsNone(desktop.scheduled)
         self.assertFalse(engine.countdown_active)
-        self.assertEqual(len(model.requests), 2)                 # "cancel" never reached the model.
+        self.assertEqual(len(model.requests), 1)                 # Host reply after yes; "cancel" never reached it.
 
     def test_stop_and_no_also_cancel_a_shutdown(self):
         for word in ("stop", "no", "No, don't!", "wait, cancel that"):

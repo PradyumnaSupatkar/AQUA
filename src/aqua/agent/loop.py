@@ -252,6 +252,59 @@ def first_sentences(text: str, count: int) -> str:
     return " ".join(_SENTENCE_END.split(text, count)[:count]).strip() if text else ""
 
 
+def _steps(outcome: ToolOutcome) -> int:
+    steps = outcome.data.get("steps", 1) if isinstance(outcome.data, dict) else 1
+    return steps if isinstance(steps, int) and 1 <= steps <= 4 else 1
+
+
+# Steps a request asks for, counted generously (clauses and action verbs), so the host writes
+# the reply only when the tool calls clearly covered all of them; otherwise the model answers.
+_CLAUSE = re.compile(r"\s*(?:[,;]|\band\s+then\b|\bthen\b|\band\b|\balso\b|\bafter\s+that\b|\bplus\b)\s*", re.I)
+_STEP_VERB = re.compile(
+    r"\b(?:open|launch|start|lock|mute|unmute|turn|set|close|quit|exit|minimi[sz]e|maximi[sz]e|restore|bring|"
+    r"switch|pause|play|resume|skip|search|undo|raise|lower|dim|brighten|increase|decrease|type|write|put|show|go|"
+    r"delete|remove|send|email|call|move|copy|save|download|install|read|tell|check|find|look|schedule|remind|"
+    r"sleep|restart|reboot|shut|sign|log|force|kill|focus|snap)\b", re.I)
+
+
+_OPEN_VERB = re.compile(r"\b(?:open|launch|start|run|bring\s+up|fire\s+up)\b", re.I)
+
+
+def steps_asked(request: str) -> int:
+    clauses = [part for part in _CLAUSE.split(request) if part.strip()]
+    return max(len(clauses), len(_STEP_VERB.findall(request)), 1)
+
+
+def host_summary(phrases: list[str]) -> str:
+    """["opened Brave", "opened YouTube"] -> "Opened Brave and YouTube." (a repeated verb is said once)."""
+    merged, last, opened = [], None, set()
+    for phrase in (p for p in phrases if p):
+        head, into, place = phrase.rpartition(" into ")
+        if into and place.casefold() in opened:
+            phrase = head  # "opened Notepad and typed your text", not "... into Notepad".
+        if phrase.startswith("opened "):
+            opened.add(phrase[len("opened "):].casefold())
+        verb, _, rest = phrase.partition(" ")
+        merged.append(rest if verb == last and rest else phrase)
+        last = verb
+    return join_phrases(merged)
+
+
+# Sites and browsers a web reply may name; each must match what the tools reported.
+_WEB_NAMES = re.compile(r"\b(you\s?tube|google|wikipedia|amazon|git\s?hub|duckduckgo|chrome|brave|firefox|"
+                        r"microsoft\s+edge|opera|vivaldi)\b", re.I)
+
+
+def web_mismatch(reply: str, operations) -> bool:
+    """The reply names a site or browser that the web tools did not use ("searched on YouTube"
+    when the search went to DuckDuckGo)."""
+    if not any(op.tool in {"open_url", "web_search"} and op.status == "ok" for op in operations):
+        return False
+    facts = " ".join(f"{op.message} {op.done}" for op in operations
+                     if op.status in {"ok", "unverified", "duplicate"}).casefold().replace(" ", "")
+    return any(name.casefold().replace(" ", "") not in facts for name in _WEB_NAMES.findall(reply))
+
+
 def join_phrases(phrases: list[str]) -> str:
     """["opened Notepad", "typed your text"] -> "Opened Notepad and typed your text." """
     phrases = [p for p in phrases if p]
@@ -268,6 +321,7 @@ class Operation:
     status: str                 # ok | unverified | failed | empty | denied | invalid | not_run
     message: str = ""
     done: str = ""
+    steps: int = 1              # Request steps this call covered ("open youtube and search X" = 2)
 
 
 @dataclass(frozen=True, slots=True)
@@ -445,9 +499,10 @@ class AgentEngine:
                 turn.operations.append(Operation(tool.name, pending.args, "denied", decision.reason))
             else:
                 outcome = self._run(tool, pending.args)
-                turn.operations.append(Operation(tool.name, pending.args, outcome.status, outcome.message, outcome.done))
+                turn.operations.append(Operation(tool.name, pending.args, outcome.status, outcome.message, outcome.done,
+                                                 _steps(outcome)))
             turn.messages.append(self._tool_message(tool.name, outcome))
-            return self._loop(turn, text, emit, result, state)
+            return self._loop(turn, text, emit, result, state, host_first=True)
 
         text = text.strip()
         self.context.begin_request(text, self._asked_after)
@@ -484,8 +539,12 @@ class AgentEngine:
 
     # -- the loop -------------------------------------------------------------
 
-    def _loop(self, turn: _Turn, utterance: str, emit, result, state) -> AgentTurnResult:
+    def _loop(self, turn: _Turn, utterance: str, emit, result, state, *, host_first: bool = False) -> AgentTurnResult:
         definitions = self.registry.definitions(turn.tool_names) or None
+        if host_first:
+            reply = self._host_reply(turn)  # A confirmed action that finished the request.
+            if reply is not None:
+                return self._finish_host(turn, utterance, reply, emit, result)
         first_new = len(turn.operations)  # Operations before this point were reported earlier.
         # A request that looks like a command is answered in one checked sentence,
         # so it is buffered; plain conversation streams live.
@@ -597,6 +656,9 @@ class AgentEngine:
                         reply = "I couldn't find that on Wikipedia, so I don't know."  # Not a stale-memory guess.
                     for tool, outcome in turn.reviews:
                         reply = tool.review(reply, outcome) or reply  # The tool's own check of the answer.
+                    if web_mismatch(reply, turn.operations):
+                        # "Searched on YouTube" when the tool searched DuckDuckGo: say what really happened.
+                        reply = host_summary([op.done for op in turn.operations if op.done])
                     if self.guards.citation_strip and not looked_up and _WIKI_CLAIM.search(reply):
                         reply = _WIKI_CLAIM.sub("", reply, count=1).strip()  # Never cite an unchecked source.
                         reply = reply[:1].upper() + reply[1:]
@@ -632,11 +694,7 @@ class AgentEngine:
                     if not reply:
                         reply = join_phrases([op.done for op in turn.operations]) or (
                             "Done." if acted else "Sorry, I didn't get a reply. Please try again.")
-                    countdown = self.context.countdown
-                    if countdown is not None and countdown.fresh:
-                        countdown.fresh = False
-                        if "cancel" not in reply.casefold():
-                            reply += " Say cancel to stop it."
+                    reply = self._with_countdown(reply)
                     if already and reply.startswith(already):
                         reply = reply[len(already):].strip()  # The streamed start was already spoken.
                     if reply:
@@ -662,8 +720,43 @@ class AgentEngine:
                     emit(" ".join(part for part in (done, lead, question) if part), segment=True)
                     self._remember(utterance, "".join(state["spoken"]))
                     return result(kind, kind, turn, status="waiting")
+            reply = self._host_reply(turn)
+            if reply is not None:
+                # Every step succeeded and nothing needs explaining: the host says what was done,
+                # without another model call that would only write "I've done X".
+                return self._finish_host(turn, utterance, reply, emit, result)
             if self.guards.restate_request:
                 self._remind(turn)
+
+    def _host_reply(self, turn: _Turn) -> str | None:
+        """The reply the host can write itself, or None when the model must answer: a look-up,
+        a reading, a failure or partial result, a tool's own review, or a request with steps left."""
+        ops = turn.operations
+        if not ops or turn.reviews or turn.explain:
+            return None
+        if any(op.status not in {"ok", "duplicate"} or op.tool in _KNOWLEDGE_TOOLS or self._read_only(op.tool)
+               for op in ops):
+            return None
+        done = [op.done for op in ops if op.status == "ok" and op.done]
+        # Opening an app only to type into it ("write hi in notepad") is not a step of its own.
+        opens = bool(_OPEN_VERB.search(turn.request))
+        covered = sum(op.steps for op in ops if op.status == "ok" and (opens or op.tool != "launch_app"))
+        if not done or covered < steps_asked(turn.request):
+            return None
+        return self._with_countdown(host_summary(done))
+
+    def _with_countdown(self, reply: str) -> str:
+        countdown = self.context.countdown
+        if countdown is not None and countdown.fresh:
+            countdown.fresh = False
+            if "cancel" not in reply.casefold():
+                reply += " Say cancel to stop it."
+        return reply
+
+    def _finish_host(self, turn: _Turn, utterance: str, reply: str, emit, result) -> AgentTurnResult:
+        emit(reply, segment=True)
+        self._remember(utterance, reply, turn)
+        return result("action", "host-reply", turn)
 
     def _commanded(self, turn: _Turn, tool) -> bool:
         """The request is a direct command for this tool's group ("lock the screen")."""
@@ -703,7 +796,7 @@ class AgentEngine:
                 return result(stop[0], stop[0], turn, status="waiting")
             if turn.operations[-1].status not in {"ok", "unverified", "duplicate"}:
                 break
-        done = join_phrases([op.done for op in turn.operations])
+        done = host_summary([op.done for op in turn.operations])
         failed = next((op.message for op in turn.operations if op.status not in {"ok", "unverified", "duplicate"}), "")
         reply = " ".join(part for part in (done, failed) if part) or "Sorry, I couldn't do that."
         emit(reply)
@@ -787,7 +880,7 @@ class AgentEngine:
             return "confirm", decision.question
         outcome = self._run(tool, args)
         turn.messages.append(self._tool_message(tool.name, outcome))
-        turn.operations.append(Operation(tool.name, args, outcome.status, outcome.message, outcome.done))
+        turn.operations.append(Operation(tool.name, args, outcome.status, outcome.message, outcome.done, _steps(outcome)))
         if tool.review is not None:
             turn.reviews.append((tool, outcome))
         return None

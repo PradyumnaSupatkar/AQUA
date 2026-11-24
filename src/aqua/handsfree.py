@@ -6,6 +6,7 @@ from math import ceil, isfinite
 from pathlib import Path
 import re
 import sys
+import time
 from time import perf_counter
 
 from aqua import chat
@@ -14,7 +15,7 @@ from aqua.audio.backend import AudioError
 from aqua.audio.console import ConsoleCommands
 from aqua.audio.levels import measure_levels
 from aqua.audio.recording import Recording
-from aqua.audio.streaming import FRAME_SAMPLES, SAMPLE_RATE, MicrophoneStream
+from aqua.audio.streaming import FRAME_SAMPLES, SAMPLE_RATE, MicrophoneFailure, MicrophoneStream
 from aqua.audio.vad import StreamingVad, UtteranceCollector, UtteranceConfig
 from aqua.brain.conversation import Conversation
 from aqua.brain.ollama import DEFAULT_CHAT_MODEL, GenerationSettings
@@ -33,6 +34,24 @@ FOLLOW_UP_TAIL_SECONDS = .25
 FOLLOW_UP_TAIL_FRAMES = ceil(FOLLOW_UP_TAIL_SECONDS * SAMPLE_RATE / FRAME_SAMPLES)
 # Spoken commands arrive minutes apart; keep the model loaded between them.
 HANDSFREE_KEEP_ALIVE = "30m"
+# Microphone recovery: reopen the input after a failure; give up after REOPEN_LIMIT failures
+# within REOPEN_WINDOW_SECONDS.
+REOPEN_LIMIT = 3
+REOPEN_WINDOW_SECONDS = 60.0
+REOPEN_PAUSE_SECONDS = .5
+GAP_TEXT = {"input_overflow": "input overflow: the audio callback ran late, likely CPU load",
+            "queue_full": "the audio queue was full: Aqua fell more than 2 s behind"}
+
+
+def _status(microphone) -> str:
+    status = getattr(microphone, "last_status", "")
+    return f"; PortAudio: {status}" if isinstance(status, str) and status else ""
+
+
+def _where(speaking: bool, capturing: bool) -> str:
+    if capturing:
+        return "during a capture"
+    return "while Aqua was speaking" if speaking else "while listening for the wake word"
 
 
 def command_text(text: str) -> str:
@@ -220,155 +239,190 @@ def run_handsfree(
                 speaker.stop()
                 print(reason, flush=True)
 
-        with MicrophoneStream(device=device, sample_rate=sample_rate) as microphone:
-            _help()
-            print('Listening for "Hey Aqua"...', flush=True)
-            while True:
-                try:
-                    control = commands.poll()
-                    if control is not None:
-                        clear_consent()
-                        silence("Speech stopped.")
-                        microphone.pause()
-                        frontend.reset()
-                        if control == "/help":
-                            _help()
-                            command = "continue"
-                        else:
-                            command = chat._control_command(control, conversation, voice=False, action_state=state)
-                        if command == "quit":
-                            return 0
-                        if command is None:
-                            print("Use /clear, /help, or /quit; spoken turns require the wake phrase.")
-                        microphone.resume()
-                        print('Listening for "Hey Aqua"...', flush=True)
-                        continue
-                    frame = microphone.read_frame(timeout=.1)
-                    if frame is None:
-                        continue
-                    playing = speaking()
-                    if report_speech and not playing:
-                        report_speech = False
-                        chat._speech_diagnostics(speaker, wait=False)
-                    if agent is not None and not playing and not frontend.active:
-                        reminder = agent.countdown_announcement()
-                        if reminder is not None:
-                            # Spoken restart/shutdown countdown; the answer window then hears "cancel".
-                            print(f"Aqua: {reminder}", flush=True)
-                            if speaker is not None:
-                                speaker.feed(reminder)
-                                speaker.finish_turn()
-                            if follow_up:
-                                follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
-                            continue
-                    if follow_up_due and not playing and not frontend.active:
-                        if tail_frames > 0:
-                            tail_frames -= 1
-                        else:
-                            follow_up_due = False
-                            frontend.arm_follow_up(follow_up)
-                            wake_started, vad_started = perf_counter(), False
-                            print("Listening for your answer...", flush=True)
-                    event = frontend.feed(frame, now=perf_counter(), keep_context=not playing)
-                except KeyboardInterrupt:
-                    if speaking() and not frontend.active:
-                        # Ctrl+C while Aqua talks silences it; pending consent is untouched.
-                        silence("\nSpeech stopped.")
-                        print('Listening for "Hey Aqua"...', flush=True)
-                        continue
-                    clear_consent()
-                    follow_up_due = False
-                    if not frontend.active:
-                        print("\nHands-free chat ended.")
-                        return 0
-                    print("\nVoice turn cancelled; no message was sent.")
-                    microphone.pause()
-                    frontend.reset()
-                    microphone.resume()
+        reopened = False
+        failures: deque = deque()  # Times of microphone failures in the last minute.
+        while True:
+            try:
+                with MicrophoneStream(device=device, sample_rate=sample_rate) as microphone:
+                    if not reopened:
+                        _help()
                     print('Listening for "Hey Aqua"...', flush=True)
-                    continue
-                if event is None:
-                    if diagnostics and frontend.active and not vad_started and frontend.collector.speech_seconds >= config.min_speech:
-                        vad_started = True
-                        print(f"VAD: speech started; {perf_counter() - wake_started:.3f}s after wake detection")
-                    continue
-                if event.status == "wake":
-                    silence("Speech stopped.")
-                    wake_started = perf_counter()
-                    vad_started = False
-                    print("Wake word detected.\nListening...", flush=True)
-                    if diagnostics:
-                        print(f"Wake detector: {event.detector_seconds:.4f}s on triggering frame; CPU; cooldown {wake_cooldown:g}s")
-                    continue
-                if event.follow_up and event.status == "no_speech":
-                    # Silence after a question is not a cancelled turn; consent stays as it was.
-                    print('No answer heard. Listening for "Hey Aqua"...', flush=True)
-                    continue
-                capture_seconds = perf_counter() - wake_started
-                microphone.pause()  # Never queue speech or detect wakes during processing.
-                try:
-                    if diagnostics:
-                        print(f"VAD: {event.status}; capture {event.duration:.3f}s; voiced after wake {event.speech_seconds:.3f}s; silence limit {end_silence:g}s")
-                    if event.status != "complete":
-                        clear_consent()
-                        reason = "no meaningful speech after wake" if event.status == "no_speech" else "maximum utterance length reached; entire turn discarded"
-                        print(f"Skipped: {reason}.")
-                        continue
-                    print("Speech ended.", flush=True)
-                    recording = _recording(event.samples, microphone.device_info)
-                    transcript = chat._transcribe_recording(
-                        recognizer, recording, capture_seconds=capture_seconds,
-                        gain_db=gain_db, language=language, hotwords=hotwords,
-                        diagnostics=diagnostics, text_transform=command_text,
-                    )
-                    reason = transcript_rejection_reason(recording, transcript)
-                    if reason is not None:
-                        clear_consent()
-                        print(f"Skipped: {reason}.")
-                        continue
-                    if client is None:
-                        session = chat._start(
-                            model=model, timeout=timeout, max_turns=max_turns,
-                            max_chars=max_chars, settings=generation, keep_alive=keep_alive,
-                            llm_threads=llm_threads,
-                        )
-                        if session is None:
+                    while True:
+                        try:
+                            control = commands.poll()
+                            if control is not None:
+                                clear_consent()
+                                silence("Speech stopped.")
+                                microphone.pause()
+                                frontend.reset()
+                                if control == "/help":
+                                    _help()
+                                    command = "continue"
+                                else:
+                                    command = chat._control_command(control, conversation, voice=False, action_state=state)
+                                if command == "quit":
+                                    return 0
+                                if command is None:
+                                    print("Use /clear, /help, or /quit; spoken turns require the wake phrase.")
+                                microphone.resume()
+                                print('Listening for "Hey Aqua"...', flush=True)
+                                continue
+                            frame = microphone.read_frame(timeout=.1)
+                            gap = take_gap() if (take_gap := getattr(microphone, "take_gap", None)) else None
+                            if gap is not None:
+                                # Audio was dropped (the input callback ran late, or the queue was full):
+                                # never stitch a capture across it, and never send it to the recogniser.
+                                where = _where(speaking(), frontend.active)
+                                if frontend.active:
+                                    print(f"Audio was lost ({GAP_TEXT[gap]}{_status(microphone)}) {where}; this turn was discarded. "
+                                          "Please say it again.", file=sys.stderr, flush=True)
+                                elif diagnostics:
+                                    print(f"Microphone: audio gap ({GAP_TEXT[gap]}{_status(microphone)}) {where}.", flush=True)
+                                frontend.reset()
+                                continue
+                            if frame is None:
+                                continue
+                            playing = speaking()
+                            if report_speech and not playing:
+                                report_speech = False
+                                chat._speech_diagnostics(speaker, wait=False)
+                            if agent is not None and not playing and not frontend.active:
+                                reminder = agent.countdown_announcement()
+                                if reminder is not None:
+                                    # Spoken restart/shutdown countdown; the answer window then hears "cancel".
+                                    print(f"Aqua: {reminder}", flush=True)
+                                    if speaker is not None:
+                                        speaker.feed(reminder)
+                                        speaker.finish_turn()
+                                    if follow_up:
+                                        follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
+                                    continue
+                            if follow_up_due and not playing and not frontend.active:
+                                if tail_frames > 0:
+                                    tail_frames -= 1
+                                else:
+                                    follow_up_due = False
+                                    frontend.arm_follow_up(follow_up)
+                                    wake_started, vad_started = perf_counter(), False
+                                    print("Listening for your answer...", flush=True)
+                            event = frontend.feed(frame, now=perf_counter(), keep_context=not playing)
+                        except KeyboardInterrupt:
+                            if speaking() and not frontend.active:
+                                # Ctrl+C while Aqua talks silences it; pending consent is untouched.
+                                silence("\nSpeech stopped.")
+                                print('Listening for "Hey Aqua"...', flush=True)
+                                continue
                             clear_consent()
+                            follow_up_due = False
+                            if not frontend.active:
+                                print("\nHands-free chat ended.")
+                                return 0
+                            print("\nVoice turn cancelled; no message was sent.")
+                            microphone.pause()
+                            frontend.reset()
+                            microphone.resume()
+                            print('Listening for "Hey Aqua"...', flush=True)
                             continue
-                        client, conversation, generation = session
-                        conversation.bind_action_state(state)
-                        conversation.text_entry_apps = text_entry_apps
-                        if engine == "new":
-                            agent = chat._start_agent(client, model=model, settings=generation,
-                                                      max_turns=max_turns, max_chars=max_chars, lookup=lookup)
-                            if agent is None:
-                                return 1
-                            conversation = agent.conversation
-                    spoken = chat.prepare_spoken(transcript.text, agent, diagnostics=diagnostics)
-                    if agent is not None:
-                        result = chat._respond_agent(agent, spoken, diagnostics=diagnostics,
-                                                     speaker=speaker, wait_for_speech=False)
-                    else:
-                        result = chat._respond_or_launch(
-                            client, conversation, spoken, model=model, settings=generation,
-                            diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
-                            speaker=speaker, wait_for_speech=False,
-                        )
-                    # Playback may continue; the loop resumes wake-only listening meanwhile.
-                    report_speech = diagnostics and speaker is not None
-                    if follow_up and _asked_question(result, state, agent):
-                        follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
-                except (SpeechError, KeyboardInterrupt) as exc:
+                        if event is None:
+                            if diagnostics and frontend.active and not vad_started and frontend.collector.speech_seconds >= config.min_speech:
+                                vad_started = True
+                                print(f"VAD: speech started; {perf_counter() - wake_started:.3f}s after wake detection")
+                            continue
+                        if event.status == "wake":
+                            silence("Speech stopped.")
+                            wake_started = perf_counter()
+                            vad_started = False
+                            print("Wake word detected.\nListening...", flush=True)
+                            if diagnostics:
+                                print(f"Wake detector: {event.detector_seconds:.4f}s on triggering frame; CPU; cooldown {wake_cooldown:g}s")
+                            continue
+                        if event.follow_up and event.status == "no_speech":
+                            # Silence after a question is not a cancelled turn; consent stays as it was.
+                            print('No answer heard. Listening for "Hey Aqua"...', flush=True)
+                            continue
+                        capture_seconds = perf_counter() - wake_started
+                        microphone.pause()  # Never queue speech or detect wakes during processing.
+                        try:
+                            if diagnostics:
+                                print(f"VAD: {event.status}; capture {event.duration:.3f}s; voiced after wake {event.speech_seconds:.3f}s; silence limit {end_silence:g}s")
+                            if event.status != "complete":
+                                clear_consent()
+                                reason = "no meaningful speech after wake" if event.status == "no_speech" else "maximum utterance length reached; entire turn discarded"
+                                print(f"Skipped: {reason}.")
+                                continue
+                            print("Speech ended.", flush=True)
+                            recording = _recording(event.samples, microphone.device_info)
+                            transcript = chat._transcribe_recording(
+                                recognizer, recording, capture_seconds=capture_seconds,
+                                gain_db=gain_db, language=language, hotwords=hotwords,
+                                diagnostics=diagnostics, text_transform=command_text,
+                            )
+                            reason = transcript_rejection_reason(recording, transcript)
+                            if reason is not None:
+                                clear_consent()
+                                print(f"Skipped: {reason}.")
+                                continue
+                            if client is None:
+                                session = chat._start(
+                                    model=model, timeout=timeout, max_turns=max_turns,
+                                    max_chars=max_chars, settings=generation, keep_alive=keep_alive,
+                                    llm_threads=llm_threads,
+                                )
+                                if session is None:
+                                    clear_consent()
+                                    continue
+                                client, conversation, generation = session
+                                conversation.bind_action_state(state)
+                                conversation.text_entry_apps = text_entry_apps
+                                if engine == "new":
+                                    agent = chat._start_agent(client, model=model, settings=generation,
+                                                              max_turns=max_turns, max_chars=max_chars, lookup=lookup)
+                                    if agent is None:
+                                        return 1
+                                    conversation = agent.conversation
+                            spoken = chat.prepare_spoken(transcript.text, agent, diagnostics=diagnostics)
+                            if agent is not None:
+                                result = chat._respond_agent(agent, spoken, diagnostics=diagnostics,
+                                                             speaker=speaker, wait_for_speech=False)
+                            else:
+                                result = chat._respond_or_launch(
+                                    client, conversation, spoken, model=model, settings=generation,
+                                    diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
+                                    speaker=speaker, wait_for_speech=False,
+                                )
+                            # Playback may continue; the loop resumes wake-only listening meanwhile.
+                            report_speech = diagnostics and speaker is not None
+                            if follow_up and _asked_question(result, state, agent):
+                                follow_up_due, tail_frames = True, FOLLOW_UP_TAIL_FRAMES
+                        except (SpeechError, KeyboardInterrupt) as exc:
+                            clear_consent()
+                            silence("Speech stopped.")
+                            message = "Voice turn cancelled" if isinstance(exc, KeyboardInterrupt) else f"Voice turn error: {exc}"
+                            print(f"\n{message}; no new action was authorized.", file=sys.stderr)
+                        finally:
+                            if diagnostics:
+                                print(f"Total interaction since wake detection: {perf_counter() - wake_started:.3f}s")
+                            frontend.reset()
+                            microphone.resume()
+                            print('Listening for "Hey Aqua"...', flush=True)
+            except MicrophoneFailure as exc:
+                # The input stream failed (no audio for 2 s, device stopped, bad blocks). Discard
+                # whatever was being captured, reopen the input and keep listening.
+                where = _where(speaking(), frontend.active)
+                now = perf_counter()
+                failures.append(now)
+                while failures and now - failures[0] > REOPEN_WINDOW_SECONDS:
+                    failures.popleft()
+                frontend.reset()
+                print(f"Microphone problem ({exc.kind}) {where}: {exc}", file=sys.stderr, flush=True)
+                if len(failures) >= REOPEN_LIMIT:
                     clear_consent()
-                    silence("Speech stopped.")
-                    message = "Voice turn cancelled" if isinstance(exc, KeyboardInterrupt) else f"Voice turn error: {exc}"
-                    print(f"\n{message}; no new action was authorized.", file=sys.stderr)
-                finally:
-                    if diagnostics:
-                        print(f"Total interaction since wake detection: {perf_counter() - wake_started:.3f}s")
-                    frontend.reset()
-                    microphone.resume()
-                    print('Listening for "Hey Aqua"...', flush=True)
+                    print(f"Hands-free error: the microphone failed {len(failures)} times within a minute. "
+                          "Check the input device and restart hands-free mode.", file=sys.stderr)
+                    return 1
+                print("Reopening the microphone; any speech in progress was discarded.", flush=True)
+                reopened = True
+                time.sleep(REOPEN_PAUSE_SECONDS)
     except (WakeError, AudioError, SpeechError, ValueError) as exc:
         clear_consent()
         print(f"Hands-free error: {exc}", file=sys.stderr)

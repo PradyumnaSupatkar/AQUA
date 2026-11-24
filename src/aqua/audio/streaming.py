@@ -12,6 +12,18 @@ from aqua.audio.devices import resolve_input_device
 
 SAMPLE_RATE = 16000
 FRAME_SAMPLES = 512
+QUEUE_BLOCKS = 100          # 2 s of 20 ms blocks: room for the consumer to fall behind briefly.
+STALL_SECONDS = 2.0
+DEFAULT_LATENCY = "high"    # Larger device buffers: a callback that runs late under CPU load is not lost.
+
+
+class MicrophoneFailure(AudioError):
+    """The input stream itself failed (not one dropped block); ``kind`` says how:
+    "stall" (no audio for 2 s), "device" (the stream stopped), "invalid" (bad blocks)."""
+
+    def __init__(self, kind: str, message: str) -> None:
+        super().__init__(message)
+        self.kind = kind
 
 
 class StreamingResampler:
@@ -86,6 +98,7 @@ class MicrophoneStream:
         self, *, device: int | None = None, sample_rate: int | None = None,
         on_native_audio: Callable[[bytes, int], None] | None = None,
         on_resampled_audio: Callable[[object, int], None] | None = None,
+        latency: str | float = DEFAULT_LATENCY, queue_blocks: int = QUEUE_BLOCKS,
     ) -> None:
         if sample_rate is not None and (type(sample_rate) is not int or not 0 < sample_rate <= 384000):
             raise ValueError("Sample rate must be a positive integer at most 384000 Hz.")
@@ -100,13 +113,20 @@ class MicrophoneStream:
         self._stream = None
         self._backend = None
         self._resampler = None
-        self._pcm = Queue(maxsize=32)
+        self._latency = latency
+        self._pcm = Queue(maxsize=queue_blocks)
         self._frames = deque()
         self._lock = Lock()
         self._paused = True
         self._failure = None
         self._block_frames = 0
         self._last_audio_at = None
+        # Audio lost without the stream failing: counts by cause, and the cause of the newest
+        # gap not yet reported to the consumer (take_gap). The audio around a gap is not continuous.
+        self.gaps = {"input_overflow": 0, "queue_full": 0}
+        self._pending_gap = None
+        self.max_queue_depth = 0
+        self.last_status = ""
 
     def __enter__(self):
         if self._stream is not None:
@@ -123,7 +143,7 @@ class MicrophoneStream:
             self._backend.check_input_settings(device=self.device_info.index, channels=1, dtype="int16", samplerate=rate)
             self._stream = self._backend.RawInputStream(
                 device=self.device_info.index, channels=1, dtype="int16", samplerate=rate,
-                blocksize=self._block_frames, latency="low", callback=self._callback,
+                blocksize=self._block_frames, latency=self._latency, callback=self._callback,
             )
             self._paused = False
             self._last_audio_at = monotonic()
@@ -136,25 +156,41 @@ class MicrophoneStream:
             raise AudioError(f"Could not open the microphone at {rate} Hz. Check the input device and Windows microphone permissions.") from exc
         return self
 
+    def _gap(self, kind: str) -> None:
+        self.gaps[kind] += 1
+        self._pending_gap = kind
+
     def _callback(self, data, frames, _time, status) -> None:
         with self._lock:
             if self._paused or self._failure is not None:
                 return
+            self._last_audio_at = monotonic()
             if status:
-                self._failure = "The microphone lost audio. This turn was discarded; reconnect the input and restart hands-free mode."
+                # PortAudio flags an input overflow when this callback ran too late (CPU load):
+                # some audio was lost before this block. Drop the block and report a gap; the
+                # stream itself is fine.
+                self.last_status = str(status)  # PortAudio's own words, e.g. "input overflow".
+                self._gap("input_overflow")
                 return
             if not 0 < frames <= self._block_frames * 4:
-                self._failure = "The microphone returned an invalid audio block."
+                self._failure = MicrophoneFailure("invalid", "The microphone returned an invalid audio block.")
                 return
             block = bytes(data)
             if len(block) != frames * 2:
-                self._failure = "The microphone returned incomplete audio."
+                self._failure = MicrophoneFailure("invalid", "The microphone returned incomplete audio.")
                 return
-            self._last_audio_at = monotonic()
             try:
                 self._pcm.put_nowait(block)
+                self.max_queue_depth = max(self.max_queue_depth, self._pcm.qsize())
             except Full:
-                self._failure = "The microphone audio queue overflowed. Restart hands-free mode; this turn was discarded."
+                self._gap("queue_full")  # The consumer fell more than 2 s behind: drop, never block.
+
+    def take_gap(self) -> str | None:
+        """The cause of audio lost since the last call ("input_overflow" or "queue_full"), or None.
+        Audio around a gap is not continuous, so a capture in progress must be discarded."""
+        with self._lock:
+            gap, self._pending_gap = self._pending_gap, None
+            return gap
 
     def _clear_buffers(self) -> None:
         self._frames.clear()
@@ -173,7 +209,7 @@ class MicrophoneStream:
         if self._stream is None:
             raise AudioError("The microphone stream is not open.")
         if self._failure is not None:
-            raise AudioError(self._failure)
+            raise self._failure
         # The callback keeps dropping data while a fresh filter is prepared.
         self.pause()
         resampler = StreamingResampler(self.native_sample_rate, on_resampled_audio=self._on_resampled_audio)
@@ -181,6 +217,7 @@ class MicrophoneStream:
             self._clear_buffers()
             self._resampler = resampler
             self._last_audio_at = monotonic()
+            self._pending_gap = None
             self._paused = False
 
     def read_frame(self, timeout: float = .1):
@@ -192,23 +229,23 @@ class MicrophoneStream:
         deadline = monotonic() + timeout
         while True:
             if self._failure is not None:
-                raise AudioError(self._failure)
+                raise self._failure
             if self._paused:
                 return None
             try:
                 if not self._stream.active:
-                    raise AudioError("The microphone disconnected or stopped. Check the input and restart hands-free mode.")
+                    raise MicrophoneFailure("device", "The microphone disconnected or stopped.")
             except AudioError:
                 raise
             except Exception as exc:
-                raise AudioError("Could not read the microphone state.") from exc
+                raise MicrophoneFailure("device", "Could not read the microphone state.") from exc
             if self._frames:
                 return self._frames.popleft()
             try:
                 block = self._pcm.get(timeout=max(0, deadline - monotonic()))
             except Empty:
-                if self._last_audio_at is not None and monotonic() - self._last_audio_at >= 2.0:
-                    raise AudioError("The microphone stopped delivering audio. Check the input and restart hands-free mode.")
+                if self._last_audio_at is not None and monotonic() - self._last_audio_at >= STALL_SECONDS:
+                    raise MicrophoneFailure("stall", f"The microphone delivered no audio for {STALL_SECONDS:g} s.")
                 return None
             if self._on_native_audio is not None:
                 # Consumer-thread observation, never work in PortAudio's

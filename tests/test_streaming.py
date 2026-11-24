@@ -199,25 +199,30 @@ class MicrophoneStreamTests(unittest.TestCase):
             np.testing.assert_array_equal(stream.read_frame(0), np.zeros(512, dtype=np.float32))
             self.backend.RawInputStream.assert_called_once()
 
-    def test_queue_overflow_fails_closed_instead_of_growing_or_silently_losing_audio(self):
-        with MicrophoneStream() as stream:
+    def test_queue_overflow_drops_blocks_and_reports_a_gap_instead_of_growing(self):
+        with MicrophoneStream(queue_blocks=32) as stream:
             for _ in range(33):
                 self.feed(stream)
-            self.assertEqual(stream._pcm.qsize(), 32)
-            with self.assertRaisesRegex(AudioError, "overflowed"):
-                stream.read_frame(0)
-            with self.assertRaises(AudioError):
-                stream.resume()
+            self.assertEqual(stream._pcm.qsize(), 32)  # Bounded: the 33rd block was dropped.
+            self.assertEqual(stream.gaps["queue_full"], 1)
+            self.assertEqual(stream.take_gap(), "queue_full")
+            self.assertIsNone(stream.take_gap())  # Reported once.
+            self.assertIsNotNone(stream.read_frame(0))  # The stream keeps working.
+            stream.resume()
 
-    def test_input_overflow_and_incomplete_audio_are_errors(self):
-        for failure in ("status", "short"):
-            with self.subTest(failure=failure), MicrophoneStream() as stream:
-                if failure == "status":
-                    self.feed(stream, status=True)
-                else:
-                    stream._callback(b"\x00" * 100, 512, None, False)
-                with self.assertRaises(AudioError):
-                    stream.read_frame(0)
+    def test_input_overflow_is_a_gap_and_incomplete_audio_is_a_failure(self):
+        from aqua.audio.streaming import MicrophoneFailure
+        with MicrophoneStream() as stream:
+            self.feed(stream, status=True)
+            self.assertEqual(stream.gaps["input_overflow"], 1)
+            self.assertEqual(stream._pcm.qsize(), 0)  # The late block is dropped, never used.
+            self.assertEqual(stream.take_gap(), "input_overflow")
+            self.assertIsNone(stream.read_frame(0))
+        with MicrophoneStream() as stream:
+            stream._callback(b"\x00" * 100, 512, None, False)
+            with self.assertRaises(MicrophoneFailure) as caught:
+                stream.read_frame(0)
+            self.assertEqual(caught.exception.kind, "invalid")
 
     def test_disconnected_input_returns_explanatory_error(self):
         with MicrophoneStream() as stream:
@@ -237,8 +242,9 @@ class MicrophoneStreamTests(unittest.TestCase):
         with patch("aqua.audio.streaming.monotonic", side_effect=lambda: clock[0]):
             with MicrophoneStream() as stream:
                 clock[0] = 2.1
-                with self.assertRaisesRegex(AudioError, "stopped delivering"):
+                with self.assertRaisesRegex(AudioError, "no audio for 2 s") as caught:
                     stream.read_frame(0)
+                self.assertEqual(caught.exception.kind, "stall")
 
     def test_resume_resets_stall_deadline_after_long_model_processing(self):
         clock = [0.0]

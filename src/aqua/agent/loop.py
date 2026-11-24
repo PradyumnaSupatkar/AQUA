@@ -23,8 +23,8 @@ from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
 from .registry import SAFE, Registry, SchemaError, ToolOutcome, validate_arguments
-from .selection import (MAX_VISIBLE_TOOLS, matched_groups, select_tools, selected_groups, wants_explanation,
-                        wants_no_action)
+from .selection import (MAX_VISIBLE_TOOLS, direct_command, matched_groups, select_tools, selected_groups,
+                        wants_explanation, wants_no_action)
 
 MAX_OPERATIONS = 12
 MAX_DECISIONS = 14
@@ -117,22 +117,6 @@ def _names_request(raw_args) -> bool:
         except ValueError:
             return True  # Malformed: the schema check reports it.
     return not isinstance(raw_args, dict) or raw_args.get("request") not in (None, "")
-
-
-# A direct command: an imperative verb first, after polite openers ("could you", "please",
-# "don't forget to"). "lock the screen" is asked for, whatever the model marked it.
-_POLITE_LEAD = re.compile(
-    r"^(?:(?:hey|hi|ok|okay)\s+aqua\b[,\s]*)?(?:(?:please|kindly|just|now|quickly)\s+|"
-    r"(?:could|can|would|will)\s+you\s+(?:please\s+)?(?:be\s+able\s+to\s+)?|don'?t\s+forget\s+to\s+|"
-    r"go\s+ahead\s+and\s+|i\s+(?:want|need)\s+you\s+to\s+)*", re.I)
-_DIRECT_VERB = re.compile(
-    r"(?:open|launch|start|lock|mute|unmute|turn|set|close|quit|exit|minimi[sz]e|maximi[sz]e|restore|bring|switch|"
-    r"pause|play|resume|skip|search|undo|raise|lower|dim|brighten|increase|decrease|type|write|put|show|go)\b", re.I)
-
-
-def direct_command(request: str) -> bool:
-    text = request.strip().casefold().replace("’", "'")
-    return bool(_DIRECT_VERB.match(text[_POLITE_LEAD.match(text).end():]))
 
 
 def _with_request(raw_args, value: str):
@@ -983,7 +967,8 @@ class AgentEngine:
         if tool.name == "youtube":
             words = _YOUTUBE_ASKS.get(args.get("action"))
             return bool(words and words.search(turn.request))
-        return tool.group in matched_groups(turn.request)
+        # Other tools: the user named this kind of action and the request is a command, not a question.
+        return tool.group in matched_groups(turn.request) and direct_command(turn.request)
 
     def _run(self, tool, args) -> ToolOutcome:
         try:

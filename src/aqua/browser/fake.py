@@ -11,6 +11,17 @@ QUALITIES = ("1080p", "720p", "480p", "360p", "240p", "144p")
 RATES = (0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2)
 
 
+def effect(browser: str, action: str, args: dict, result: dict) -> str:
+    """"youtube:<browser>:<action>[=<detail>]", e.g. youtube:brave:seek=55 (benchmark effects)."""
+    detail = {
+        "seek": result.get("position"), "speed": f"{result.get('rate', 0):g}", "quality": result.get("quality"),
+        "volume": result.get("level"), "search": result.get("query"), "play_result": result.get("n"),
+        "fullscreen": "on" if result.get("on") else "off", "captions": "on" if result.get("on") else "off",
+        "mute": "on" if result.get("on") else "off",
+    }.get(action)
+    return f"youtube:{browser}:{action}" + (f"={detail}" if detail is not None else "")
+
+
 @dataclass
 class FakeTab:
     browser: str
@@ -34,16 +45,19 @@ class FakeTab:
 
 
 class FakeBrowserBridge:
-    def __init__(self, tabs=(), *, connected: bool = True) -> None:
+    def __init__(self, tabs=(), *, connected: bool = True, browsers=("chrome",)) -> None:
         self.tabs = list(tabs)
         self.is_connected = connected
+        self.browsers = tuple(browsers)  # Browsers whose extension is connected (with or without a YouTube tab).
         self.calls: list[tuple[str, str, dict]] = []   # (browser, action, args)
         self.effects: list[str] = []                    # "youtube:pause", ... (actions that changed something)
         self.error: str | None = None
 
     @property
     def connected(self) -> tuple[str, ...]:
-        return tuple(dict.fromkeys(tab.browser for tab in self.tabs)) if self.is_connected else ()
+        if not self.is_connected:
+            return ()
+        return tuple(dict.fromkeys((*self.browsers, *(tab.browser for tab in self.tabs))))
 
     def add_tab(self, browser: str = "chrome", last_accessed: float = 100, **fields) -> FakeTab:
         tab = FakeTab(browser, last_accessed, **fields)
@@ -60,9 +74,11 @@ class FakeBrowserBridge:
         browser = tab.browser if tab is not None else "chrome"
         self.calls.append((browser, action, dict(args)))
         result = self._run(tab, action, args)
+        if tab is None and action == "search":
+            tab = self._newest()
         if "done" in result and action != "now_playing":
-            self.effects.append(f"youtube:{action}")
-        return {**result, "browser": tab.browser if tab is not None else browser if action == "search" else None}
+            self.effects.append(effect(tab.browser if tab is not None else browser, action, args, result))
+        return {**result, "browser": tab.browser if tab is not None else None}
 
     def _now(self, tab: FakeTab) -> dict:
         return {"title": tab.title, "channel": tab.channel, "position": round(tab.position),

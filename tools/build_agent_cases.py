@@ -314,13 +314,21 @@ OVERRIDES = {
     "cant-hear": {"turns": [T("I can't hear anything", E(["mute:off"], allow=["volume:up=.*"]), ASKS,
                               E(outcome=["confirm"], reply_any=[r"unmute|sound|volume"]))],
                   "reason": "An unmute offer (host yes/no question) is an acceptable answer to 'I can't hear anything'."},
+    # Round 4: an app the user never named, asked for as a wish, is opened only after a host yes/no.
+    "feel-like-programming": {"turns": [T("I feel like programming", E(["launch:visual studio code"]), ASKS, OFFERED)],
+                              "reason": "A host yes/no question ('Open Visual Studio Code?') is an acceptable answer."},
+    "si-activity-notes": {"turns": [T("I'd like somewhere to jot down a few thoughts.", E(["launch:notepad"]), ASKS,
+                                      OFFERED)],
+                          "reason": "A host yes/no question ('Open Notepad?') is an acceptable answer."},
 }
 EXPECTATION_CHANGES = [
     "extra-offer-programming-yes, extra-offer-notes-no, extra-offer-quiet-no: a clarifying question with options "
     "is accepted on the first turn (the programming case gained the ASKS alternative; the other two had it).",
     "cant-hear (frozen case, overridden here): an unmute offer as a host yes/no question is accepted.",
+    "v3 (round 4): feel-like-programming and si-activity-notes (frozen, overridden here) also accept a host yes/no "
+    "question, since an app the user never named is opened only after asking when the request is a wish.",
 ]
-extra_suite = {"version": 2, "name": "agent-v1-extra", "extends": "cases.json",
+extra_suite = {"version": 3, "name": "agent-v1-extra", "extends": "cases.json",
                "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
                "expectation_changes": EXPECTATION_CHANGES, "overrides": OVERRIDES, "cases": extra}
 extra_data = (json.dumps(extra_suite, indent=1, ensure_ascii=False) + "\n").encode("utf-8")

@@ -5,6 +5,7 @@ system text and the earlier conversation. The clock goes on the end of the
 newest user message instead.
 """
 
+import re
 from datetime import datetime
 
 SYSTEM_PROMPT = """You are Aqua, a hands-free voice assistant that controls the user's Windows PC through tools.
@@ -39,5 +40,16 @@ def request_context(now: datetime, *, undoable: str | None = None, not_done: tup
     return f"[Aqua host context, not from the user: {'; '.join(facts)}.]"
 
 
+_DONT_FORGET = re.compile(r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+)?(?:don'?t|do\s+not)\s+forget\s+to\s+(?P<rest>\S.*)$",
+                          re.I)
+
+
+def model_text(text: str) -> str:
+    """The request as the model sees it. "don't forget to open Notepad" asks for it now, but a
+    small model reads the "don't" as a refusal ("I will not open Notepad"), so it sees the command."""
+    match = _DONT_FORGET.match(text.replace("’", "'"))
+    return f"Please {match.group('rest')}" if match else text
+
+
 def user_message(text: str, now: datetime, *, undoable: str | None = None, not_done: tuple[str, ...] = ()) -> str:
-    return f"{text}\n\n{request_context(now, undoable=undoable, not_done=not_done)}"
+    return f"{model_text(text)}\n\n{request_context(now, undoable=undoable, not_done=not_done)}"

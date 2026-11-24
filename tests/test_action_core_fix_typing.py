@@ -94,9 +94,13 @@ class LaunchToTypeTests(unittest.TestCase):
     def test_named_app_or_non_typing_request_launches(self):
         launch = build_registry().get("launch_app")
         for request, app in (("Open Notepad and write hello", "Notepad"), ("write hello in note pad", "Notepad"),
-                             ("type hello in vs code", "VS Code"), ("I feel like programming", "VS Code")):
+                             ("type hello in vs code", "VS Code"), ("could you bring up my coding environment?", "VS Code")):
             ctx = self.context(FakeDesktop(), request)
             self.assertEqual(ctx.policy.decide(launch, {"app": app, "request": "asked"}, ctx).action, RUN, request)
+        # A wish that names no app ("I feel like programming" -> VS Code) is the model's idea: the host asks.
+        ctx = self.context(FakeDesktop(), "I feel like programming")
+        decision = ctx.policy.decide(launch, {"app": "VS Code", "request": "asked"}, ctx)
+        self.assertEqual((decision.action, decision.question), ("confirm", "Open Visual Studio Code? Say yes or no."))
 
     def test_already_open_app_is_not_a_guess(self):
         desktop, _ = notepad_desktop()

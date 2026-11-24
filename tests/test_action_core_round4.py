@@ -193,6 +193,34 @@ class PromiseOfferTests(unittest.TestCase):
         self.assertEqual((desktop.launched, len(model.requests)), ([], 1))
 
 
+class Round4BenchmarkFixTests(unittest.TestCase):
+    """Real-model failures in the round 4 benchmark: the model treated a wish as a command, and
+    read "don't forget to open Notepad" as "don't open Notepad"."""
+
+    def test_an_app_guessed_from_a_wish_is_asked_about(self):
+        engine, desktop, _ = make_engine([call("launch_app", app="Notepad", request="asked")])
+        asked = engine.respond("I'd like somewhere to jot down a few thoughts")
+        self.assertEqual((asked.outcome, asked.text), ("confirm", "Open Notepad? Say yes or no."))
+        engine.respond("no")
+        self.assertEqual(desktop.launched, [])
+
+    def test_named_apps_and_direct_commands_still_open_at_once(self):
+        for request in ("I'd like to open Notepad", "could you bring up my coding environment?"):
+            app = "Notepad" if "Notepad" in request else "VS Code"
+            engine, desktop, _ = make_engine([call("launch_app", app=app)])
+            self.assertEqual(engine.respond(request).outcome, "action", request)
+
+    def test_dont_forget_reaches_the_model_as_a_command(self):
+        from aqua.agent.prompt import model_text
+        self.assertEqual(model_text("don't forget to open Notepad"), "Please open Notepad")
+        self.assertEqual(model_text("Please do not forget to mute"), "Please mute")
+        self.assertEqual(model_text("don't open Notepad"), "don't open Notepad")
+        engine, _, model = make_engine([call("launch_app", app="Notepad")])
+        engine.respond("don't forget to open Notepad")
+        self.assertTrue(model.requests[0]["messages"][-1]["content"].startswith("Please open Notepad\n"))
+        self.assertEqual(engine.conversation.history[0]["content"], "don't forget to open Notepad")  # History keeps the user's words.
+
+
 class HowToTests(unittest.TestCase):
     def test_a_refusal_to_a_how_to_question_becomes_the_steps(self):
         engine, desktop, _ = make_engine("I don't know how to lock the screen.")

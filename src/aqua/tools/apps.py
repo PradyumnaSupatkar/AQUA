@@ -52,7 +52,22 @@ def _check(args: dict, context: ToolContext):
             and not any(window_matches_app(w, entry) for w in context.desktop.windows())):
         # A typing request that named no app: starting one to type into is the model's guess.
         return ask(f"Open {entry.name} to type into it? Say yes or no.")
+    if (entry is not None and context.request and not _named_anywhere(context, query, entry)
+            and not _commanded(context.request)):
+        # "I'd like somewhere to jot down a few thoughts" -> Notepad: a wish, and an app the user
+        # never named, so it is the model's idea; ask. ("could you bring up my coding environment?"
+        # is a direct request and still opens its app.)
+        return ask(f"Open {entry.name}? Say yes or no.")
     return None
+
+
+def _named_anywhere(context: ToolContext, query: str, entry: AppEntry) -> bool:
+    return any(app_named(said, query, entry) for said in (context.request, *context.earlier))
+
+
+def _commanded(request: str) -> bool:
+    from aqua.agent.loop import direct_command
+    return direct_command(request)
 
 
 def app_named(request: str, query: str, entry: AppEntry) -> bool:

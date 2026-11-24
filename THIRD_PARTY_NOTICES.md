@@ -1,9 +1,33 @@
 # Third-party notices
 
 Aqua's own source code is licensed under [Apache-2.0](LICENSE). Aqua uses, but does not include, the
-components below. They are installed separately (Python dependencies via `pip`, voice models via
-`aqua setup-voice`) and keep their own licences. Check each licence before redistributing them or using
+components below. They are installed separately (Python dependencies via `pip`, speech recognition models
+via `aqua setup-model`, voice models via `aqua setup-voice`) and keep their own licences. Check each licence before redistributing them or using
 them commercially.
+
+## Speech recognition models (downloaded by `aqua setup-model`)
+
+| Model | Use | Source (pinned revision, every file by SHA-256) | Licence |
+| --- | --- | --- | --- |
+| **Parakeet TDT 0.6B v3** (int8 ONNX), by NVIDIA | Default recogniser (`--asr parakeet`); `aqua setup-model --model parakeet --download` | [csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8), revision `ed5d745623472f97cfc2e6c2916ee248798fc5a8`; pins in `src/aqua/speech/parakeet.py` | [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) |
+| Whisper Small / Base, by OpenAI (CTranslate2 conversions by Systran) | Fallback recogniser (`--asr whisper`) | [Systran/faster-whisper-small](https://huggingface.co/Systran/faster-whisper-small), [Systran/faster-whisper-base](https://huggingface.co/Systran/faster-whisper-base); pins in `src/aqua/speech/models.py` | MIT |
+
+**Attribution (CC-BY-4.0):** Aqua's default speech recogniser is **Parakeet TDT 0.6B v3** by **NVIDIA**,
+<https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3>, licensed under the Creative Commons Attribution 4.0
+International licence (<https://creativecommons.org/licenses/by/4.0/>). Aqua uses the int8 ONNX export made by
+the [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) project (k2-fsa); that export quantizes the
+model's weights to int8. Aqua does not modify the model files; it only pads each utterance with silence before
+recognition.
+
+### Benchmark-only models (`tools/asr_models.py`; not used by Aqua at runtime)
+
+These were compared in `benchmarks/asr-v1` and are downloaded only by that tool, into `.cache/asr-models`.
+
+| Model | Source (pinned) | Licence |
+| --- | --- | --- |
+| Parakeet TDT 0.6B v2 (English), by NVIDIA (int8 ONNX by sherpa-onnx) | [csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8](https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8) ([model card](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v2)) | CC-BY-4.0 |
+| Moonshine v2 base and tiny (English, quantized 2026-02-27), by Moonshine AI (Useful Sensors) | [csukuangfj2/sherpa-onnx-moonshine-base-en-quantized-2026-02-27](https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-en-quantized-2026-02-27), [csukuangfj2/sherpa-onnx-moonshine-tiny-en-quantized-2026-02-27](https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-tiny-en-quantized-2026-02-27) (a k2-fsa organisation member's account) | MIT for the English models (the repos' `LICENSE`, section 1). Moonshine models for other languages use the non-commercial Moonshine Community License. |
+| Whisper small.en, by OpenAI (CTranslate2 conversion by Systran) | [Systran/faster-whisper-small.en](https://huggingface.co/Systran/faster-whisper-small.en) | MIT |
 
 ## Speech output dependency
 

@@ -445,6 +445,26 @@ def load_recognizer(asr: str, speech_model_dir: Path | None = None, *, whisper=N
     return whisper() if speech_model_dir is None else whisper(speech_model_dir)
 
 
+def prepare_spoken(text: str, agent=None, *, diagnostics: bool = False) -> str:
+    """The transcript as the engine sees it: 'right/ride/bright ... into notepad' -> 'write ...'
+    and spoken numbers as digits (aqua.speech.postprocess). Corrections print with --diagnostics."""
+    from aqua.speech.postprocess import prepare
+    awaiting = getattr(agent, "awaiting_app", False) is True
+    is_app = None
+    apps = getattr(getattr(agent, "context", None), "apps", None)
+    if apps is not None and hasattr(apps, "find"):
+        def is_app(name: str) -> bool:
+            try:
+                return apps.find(name).kind == "found"
+            except Exception:  # noqa: BLE001 - an app index problem must not lose the turn
+                return False
+    prepared, notes = prepare(text, awaiting_app=awaiting, is_app=is_app)
+    if diagnostics:
+        for note in notes:
+            print(f"Speech fix: {note}")
+    return prepared
+
+
 def _transcribe_recording(
     recognizer: OfflineRecognizer,
     recording: Recording,
@@ -584,13 +604,14 @@ def run_voice_chat(
                 print("\nVoice turn cancelled; no message was sent.")
                 continue
 
+            spoken = prepare_spoken(transcript.text, agent, diagnostics=diagnostics)
             if agent is not None:
-                _respond_agent(agent, transcript.text, diagnostics=diagnostics, speaker=speaker)
+                _respond_agent(agent, spoken, diagnostics=diagnostics, speaker=speaker)
                 continue
             _respond_or_launch(
                 client,
                 conversation,
-                transcript.text,
+                spoken,
                 model=model,
                 settings=generation,
                 diagnostics=diagnostics,

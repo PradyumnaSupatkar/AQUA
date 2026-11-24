@@ -344,12 +344,13 @@ def run_handsfree(
                             if agent is None:
                                 return 1
                             conversation = agent.conversation
+                    spoken = chat.prepare_spoken(transcript.text, agent, diagnostics=diagnostics)
                     if agent is not None:
-                        result = chat._respond_agent(agent, transcript.text, diagnostics=diagnostics,
+                        result = chat._respond_agent(agent, spoken, diagnostics=diagnostics,
                                                      speaker=speaker, wait_for_speech=False)
                     else:
                         result = chat._respond_or_launch(
-                            client, conversation, transcript.text, model=model, settings=generation,
+                            client, conversation, spoken, model=model, settings=generation,
                             diagnostics=diagnostics, action_state=state, intent_timeout=min(timeout, 15.0),
                             speaker=speaker, wait_for_speech=False,
                         )

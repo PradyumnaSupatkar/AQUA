@@ -408,6 +408,11 @@ class AgentEngine:
         self.now = now if now is not None else (lambda: datetime.now().astimezone())
 
     @property
+    def awaiting_app(self) -> bool:
+        """Aqua asked "Which app should I type that into?" and keeps the text for the answer."""
+        return self._awaiting_text is not None
+
+    @property
     def pending(self) -> PendingAction | None:
         return self.gate.pending
 

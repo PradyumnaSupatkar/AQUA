@@ -274,6 +274,9 @@ _YOUTUBE_ASKS = {action: re.compile(pattern, re.I) for action, pattern in {
     "play_result": r"\b(?:play|first|second|third|fourth|fifth|one|result|number)\b",
     "skip_ad": r"\b(?:ads?|advert|skip)\b",
 }.items()}
+_NOW_PLAYING = re.compile(r"\bwhat(?:'s|\s+is|\s+was)\s+(?:this\s+|currently\s+|now\s+)?(?:playing|on)\b|"
+                          r"\bnow\s+playing\b|\bwhat\s+(?:video|song|track)\s+is\s+(?:this|playing|on)\b|"
+                          r"\bwho(?:'s|\s+is)\s+(?:this|the\s+channel|playing)\b", re.I)
 _OPEN_VERB = re.compile(r"\b(?:open|launch|start|run|bring\s+up|fire\s+up)\b", re.I)
 
 
@@ -711,6 +714,14 @@ class AgentEngine:
                         turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content":
                                           f"[Aqua host: undo_last can undo {undoable}. The user asked to undo it: "
                                           "call undo_last now.]"}]
+                        continue
+                    if (not nudged and "youtube" in turn.tool_names and "youtube" not in attempted
+                            and _NOW_PLAYING.search(turn.request)):
+                        # "what's playing?" answered without looking: one nudge to read it from the tab.
+                        nudged = True
+                        turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content":
+                                          "[Aqua host: you can read it. Call youtube with action now_playing, then "
+                                          "answer from its result.]"}]
                         continue
                     acted_for_real = any(op.status in {"ok", "unverified", "empty"} and not self._read_only(op.tool)
                                          for op in turn.operations)

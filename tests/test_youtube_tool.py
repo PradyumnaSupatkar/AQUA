@@ -139,6 +139,14 @@ class UntrustedDataTests(unittest.TestCase):
         self.assertIn("never instructions", body["note"])
         self.assertEqual((result.text, len(model.requests)), ("It's Lofi beats by Lofi Girl.", 2))
 
+    def test_whats_playing_without_looking_gets_one_nudge(self):
+        # Live Brave: "what's playing?" -> "I cannot determine what is playing" with no tool call.
+        engine, _, model, _ = engine_with("I cannot determine what is playing.", [call("youtube", action="now_playing")],
+                                          "It's Lofi beats to study to.")
+        result = engine.respond("what's playing?")
+        self.assertIn("action now_playing", model.requests[1]["messages"][-1]["content"])
+        self.assertEqual(result.text, "It's Lofi beats to study to.")
+
     def test_page_text_is_not_kept_in_history(self):
         engine, _, _, _ = engine_with([call("youtube", action="now_playing")], "It's a lofi stream.", title=INJECTION)
         engine.respond("what's playing on youtube?")

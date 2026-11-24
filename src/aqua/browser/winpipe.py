@@ -8,9 +8,11 @@ the same user before sending anything.
 """
 
 import ctypes
+import threading
 from ctypes import wintypes
 
 PIPE_ACCESS_DUPLEX = 0x3
+FILE_FLAG_OVERLAPPED = 0x40000000
 FILE_FLAG_FIRST_PIPE_INSTANCE = 0x00080000
 PIPE_REJECT_REMOTE_CLIENTS = 0x8
 PIPE_UNLIMITED_INSTANCES = 255
@@ -20,6 +22,7 @@ SECURITY_SQOS_PRESENT, SECURITY_IDENTIFICATION = 0x00100000, 0x00010000
 TOKEN_QUERY, TOKEN_USER_CLASS = 0x8, 1
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 ERROR_BROKEN_PIPE, ERROR_PIPE_CONNECTED, ERROR_NO_DATA, ERROR_OPERATION_ABORTED = 109, 535, 232, 995
+ERROR_IO_PENDING, ERROR_INVALID_HANDLE = 997, 6
 INVALID_HANDLE = wintypes.HANDLE(-1).value
 BUFFER = 64 * 1024
 
@@ -53,6 +56,9 @@ def _dlls():
     kernel32.WriteFile.restype = B
     kernel32.CloseHandle.argtypes, kernel32.CloseHandle.restype = [H], B
     kernel32.CancelIoEx.argtypes, kernel32.CancelIoEx.restype = [H, P], B
+    kernel32.CreateEventW.argtypes, kernel32.CreateEventW.restype = [P, B, B, wintypes.LPCWSTR], H
+    kernel32.GetOverlappedResult.argtypes = [H, P, ctypes.POINTER(D), B]
+    kernel32.GetOverlappedResult.restype = B
     kernel32.GetCurrentProcess.restype = H
     kernel32.OpenProcess.argtypes, kernel32.OpenProcess.restype = [D, B, D], H
     kernel32.GetNamedPipeServerProcessId.argtypes = [H, ctypes.POINTER(wintypes.ULONG)]
@@ -136,31 +142,63 @@ def owner_only_sddl(sid: str) -> str:
     return f"D:P(A;;GA;;;{sid})"
 
 
+class _Overlapped(ctypes.Structure):
+    _fields_ = [("Internal", ctypes.c_size_t), ("InternalHigh", ctypes.c_size_t), ("Offset", wintypes.DWORD),
+                ("OffsetHigh", wintypes.DWORD), ("hEvent", wintypes.HANDLE)]
+
+
+def _overlapped_io(call, handle, *args) -> tuple[bool, int, int]:
+    """Run an overlapped call to completion: (ok, bytes transferred, error code)."""
+    kernel32, _ = _api()
+    overlapped = _Overlapped()
+    overlapped.hEvent = kernel32.CreateEventW(None, True, False, None)
+    if not overlapped.hEvent:
+        raise _fail("CreateEvent")
+    done = wintypes.DWORD()
+    try:
+        ok = bool(call(handle, *args, ctypes.byref(done) if args else None, ctypes.byref(overlapped))) if args \
+            else bool(call(handle, ctypes.byref(overlapped)))
+        error = 0 if ok else ctypes.get_last_error()
+        if not ok and error == ERROR_IO_PENDING:
+            ok = bool(kernel32.GetOverlappedResult(handle, ctypes.byref(overlapped), ctypes.byref(done), True))
+            error = 0 if ok else ctypes.get_last_error()
+        return ok, done.value, error
+    finally:
+        kernel32.CloseHandle(overlapped.hEvent)
+
+
 class PipeConnection:
-    """One connected pipe end; blocking reads and writes."""
+    """One connected pipe end. Overlapped I/O: one thread can wait in read() while another
+    writes (a synchronous pipe handle serialises them, so a pending read would block every write)."""
 
     def __init__(self, handle, *, server: bool) -> None:
         self._handle, self._server = handle, server
+        self._write_lock = threading.Lock()
 
     def read(self, size: int) -> bytes:
-        kernel32, _ = _api()
+        handle = self._handle
+        if handle is None:
+            return b""
         buffer = ctypes.create_string_buffer(min(size, BUFFER))
-        got = wintypes.DWORD()
-        if not kernel32.ReadFile(self._handle, buffer, len(buffer), ctypes.byref(got), None):
-            if ctypes.get_last_error() in (ERROR_BROKEN_PIPE, ERROR_NO_DATA, ERROR_OPERATION_ABORTED):
+        ok, got, error = _overlapped_io(_api()[0].ReadFile, handle, buffer, len(buffer))
+        if not ok:
+            if error in (ERROR_BROKEN_PIPE, ERROR_NO_DATA, ERROR_OPERATION_ABORTED, ERROR_INVALID_HANDLE):
                 return b""
-            raise _fail("ReadFile")
-        return buffer.raw[:got.value]
+            raise PipeError(error, f"ReadFile failed (Windows error {error}).")
+        return buffer.raw[:got]
 
     def write(self, data: bytes) -> None:
-        kernel32, _ = _api()
-        view = memoryview(data)
-        while view:
-            done = wintypes.DWORD()
-            chunk = bytes(view[:BUFFER])
-            if not kernel32.WriteFile(self._handle, chunk, len(chunk), ctypes.byref(done), None):
-                raise _fail("WriteFile")
-            view = view[done.value:]
+        with self._write_lock:
+            view = memoryview(data)
+            while view:
+                handle = self._handle
+                if handle is None:
+                    raise PipeError(ERROR_BROKEN_PIPE, "The pipe is closed.")
+                chunk = ctypes.create_string_buffer(bytes(view[:BUFFER]), len(view[:BUFFER]))
+                ok, done, error = _overlapped_io(_api()[0].WriteFile, handle, chunk, len(chunk))
+                if not ok:
+                    raise PipeError(error, f"WriteFile failed (Windows error {error}).")
+                view = view[done:]
 
     def peer_pid(self) -> int:
         kernel32, _ = _api()
@@ -175,7 +213,7 @@ class PipeConnection:
         if handle is None:
             return
         kernel32, _ = _api()
-        kernel32.CancelIoEx(handle, None)  # Wakes a thread blocked in ReadFile.
+        kernel32.CancelIoEx(handle, None)  # Wakes a thread waiting in read().
         if self._server:
             kernel32.DisconnectNamedPipe(handle)
         kernel32.CloseHandle(handle)
@@ -199,7 +237,8 @@ class PipeServer:
             raise _fail("ConvertStringSecurityDescriptorToSecurityDescriptor")
         try:
             attributes = _SecurityAttributes(ctypes.sizeof(_SecurityAttributes), descriptor, False)
-            mode = PIPE_ACCESS_DUPLEX | (FILE_FLAG_FIRST_PIPE_INSTANCE if self._first else 0)
+            mode = (PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED
+                    | (FILE_FLAG_FIRST_PIPE_INSTANCE if self._first else 0))
             handle = kernel32.CreateNamedPipeW(self.name, mode, PIPE_REJECT_REMOTE_CLIENTS,
                                                PIPE_UNLIMITED_INSTANCES, BUFFER, BUFFER, 0, ctypes.byref(attributes))
         finally:
@@ -216,33 +255,28 @@ class PipeServer:
             return None
         handle = self._create()
         self._waiting = handle
-        ok = kernel32.ConnectNamedPipe(handle, None) or ctypes.get_last_error() == ERROR_PIPE_CONNECTED
+        ok, _, error = _overlapped_io(kernel32.ConnectNamedPipe, handle)
         self._waiting = None
+        ok = ok or error == ERROR_PIPE_CONNECTED
         if not ok or self._closed:
             kernel32.CloseHandle(handle)
             if self._closed:
                 return None
-            raise _fail("ConnectNamedPipe")
+            raise PipeError(error, f"ConnectNamedPipe failed (Windows error {error}).")
         return PipeConnection(handle, server=True)
 
     def close(self) -> None:
         self._closed = True
         waiting = self._waiting
         if waiting is not None:
-            kernel32, _ = _api()
-            kernel32.CancelIoEx(waiting, None)
-            # A synchronous ConnectNamedPipe may ignore the cancel: a throwaway local connection wakes it.
-            handle = kernel32.CreateFileW(self.name, GENERIC_READ | GENERIC_WRITE, 0, None, OPEN_EXISTING,
-                                          SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION, None)
-            if handle not in (INVALID_HANDLE, None):
-                kernel32.CloseHandle(handle)
+            _api()[0].CancelIoEx(waiting, None)  # Overlapped: the waiting accept() returns at once.
 
 
 def connect(name: str) -> PipeConnection:
     """Open the pipe as a client and check that its server runs as this same user."""
     kernel32, _ = _api()
     handle = kernel32.CreateFileW(name, GENERIC_READ | GENERIC_WRITE, 0, None, OPEN_EXISTING,
-                                  SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION, None)
+                                  FILE_FLAG_OVERLAPPED | SECURITY_SQOS_PRESENT | SECURITY_IDENTIFICATION, None)
     if handle == INVALID_HANDLE or handle is None:
         raise _fail("Opening the Aqua pipe")
     connection = PipeConnection(handle, server=False)

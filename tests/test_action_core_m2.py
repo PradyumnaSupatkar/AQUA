@@ -242,7 +242,7 @@ class WebToolTests(unittest.TestCase):
         self.assertEqual(decide(open_url, {"url": "C:\\Users"}, ctx).action, DENY)
         self.assertEqual(decide(open_url, {"url": "youtube.com"}, ctx).action, "run")
         outcome = open_url.run({"url": "youtube.com"}, ctx)
-        self.assertEqual((outcome.done, ctx.desktop.opened_urls), ("opened youtube.com", ["https://youtube.com"]))
+        self.assertEqual((outcome.done, ctx.desktop.opened_urls), ("opened YouTube", ["https://youtube.com"]))
 
     def test_web_search_opens_the_search_page(self):
         ctx = context()

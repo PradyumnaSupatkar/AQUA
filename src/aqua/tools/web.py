@@ -1,7 +1,9 @@
 """open_url and web_search, in the default browser. Only http(s) web addresses open."""
 
 import ipaddress
+import os
 import re
+from pathlib import Path
 from urllib.parse import quote_plus, urlsplit
 
 from aqua.agent.context import ToolContext
@@ -19,6 +21,23 @@ SITE_SEARCH = {
     "github": "https://github.com/search?q={}",
 }
 _HOST = re.compile(r"^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$", re.IGNORECASE)
+
+
+def preferred_browser_path() -> Path:
+    return Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData" / "Local"))) / "Aqua" / "preferred-browser.txt"
+
+
+def read_preferred_browser(path: Path | None = None) -> str | None:
+    """The optional preferred-browser setting: AQUA_BROWSER, else the first line of
+    %LOCALAPPDATA%\\Aqua\\preferred-browser.txt (e.g. "Brave"). None means the Windows default."""
+    value = os.environ.get("AQUA_BROWSER", "").strip()
+    if value:
+        return value[:60]
+    try:
+        lines = (preferred_browser_path() if path is None else path).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return None
+    return next((line.strip()[:60] for line in lines if line.strip() and not line.lstrip().startswith("#")), None)
 
 
 def normalize_url(value: str) -> str | None:
@@ -53,14 +72,77 @@ def normalize_url(value: str) -> str | None:
 
 BROWSER_PARAMETER = {"type": "string", "description": "Browser to use if the user named one, e.g. Chrome; "
                      "omit for the default browser", "maxLength": 60}
+# Spoken browser names, longest first so "google chrome" wins over "chrome".
+BROWSERS = ("google chrome", "microsoft edge", "mozilla firefox", "brave browser", "opera gx", "tor browser",
+            "chrome", "brave", "firefox", "edge", "opera", "vivaldi")
+SITE_NAMES = {"youtube": "YouTube", "google": "Google", "wikipedia": "Wikipedia", "amazon": "Amazon",
+              "github": "GitHub", "duckduckgo": "DuckDuckGo"}
+_SITE = r"(you\s?tube|google(?!\s+chrome)|wikipedia|amazon|git\s?hub)"
+# A site the request searches on: "on YouTube", "search YouTube for", "open YouTube (and search)".
+_SITE_PLACE = (re.compile(rf"\b(?:on|in|at|using|via|with)\s+(?:the\s+)?{_SITE}\b", re.I),
+               re.compile(rf"\bsearch\s+{_SITE}\s+for\b", re.I),
+               re.compile(rf"\b(?:open|go\s+to|launch|start|bring\s+up)\s+(?:the\s+)?{_SITE}(?:\.com)?\b", re.I))
+_SEARCH_VERB = r"(?:search(?:\s+for)?|look\s+up|look\s+for|find)"
+
+
+def _plain(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s.]", " ", text.casefold()).split())
+
+
+def named_browser(text: str) -> str | None:
+    """The browser a request names ("open brave browser and ..."), if any."""
+    words = f" {_plain(text)} "
+    return next((name for name in BROWSERS if f" {name} " in words), None)
+
+
+def named_site(text: str) -> str | None:
+    """The SITE_SEARCH site a request searches or opens, e.g. "youtube"; None for the web."""
+    for pattern in _SITE_PLACE:
+        match = pattern.search(text)
+        if match:
+            return re.sub(r"\s", "", match.group(1).casefold())
+    return None
+
+
+def site_query(text: str, site: str) -> str | None:
+    """What to search for on ``site``: "open youtube and search sidemen sunday" and
+    "search sidemen sunday on youtube" both give "sidemen sunday"."""
+    name = r"(?:the\s+)?" + _SITE
+    for pattern in (rf"\b{_SEARCH_VERB}\s+(?P<q>.+?)\s+(?:on|in|at|using|via)\s+{name}\b",
+                    rf"\bsearch\s+{name}\s+for\s+(?P<q>.+)",
+                    rf"\b{name}\b.*?\b{_SEARCH_VERB}\s+(?P<q>.+)"):
+        match = re.search(pattern, text, re.I)
+        if match and named_site(match.group(0)) in (site, None):
+            query = re.sub(rf"\s+(?:on|in|at|using|via|with)\s+(?:the\s+)?(?:{_SITE}|[\w ]*browser|"
+                           rf"{'|'.join(BROWSERS)})\b.*$", "", match.group("q"), flags=re.I)
+            query = " ".join(query.strip(" .!?,\"'").split())
+            if query:
+                return query
+    return None
+
+
+def _launched_browser(context: ToolContext) -> str | None:
+    for launch in reversed(context.launches):
+        if named_browser(launch.app) is not None:
+            return launch.app
+    return None
+
+
+def browser_choice(args: dict, context: ToolContext) -> str | None:
+    """The browser to use: the model's argument, else the one the request names, else one
+    launched earlier in this request, else the preferred-browser setting (None: Windows default)."""
+    return (args.get("browser") or named_browser(context.request) or _launched_browser(context)
+            or context.preferred_browser or None)
 
 
 def _browser(args: dict, context: ToolContext):
     """(installed browser entry or None, note for the reply)."""
-    name = args.get("browser")
+    name = browser_choice(args, context)
     if not name:
         return None, ""
     match = context.apps.find(name)
+    if match.entry is None and name.casefold().endswith(" browser"):
+        match = context.apps.find(name[:-len(" browser")])  # "brave browser" is installed as "Brave".
     if match.entry is None:
         return None, f" {name} was not found, so the default browser was used."
     return match.entry, ""
@@ -88,27 +170,57 @@ def _open_in(url: str, args: dict, context: ToolContext):
     return (entry.name if entry is not None else "the browser"), note
 
 
+def _site_of(host: str) -> str | None:
+    """"www.youtube.com" -> "youtube" for the sites Aqua can search."""
+    parts = host.casefold().split(".")
+    return next((site for site in SITE_SEARCH if site in parts[-3:-1]), None)
+
+
+def _where(where: str, args: dict, context: ToolContext) -> str:
+    """" in Brave" for the done phrase, unless Brave was opened in this same request."""
+    if where == "the browser" or _launched_browser(context) == where:
+        return ""
+    return f" in {where}"
+
+
 def _open(args: dict, context: ToolContext) -> ToolOutcome:
     url = normalize_url(args["url"])
+    host = urlsplit(url).hostname or ""
+    site = _site_of(host)
+    query = site_query(context.request, site) if site and urlsplit(url).path in ("", "/") else None
+    if query:
+        # "open youtube and search X": one search on that site, not the home page and then a guess.
+        return _search({**args, "query": query, "site": site}, context, steps=2)
     where, note = _open_in(url, args, context)
     if where is None:
         return ToolOutcome("failed", "The browser could not be opened.")
-    host = urlsplit(url).hostname
-    return ToolOutcome("ok", f"Opened {host} in {where}.{note}", done=f"opened {host}", data={"url": url})
+    shown = SITE_NAMES.get(site, host.removeprefix("www.")) if site else host.removeprefix("www.")
+    return ToolOutcome("ok", f"Opened {host} in {where}.{note}", done=f"opened {shown}{_where(where, args, context)}",
+                       data={"url": url, "browser": where})
 
 
 def search_url(query: str, site: str | None = None) -> str:
     return SITE_SEARCH.get(site or "", SEARCH_URL).format(quote_plus(" ".join(query.split())))
 
 
-def _search(args: dict, context: ToolContext) -> ToolOutcome:
-    query, site = " ".join(args["query"].split()), args.get("site")
+def _search(args: dict, context: ToolContext, steps: int = 1) -> ToolOutcome:
+    query = " ".join(args["query"].split())
+    # The model often drops the site ("open youtube and search X"): the request says it.
+    site = args.get("site") or named_site(context.request)
+    key = (site, query.casefold())
+    if key in context.searches:
+        return ToolOutcome("duplicate", "Already searched for that; not repeated.")
     where, note = _open_in(search_url(query, site), args, context)
     if where is None:
         return ToolOutcome("failed", "The browser could not be opened.")
-    on = f" on {site.capitalize() if site != 'youtube' else 'YouTube'}" if site else ""
+    context.searches.append(key)
+    name = SITE_NAMES.get(site, "") if site else ""
+    on = f" on {name}" if name else " on DuckDuckGo"
+    if site and _SITE_PLACE[2].search(context.request):
+        steps = 2  # "open youtube and search X" asked for both, and this one search does both.
     return ToolOutcome("ok", f"Opened a search for {query!r}{on} in {where}.{note}",
-                       done=f"searched{on or ' the web'} for {query}")
+                       done=f"searched {name or 'the web'} for {query}{_where(where, args, context)}",
+                       data={"site": site or "duckduckgo", "browser": where, "query": query, "steps": steps})
 
 
 open_url = Tool(

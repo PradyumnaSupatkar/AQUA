@@ -947,8 +947,10 @@ def build_engine(client, *, model: str, settings: GenerationSettings, max_turns:
         desktop = Win32Desktop()
     apps = AppIndex(desktop.app_entries)
     apps.prewarm()
+    from aqua.tools.web import read_preferred_browser
     context = ToolContext(desktop=desktop, apps=apps,
-                          policy=policy if policy is not None else Policy.from_user_config())
+                          policy=policy if policy is not None else Policy.from_user_config(),
+                          preferred_browser=read_preferred_browser())
     conversation = Conversation(max_turns=max_turns, max_chars=max_chars, system_prompt=SYSTEM_PROMPT)
     return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup),
                        context=context, conversation=conversation)

@@ -31,9 +31,14 @@ class ToolContext:
     request: str = ""           # The current user request (stays on this PC).
     # Earlier requests this one answers (Aqua asked a question in between), for grounding.
     earlier: tuple[str, ...] = ()
+    # Optional setting: the browser for web actions when the user names none (None: Windows default).
+    preferred_browser: str | None = None
+    # (site, query) searches opened in this request, so a repeated search is not opened twice.
+    searches: list = field(default_factory=list)
 
     def begin_request(self, request: str = "", earlier: tuple[str, ...] = ()) -> None:
         self.launches.clear()
+        self.searches.clear()
         self.request = request
         self.earlier = tuple(earlier)
 

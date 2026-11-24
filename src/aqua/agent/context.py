@@ -33,6 +33,8 @@ class ToolContext:
     earlier: tuple[str, ...] = ()
     # Optional setting: the browser for web actions when the user names none (None: Windows default).
     preferred_browser: str | None = None
+    # The browser bridge (aqua.browser.bridge.BrowserBridge or a fake), or None when not available.
+    browser: object = None
     # (site, query) searches opened in this request, so a repeated search is not opened twice.
     searches: list = field(default_factory=list)
 

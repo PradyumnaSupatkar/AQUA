@@ -94,7 +94,7 @@ class Policy:
         if tier >= DISRUPTIVE:
             question = tool.confirm(args) if tool.confirm is not None else f"Run {tool.name}? Say yes or no."
             return Decision(CONFIRM, tier, question=question)
-        if args.get("request") == "unsure":
+        if args.get("request") == "unsure" and tier >= SAFE:  # A reading is never asked about.
             # The model was not sure the user asked for this: ask, never act on a guess.
             return Decision(CONFIRM, tier, question=unsure_question(tool, args))
         return Decision(RUN, tier)

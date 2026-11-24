@@ -30,8 +30,16 @@ GROUP_KEYWORDS = {
                   "prime minister", "wikipedia", "look up", "tell me about", "history of", "fact", "facts",
                   "record", "tallest", "largest", "biggest", "oldest", "first"),
     "undo": ("undo", "revert", "take back", "put it back", "change it back"),
+    # YouTube in the browser, through the Aqua extension.
+    "browser": ("youtube", "you tube", "video", "videos", "captions", "caption", "subtitles", "subtitle", "cc",
+                "fullscreen", "full screen", "quality", "resolution", "1080p", "720p", "480p", "1440p", "4k",
+                "playback speed", "speed", "faster", "slower", "skip ad", "skip the ad", "skip this ad", "ad",
+                "ads", "what's playing", "what is playing", "now playing", "playing", "rewind", "fast forward",
+                "seek", "jump to", "go back", "first one", "second one", "third one", "fourth one", "fifth one",
+                "result", "results", "next video", "previous video", "channel", "pause", "play", "resume"),
 }
-GROUP_ORDER = ("apps", "input", "windows", "system", "audio", "display", "power", "web", "knowledge", "undo")
+GROUP_ORDER = ("apps", "input", "browser", "windows", "system", "audio", "display", "power", "web", "knowledge",
+               "undo")
 
 _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE)
              for group, words in GROUP_KEYWORDS.items()}
@@ -108,6 +116,11 @@ def _read_only(registry, name: str) -> bool:
     return tool is not None and not callable(tool.tier) and tool.tier == 0
 
 
+def _has_reading(registry, name: str) -> bool:
+    tool = registry.get(name)
+    return tool is not None and callable(tool.tier) and tool.group == "browser"
+
+
 def select_tools(text: str, registry, *, negation_guard: bool = True, question_guard: bool = True,
                  previous: tuple[str, ...] = ()) -> tuple[str, ...]:
     """The core tools plus every selected group's tools, capped at eight."""
@@ -128,7 +141,9 @@ def select_tools(text: str, registry, *, negation_guard: bool = True, question_g
         # rather than only the core three. Visibility still grants no permission.
         names += [name for name in FALLBACK_TOOLS if registry.get(name) is not None and name not in names]
     if question_guard and wants_explanation(text):
-        names = [name for name in names if _read_only(registry, name)]
+        # Read-only tools, and tools with a read-only action (youtube's now_playing): the loop
+        # makes any other call of theirs "unsure", so the host asks first.
+        names = [name for name in names if _read_only(registry, name) or _has_reading(registry, name)]
     names = list(dict.fromkeys(names))
     # The cap keeps read-only status tools: they never act, and status answers need them.
     keep = [n for n in names if _read_only(registry, n)][:2]

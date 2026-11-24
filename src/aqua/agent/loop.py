@@ -22,7 +22,7 @@ from .howto import how_to_answer, is_refusal
 from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
-from .registry import Registry, SchemaError, ToolOutcome, validate_arguments
+from .registry import SAFE, Registry, SchemaError, ToolOutcome, validate_arguments
 from .selection import (MAX_VISIBLE_TOOLS, matched_groups, select_tools, selected_groups, wants_explanation,
                         wants_no_action)
 
@@ -42,12 +42,14 @@ _EXECUTED = frozenset({"ok", "unverified", "failed", "empty"})
 # never authorizes or blocks an action.
 _ACTION_CLAIMS = (
     (re.compile(r"\b(?:opened|launched|started|brought)\b|\b(?:is|are)\s+now\s+open\b", re.I),
-     {"launch_app", "window_action", "open_url",
-                                                                     "web_search"}),
+     {"launch_app", "window_action", "open_url", "web_search", "youtube"}),
     (re.compile(r"\b(?:typed|wrote|written|entered)\b", re.I), {"type_text"}),
     (re.compile(r"\b(?:muted|unmuted|lowered|raised|increased|decreased|turned\s+(?:the\s+)?(?:volume|sound|it)|"
-                r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume", "brightness"}),
-    (re.compile(r"\b(?:paused|resumed|skipped)\b", re.I), {"media"}),
+                r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume", "brightness", "youtube"}),
+    (re.compile(r"\b(?:paused|resumed|skipped)\b", re.I), {"media", "youtube"}),
+    (re.compile(r"\b(?:fullscreen|full\s+screen|captions|subtitles|playback\s+speed|quality)\b[^.?!]*"
+                r"\b(?:on|off|set|now|changed|turned)\b|\b(?:rewound|fast-forwarded|jumped\s+to|moved\s+the\s+video)\b",
+                re.I), {"youtube"}),
     (re.compile(r"\blocked\b", re.I), {"lock_screen"}),
     (re.compile(r"\b(?:minimi[sz]ed|maximi[sz]ed|restored|focused|switched)\b", re.I), {"window_action", "undo_last"}),
     (re.compile(r"\b(?:undid|undone|reverted|put\s+\w+\s+back)\b", re.I), {"undo_last"}),
@@ -56,7 +58,7 @@ _ACTION_CLAIMS = (
     (re.compile(r"\b(?:brightness\s+(?:is|has\s+been)\s+(?:now|set|turned)|dimmed|brightened)\b", re.I), {"brightness"}),
     (re.compile(r"\b(?:restarting|shutting\s+down|signing\s+(?:you\s+)?out|signed\s+out|going\s+to\s+sleep|"
                 r"put\s+(?:the\s+)?(?:computer|pc)\s+to\s+sleep)\b", re.I), {"power"}),
-    (re.compile(r"\bsearched\b", re.I), {"web_search"}),
+    (re.compile(r"\bsearched\b", re.I), {"web_search", "youtube"}),
 )
 _STATE_CLAIMS = (
     # Device state must come from a live reading this turn, never from earlier turns.
@@ -69,7 +71,8 @@ _STATE_CLAIMS = (
     (re.compile(r"\bbrightness\b[^.?!]*\b(?:is|at|of)\b[^.?!]*\d{1,3}\s?(?:%|percent)", re.I),
      {"device_status", "brightness"}),
     (re.compile(r"\b(?:music|song|track|video|playback|media|something)\b[^.?!]*\b(?:is|are)\s+(?:currently\s+|still\s+)?"
-                r"(?:playing|paused|stopped)\b|\bnothing\s+is\s+playing\b", re.I), {"device_status", "media"}),
+                r"(?:playing|paused|stopped)\b|\bnothing\s+is\s+playing\b|\bnow\s+playing\b", re.I),
+     {"device_status", "media", "youtube"}),
     (re.compile(r"\b(?:open\s+windows\s+are|windows\s+(?:that\s+are\s+)?open\s+(?:are|include))\b", re.I),
      {"list_windows"}),
 )
@@ -268,6 +271,25 @@ _STEP_VERB = re.compile(
     r"sleep|restart|reboot|shut|sign|log|force|kill|focus|snap)\b", re.I)
 
 
+# Words in the user's own request that ask for each YouTube action. After page text arrived in a
+# request, an action whose words the user did not say is asked about first (it may be injected).
+_YOUTUBE_ASKS = {action: re.compile(pattern, re.I) for action, pattern in {
+    "play": r"\b(?:play|resume|unpause|continue|start)\b",
+    "pause": r"\b(?:pause|stop|hold)\b",
+    "seek": r"\b(?:seek|skip|forward|back|rewind|jump|go\s+to|minutes?|seconds?|percent|halfway|beginning)\b|"
+            r"\d+:\d\d|%",
+    "next": r"\b(?:next|skip)\b",
+    "previous": r"\b(?:previous|last|back)\b",
+    "fullscreen": r"\bfull\s?screen\b",
+    "captions": r"\b(?:captions?|subtitles?|cc)\b",
+    "speed": r"\b(?:speed|faster|slower)\b|\b\d(?:\.\d+)?\s?x\b",
+    "quality": r"\b(?:quality|resolution|4k|hd|\d{3,4}\s?p)\b",
+    "volume": r"\b(?:volume|louder|quieter|softer)\b",
+    "mute": r"\b(?:mute|unmute|silence)\b",
+    "search": r"\b(?:search|find|look\s+(?:up|for))\b",
+    "play_result": r"\b(?:play|first|second|third|fourth|fifth|one|result|number)\b",
+    "skip_ad": r"\b(?:ads?|advert|skip)\b",
+}.items()}
 _OPEN_VERB = re.compile(r"\b(?:open|launch|start|run|bring\s+up|fire\s+up)\b", re.I)
 
 
@@ -380,6 +402,7 @@ class _Turn:
     groups: tuple = ()          # Keyword groups used for this request (inherited by follow-ups).
     explain: bool = False       # An explanation-only question: action tools hidden, offers still allowed.
     detail: str = ""            # Display-only text for the host question this request ended in.
+    tainted: bool = False       # A tool returned untrusted page text (YouTube titles) this request.
 
 
 class AgentEngine:
@@ -774,7 +797,7 @@ class AgentEngine:
         ops = turn.operations
         if not ops or turn.reviews or turn.explain:
             return None
-        if any(op.status not in {"ok", "duplicate"} or op.tool in _KNOWLEDGE_TOOLS or self._read_only(op.tool)
+        if any(op.status not in {"ok", "duplicate"} or op.tool in _KNOWLEDGE_TOOLS or self._reading(op)
                for op in ops):
             return None
         done = [op.done for op in ops if op.status == "ok" and op.done]
@@ -784,6 +807,16 @@ class AgentEngine:
         if not done or covered < steps_asked(turn.request):
             return None
         return self._with_countdown(host_summary(done))
+
+    def _reading(self, op: Operation) -> bool:
+        """A read-only call (a tool or, for youtube, an action) whose result the model must report."""
+        if self._read_only(op.tool):
+            return True
+        tool = self.registry.get(op.tool)
+        try:
+            return tool is not None and callable(tool.tier) and tool.tier_for(op.args, self.context) == 0
+        except Exception:
+            return True
 
     def _with_countdown(self, reply: str) -> str:
         countdown = self.context.countdown
@@ -912,6 +945,13 @@ class AgentEngine:
             turn.messages.append(self._tool_message(tool.name, ToolOutcome("ok", "Already done; not repeated.")))
             turn.operations.append(Operation(tool.name, args, "duplicate", "repeated call skipped"))
             return None
+        if "request" in args and args["request"] != "unsure" and tool.tier_for(args, self.context) >= SAFE:
+            if turn.explain:
+                args = {**args, "request": "unsure"}  # An explanation question never acts directly.
+            elif turn.tainted and not self._asked_for(turn, tool, args):
+                # Page text arrived this request and the user's own words did not ask for this
+                # action: it may have come from the page, so the host asks first.
+                args = {**args, "request": "unsure"}
         decision = self.context.policy.decide(tool, args, self.context)
         if decision.action == DENY:
             turn.messages.append(self._tool_message(tool.name, ToolOutcome("failed", "Not done: " + decision.reason)))
@@ -932,9 +972,18 @@ class AgentEngine:
         outcome = self._run(tool, args)
         turn.messages.append(self._tool_message(tool.name, outcome))
         turn.operations.append(Operation(tool.name, args, outcome.status, outcome.message, outcome.done, _steps(outcome)))
+        if isinstance(outcome.data, dict) and "untrusted_page_data" in outcome.data:
+            turn.tainted = True
         if tool.review is not None:
             turn.reviews.append((tool, outcome))
         return None
+
+    def _asked_for(self, turn: _Turn, tool, args: dict) -> bool:
+        """The user's own words ask for this action (not just text a page returned)."""
+        if tool.name == "youtube":
+            words = _YOUTUBE_ASKS.get(args.get("action"))
+            return bool(words and words.search(turn.request))
+        return tool.group in matched_groups(turn.request)
 
     def _run(self, tool, args) -> ToolOutcome:
         try:
@@ -1075,6 +1124,10 @@ class AgentEngine:
             if call["role"] == "assistant" and call.get("tool_calls") and answer["role"] == "tool":
                 body = json.loads(answer["content"])
                 body.pop("next", None)
+                if body.pop("untrusted_page_data", None) is not None:
+                    # Page text (titles, channels) is never kept: it cannot steer later requests.
+                    body.pop("note", None)
+                    body["untrusted_page_data"] = "[not kept]"
                 pairs.append(({"role": "assistant", "content": "", "tool_calls": call["tool_calls"]},
                               [{**answer, "content": json.dumps(body, ensure_ascii=False)}]))
         return pairs
@@ -1082,19 +1135,24 @@ class AgentEngine:
 
 def build_engine(client, *, model: str, settings: GenerationSettings, max_turns: int = 8,
                  max_chars: int = 12000, desktop=None, policy: Policy | None = None,
-                 lookup: bool = True) -> AgentEngine:
-    """The real session engine: Windows adapter, app index, all tools (look_up unless disabled)."""
+                 lookup: bool = True, browser=None) -> AgentEngine:
+    """The real session engine: Windows adapter, app index, all tools (look_up unless disabled),
+    and the browser bridge (real sessions only; tests pass a desktop and get none)."""
     from aqua.tools import build_registry
     from aqua.tools.app_index import AppIndex
+    real_desktop = desktop is None
     if desktop is None:
         from aqua.tools.win32 import Win32Desktop
         desktop = Win32Desktop()
     apps = AppIndex(desktop.app_entries)
     apps.prewarm()
     from aqua.tools.web import read_preferred_browser
+    if browser is None and real_desktop:
+        from aqua.browser.bridge import BrowserBridge
+        browser = BrowserBridge().start()  # Never fails: without the pipe it just stays disconnected.
     context = ToolContext(desktop=desktop, apps=apps,
                           policy=policy if policy is not None else Policy.from_user_config(),
-                          preferred_browser=read_preferred_browser())
+                          preferred_browser=read_preferred_browser(), browser=browser)
     conversation = Conversation(max_turns=max_turns, max_chars=max_chars, system_prompt=SYSTEM_PROMPT)
     return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup),
                        context=context, conversation=conversation)

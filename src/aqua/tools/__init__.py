@@ -12,9 +12,10 @@ def build_registry(*, lookup: bool = True, wikipedia=None) -> Registry:
     from .undo import undo_last
     from .web import open_url, web_search
     from .windows import inspect_window, list_windows, window_action
+    from .youtube import youtube
     tools = [launch_app, type_text, undo_last, close_app, force_quit_app, list_windows, window_action,
              inspect_window, get_time, get_battery, device_status, volume, media, brightness, lock_screen, power,
-             open_url, web_search]
+             open_url, web_search, youtube]
     if lookup:
         from .knowledge import make_look_up
         tools.append(make_look_up(wikipedia))

@@ -12,38 +12,64 @@ const ACTIONS = new Set([
 ]);
 const MAX_TEXT = 200;
 
+// Connection lifetime. An open native port keeps the service worker running; the host itself
+// waits for Aqua (retrying its pipe), so start order does not matter. If the port fails (host not
+// registered, host crashed), a chrome.alarms alarm wakes the worker to retry: alarms survive
+// service-worker suspension, unlike setTimeout. The alarm exists only while disconnected and backs
+// off from 30 s to 5 min, so a working connection costs nothing and a broken one very little.
+const RETRY_ALARM = "aqua-reconnect";
+const RETRY_MINUTES = [0.5, 1, 2, 5];
 let port = null;
-let retryDelay = 1000;
+let failures = 0;
 
-function connect() {
+function log(...parts) {
+  console.info("[Aqua bridge]", new Date().toISOString(), ...parts);
+}
+
+function connect(reason) {
   if (port) return;
+  log(`connecting to ${HOST} (${reason})`);
   try {
     port = chrome.runtime.connectNative(HOST);
   } catch (error) {
     port = null;
+    log("connectNative threw:", String(error && error.message || error));
     scheduleRetry();
     return;
   }
   port.onMessage.addListener(onMessage);
   port.onDisconnect.addListener(() => {
-    void chrome.runtime.lastError;  // "host not found" until `aqua setup-browser` has run.
+    const error = chrome.runtime.lastError;
+    // "Specified native messaging host not found": run `aqua setup-browser --browser <name>`.
+    // "Access to the specified native messaging host is forbidden": the extension ID does not match.
+    log("native host disconnected:", error ? error.message : "host exited");
     port = null;
     scheduleRetry();
   });
-  retryDelay = 1000;
 }
 
 function scheduleRetry() {
-  setTimeout(connect, retryDelay);
-  retryDelay = Math.min(retryDelay * 2, 60000);
+  const minutes = RETRY_MINUTES[Math.min(failures, RETRY_MINUTES.length - 1)];
+  failures += 1;
+  chrome.alarms.create(RETRY_ALARM, {delayInMinutes: minutes});
+  log(`retrying in ${minutes * 60} s (attempt ${failures})`);
 }
 
-// The service worker starts on these events; a native port then keeps it running.
-chrome.runtime.onStartup.addListener(connect);
-chrome.runtime.onInstalled.addListener(connect);
-chrome.tabs.onActivated.addListener(connect);
-chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === "complete") connect(); });
-connect();
+function connected() {
+  // The host answered something: the link works. Drop the retry alarm and reset the backoff.
+  if (failures) log("connected");
+  failures = 0;
+  chrome.alarms.clear(RETRY_ALARM);
+}
+
+// Wake-ups: browser start, extension install/reload, the retry alarm, and tab activity (switching
+// tabs, a page finishing loading). Each is a no-op when the port is already open.
+chrome.runtime.onStartup.addListener(() => connect("browser started"));
+chrome.runtime.onInstalled.addListener(() => connect("installed or reloaded"));
+chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === RETRY_ALARM) connect("retry alarm"); });
+chrome.tabs.onActivated.addListener(() => connect("tab activated"));
+chrome.tabs.onUpdated.addListener((_id, info) => { if (info.status === "complete") connect("page loaded"); });
+connect("service worker started");
 
 function reply(id, body) {
   if (port) port.postMessage({id, ...body});
@@ -52,6 +78,8 @@ function reply(id, body) {
 async function onMessage(message) {
   const id = Number.isInteger(message && message.id) ? message.id : null;
   if (id === null) return;
+  connected();
+  log(`command ${message.cmd}${message.action ? " " + message.action : ""}`);
   try {
     if (message.cmd === "status") {
       reply(id, {ok: true, result: {tab: describe(await newestYouTubeTab())}});
@@ -61,6 +89,7 @@ async function onMessage(message) {
       reply(id, {ok: false, error: "unknown command"});
     }
   } catch (error) {
+    log("command failed:", String(error && error.message || error));
     reply(id, {ok: false, error: String(error && error.message || error).slice(0, MAX_TEXT)});
   }
 }

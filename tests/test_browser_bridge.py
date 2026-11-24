@@ -126,16 +126,9 @@ class HostTests(unittest.TestCase):
         aqua_end, host_end = MemoryPipe.pair()
         reply = protocol.encode({"id": 1, "ok": True, "result": {"tab": None}})
         junk = protocol.encode({"cmd": "youtube"})  # No id: not a reply.
-        stdin = io.BytesIO(junk + reply)
-        stdout = io.BytesIO()
-        connected = threading.Event()
-
-        def connect():
-            connected.set()
-            return host_end
-
-        relay = Relay("chrome", protocol.ORIGIN, stdin=_Slow(stdin, connected), stdout=stdout,
-                      connect_pipe=connect, sleep=lambda _s: None)
+        stdout = _Out()
+        relay = Relay("chrome", protocol.ORIGIN, stdin=_AfterForward(junk + reply, stdout), stdout=stdout,
+                      connect_pipe=lambda: host_end, sleep=lambda _s: None)
         aqua_end.write(protocol.encode({"id": 1, "cmd": "status"}))
         aqua_end.write(protocol.encode({"id": 2, "cmd": "run_program", "path": "calc"}))  # Not a command.
         thread = threading.Thread(target=relay.run, daemon=True)
@@ -149,17 +142,31 @@ class HostTests(unittest.TestCase):
         self.assertIsNone(protocol.read_message(out.read))  # run_program was dropped.
 
 
-class _Slow:
-    """stdin that waits until the pipe is up, then gives a little time for relaying."""
+class _Out(io.BytesIO):
+    """stdout that signals once the host has forwarded something to the extension."""
 
-    def __init__(self, stream, ready) -> None:
-        self.stream, self.ready = stream, ready
+    def __init__(self) -> None:
+        super().__init__()
+        self.written = threading.Event()
+
+    def flush(self):
+        super().flush()
+        self.written.set()
+
+
+class _AfterForward:
+    """stdin from the browser: its messages arrive only after the host forwarded Aqua's command
+    (so the pipe is up), and its end comes after a short grace for the dropped message."""
+
+    def __init__(self, data: bytes, stdout: _Out) -> None:
+        self.stream, self.stdout = io.BytesIO(data), stdout
 
     def read(self, size):
-        self.ready.wait(2)
-        import time
-        time.sleep(0.1)
-        return self.stream.read(size)
+        self.stdout.written.wait(2)
+        chunk = self.stream.read(size)
+        if not chunk:
+            threading.Event().wait(0.3)  # Let the pipe thread finish reading run_program (dropped).
+        return chunk
 
 
 class BridgeTests(unittest.TestCase):

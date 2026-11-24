@@ -36,7 +36,9 @@ GROUP_KEYWORDS = {
                 "playback speed", "speed", "faster", "slower", "skip ad", "skip the ad", "skip this ad", "ad",
                 "ads", "what's playing", "what is playing", "now playing", "rewind", "fast forward",
                 "seek", "jump to", "go back", "first one", "second one", "third one", "fourth one", "fifth one",
-                "result", "results", "next video", "previous video", "channel"),
+                "result", "results", "next video", "previous video", "channel",
+                # Seeking is said without naming the video: "skip ahead 30 seconds", "jump to 1:30".
+                "skip ahead", "skip forward", "skip back", "go forward", "minute mark", "seconds", "jump"),
     # Bare "pause"/"play" stay with the media keys (which pause YouTube too); "pause the video" adds youtube.
 }
 GROUP_ORDER = ("apps", "input", "browser", "windows", "system", "audio", "display", "power", "web", "knowledge",

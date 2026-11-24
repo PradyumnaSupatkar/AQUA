@@ -67,12 +67,61 @@ _SEARCH_IN_REQUEST = re.compile(
     r"(?:\s+(?:on|in)\s+you\s?tube)?\s*[.!?]*$", re.I)
 
 
+_DURATION = (r"(?:(?P<m>\d{1,3})\s*(?:minutes?|mins?)(?:\s*(?:and\s+)?(?P<ms>\d{1,2})\s*(?:seconds?|secs?))?"
+             r"|(?P<s>\d{1,4})\s*(?:seconds?|secs?))")
+_CLOCK = r"(?P<h>\d{1,2}):(?P<mm>\d{2})(?::(?P<ss>\d{2}))?"
+# Absolute: "jump/go/skip/move to 1:30", "at 1:30", "go to the 2 minute mark", "back to the beginning".
+_ABSOLUTE = (re.compile(rf"\b(?:to|at|from)\s+(?:the\s+)?{_CLOCK}\b", re.I),
+             re.compile(rf"\b(?:to|at|from)\s+(?:the\s+)?{_DURATION}(?:\s+mark)?\b", re.I),
+             re.compile(rf"\b{_DURATION}\s+mark\b", re.I))
+_TO_START = re.compile(r"\b(?:to|from)\s+the\s+(?:beginning|start)\b|\bstart\s+(?:it\s+)?over\b", re.I)
+# Relative: "go back 10 seconds", "skip ahead 30 seconds", "forward 1 minute", "rewind 15 seconds".
+_RELATIVE = re.compile(rf"\b(?P<dir>back(?:wards?)?|rewind|ahead|forwards?|fast\s+forward|skip)\b(?:\s+by)?\s+"
+                       rf"(?!to\b)(?:{_DURATION})", re.I)
+
+
+def seek_from_request(request: str) -> dict | None:
+    """The seek the user's own words ask for: {"to": "m:ss"} (absolute) or {"seconds": +-n}
+    (relative), or None when the words do not say. Numbers are already digits (aqua.speech.postprocess)."""
+    if _TO_START.search(request):
+        return {"to": "0:00"}
+    relative = _RELATIVE.search(request)
+    if relative:
+        amount = _duration_seconds(relative)
+        back = relative.group("dir").casefold().startswith(("back", "rewind"))
+        return {"seconds": -amount if back else amount}
+    absolute = next((m for pattern in _ABSOLUTE if (m := pattern.search(request))), None)
+    if absolute:
+        if "h" in absolute.re.groupindex:
+            hours_or_minutes, rest = int(absolute.group("h")), int(absolute.group("mm"))
+            total = (hours_or_minutes * 3600 + rest * 60 + int(absolute.group("ss"))) if absolute.group("ss") \
+                else hours_or_minutes * 60 + rest
+        else:
+            total = _duration_seconds(absolute)
+        return {"to": clock(total)}
+    return None
+
+
+def _duration_seconds(match) -> int:
+    if match.group("m") is not None:
+        return int(match.group("m")) * 60 + int(match.group("ms") or 0)
+    return int(match.group("s"))
+
+
 def _grounded(args: dict, context) -> dict:
     """The model's arguments, corrected by the user's own words: a quality the request names
     ("watch this in 4k") wins over the model's pick, and a missing search query comes from
     the request ("search youtube for lofi hip hop")."""
     request = getattr(context, "request", "") or ""
     args = dict(args)
+    if args.get("action") == "seek":
+        # "jump to 1:30" is a position, "skip ahead 30 seconds" a move: the words decide the mode
+        # when the model picked the other one (live: "jump to 1:30" moved the video forward 90 s).
+        wanted = seek_from_request(request)
+        if wanted is not None:
+            for key in ("seconds", "to", "percent"):
+                args.pop(key, None)
+            args.update(wanted)
     if args.get("action") == "quality":
         named = _QUALITY_IN_REQUEST.search(request)
         label = quality_label(named.group(1)) if named else None

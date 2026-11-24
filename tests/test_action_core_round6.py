@@ -53,5 +53,48 @@ class EarlierActionRecapTests(unittest.TestCase):
         self.assertIn("tool result of THIS request", SYSTEM_PROMPT)
 
 
+class SeekModeTests(unittest.TestCase):
+    def test_words_decide_absolute_or_relative(self):
+        from aqua.tools.youtube import seek_from_request
+        cases = {
+            "jump to 1:30": {"to": "1:30"}, "go to 2:05 in the video": {"to": "2:05"},
+            "skip to 1:02:03": {"to": "1:02:03"}, "go to the 2 minute mark": {"to": "2:00"},
+            "jump to 1 minute 30 seconds": {"to": "1:30"}, "go back to the beginning": {"to": "0:00"},
+            "start it over": {"to": "0:00"},
+            "go back 10 seconds": {"seconds": -10}, "rewind 15 seconds": {"seconds": -15},
+            "skip ahead 30 seconds": {"seconds": 30}, "go forward 1 minute": {"seconds": 60},
+            "fast forward 2 minutes": {"seconds": 120}, "skip 45 seconds": {"seconds": 45},
+            "back 10 seconds please": {"seconds": -10},
+            "pause the video": None, "what's playing": None,
+        }
+        for text, wanted in cases.items():
+            self.assertEqual(seek_from_request(text), wanted, text)
+
+    def _engine(self, model_args):
+        engine, _, _ = make_engine([call("youtube", action="seek", **model_args)])
+        bridge = FakeBrowserBridge()
+        bridge.add_tab(position=200, duration=600)
+        engine.context.browser = bridge
+        return engine, bridge
+
+    def test_jump_to_a_time_is_a_position_even_when_the_model_sends_seconds(self):
+        # The live case: "jump to one minute thirty seconds" -> "jump to 1:30" -> model: seconds=90.
+        engine, bridge = self._engine({"seconds": 90})
+        result = engine.respond("jump to 1:30")
+        self.assertEqual(bridge.effects, ["youtube:chrome:seek=90"])  # Position 1:30, not 200 + 90.
+        self.assertEqual(bridge.calls[-1][2], {"to": 90})
+        self.assertIn("1:30", result.text)
+
+    def test_a_relative_move_stays_relative_even_when_the_model_sends_a_time(self):
+        engine, bridge = self._engine({"to": "0:30"})
+        engine.respond("skip ahead 30 seconds")
+        self.assertEqual(bridge.effects, ["youtube:chrome:seek=230"])
+
+    def test_without_time_words_the_model_decides(self):
+        engine, bridge = self._engine({"percent": 50})
+        engine.respond("jump to the middle of the video")
+        self.assertEqual(bridge.effects, ["youtube:chrome:seek=300"])
+
+
 if __name__ == "__main__":
     unittest.main()

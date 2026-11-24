@@ -21,6 +21,7 @@ from aqua.brain.ollama import (
     OllamaClient, OllamaError,
 )
 from aqua.speech.models import SpeechError
+from aqua.speech.parakeet import ParakeetRecognizer
 from aqua.speech.recognizer import OfflineRecognizer, Transcript
 from aqua.speech.reliability import transcript_rejection_reason
 
@@ -423,6 +424,27 @@ def _respond_or_launch(
     )
 
 
+ASR_CHOICES = ("parakeet", "whisper")
+DEFAULT_ASR = "parakeet"
+
+
+def recognizer_name(recognizer) -> str:
+    name = getattr(recognizer, "name", None)
+    return name if isinstance(name, str) else "whisper"
+
+
+def load_recognizer(asr: str, speech_model_dir: Path | None = None, *, whisper=None, parakeet=None):
+    """The session's speech recogniser: Parakeet (default) or Whisper (``speech_model_dir`` applies
+    to Whisper only). Callers pass their own class references so tests can replace them."""
+    whisper = whisper if whisper is not None else OfflineRecognizer
+    parakeet = parakeet if parakeet is not None else ParakeetRecognizer
+    if asr == "parakeet":
+        return parakeet()
+    if asr != "whisper":
+        raise SpeechError(f"Unknown speech recogniser {asr!r}; choose parakeet or whisper.")
+    return whisper() if speech_model_dir is None else whisper(speech_model_dir)
+
+
 def _transcribe_recording(
     recognizer: OfflineRecognizer,
     recording: Recording,
@@ -452,7 +474,8 @@ def _transcribe_recording(
             f"Audio capture: {capture_seconds:.3f}s wall; {recording.duration:.3f}s audio at {recording.sample_rate} Hz | "
             f"Peak {recording.levels.peak_dbfs:.1f} dBFS | RMS {recording.levels.rms_dbfs:.1f} dBFS"
         )
-        print(f"Speech transcription: {elapsed:.3f}s | VAD-retained audio: {transcript.speech_seconds:.3f}s")
+        print(f"Speech transcription: {elapsed:.3f}s ({recognizer_name(recognizer)}) | "
+              f"VAD-retained audio: {transcript.speech_seconds:.3f}s")
     return transcript
 
 
@@ -467,10 +490,11 @@ def run_voice_chat(
     device: int | None = None,
     sample_rate: int | None = None,
     gain_db: float = 0.0,
-    language: str | None = None,
+    language: str | None = "en",
     hotwords: str | None = None,
     diagnostics: bool = False,
     text_entry_apps: tuple[str, ...] = (),
+    asr: str = "whisper",  # The CLI passes --asr (default parakeet); direct callers keep Whisper.
     speak: bool = False,
     tts_engine: str = "kokoro",
     voice: str | None = None,
@@ -502,13 +526,14 @@ def run_voice_chat(
             conversation = agent.conversation
         started = perf_counter()
         try:
-            recognizer = OfflineRecognizer() if speech_model_dir is None else OfflineRecognizer(speech_model_dir)
+            recognizer = load_recognizer(asr, speech_model_dir, whisper=OfflineRecognizer, parakeet=ParakeetRecognizer)
         except SpeechError as exc:
             print(f"Speech setup error: {exc}", file=sys.stderr)
             return 1
         load_seconds = perf_counter() - started
         if diagnostics:
-            print(f"Speech model loading: {load_seconds:.3f}s (once per session; CPU INT8)")
+            print(f"Speech model loading: {load_seconds:.3f}s ({recognizer_name(recognizer)}; once per session; "
+                  "CPU INT8)")
         speaker = _open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
                                 voice_model_dir=voice_model_dir, speech_rate=speech_rate,
                                 tts_threads=tts_threads)

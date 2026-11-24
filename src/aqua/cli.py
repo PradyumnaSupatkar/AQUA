@@ -195,14 +195,23 @@ def _voice_options(parser: argparse.ArgumentParser, *, speak_default: bool) -> N
                         help="speaking speed, 0.5 to 2; default: 1")
 
 
+DEFAULT_ASR = "parakeet"  # benchmarks/asr-v1: most accurate and about 6x faster than Whisper Small.
+DEFAULT_LANGUAGE = "en"  # Aqua is English-only; Whisper's language detection doubles its time.
+
+
 def _speech_options(parser: argparse.ArgumentParser) -> None:
     speech = parser.add_mutually_exclusive_group()
-    speech.add_argument("--speech-model", choices=tuple(MODEL_DIRS), help=f"local Whisper model; default: {DEFAULT_MODEL}")
+    parser.add_argument("--asr", choices=("parakeet", "whisper"), default=DEFAULT_ASR,
+                        help="speech recogniser: parakeet (default; Parakeet TDT 0.6B v3) or whisper")
+    speech.add_argument("--speech-model", choices=tuple(MODEL_DIRS),
+                        help=f"local Whisper model (with --asr whisper); default: {DEFAULT_MODEL}")
     speech.add_argument("--speech-model-dir", type=Path, metavar="PATH", help="complete local Whisper directory instead of a named model")
     parser.add_argument("--device", type=_device_index, metavar="ID", help="microphone ID; default: current Windows input")
     parser.add_argument("--sample-rate", type=_positive_integer, metavar="HZ", help="override capture rate before resampling")
     parser.add_argument("--gain-db", type=_gain_db, default=0.0, metavar="DB", help="recognition gain; default: 0 (no automatic gain)")
-    parser.add_argument("--language", metavar="CODE", help="spoken language code, e.g. en; default: automatic detection")
+    parser.add_argument("--language", metavar="CODE", default=DEFAULT_LANGUAGE,
+                        help="spoken language code for Whisper; default: en (Aqua is English-only); "
+                             "'auto' detects it (about twice as slow)")
     hints = parser.add_mutually_exclusive_group()
     hints.add_argument("--hints", action="store_true", dest="hints", help="enable optional speech vocabulary hints")
     hints.add_argument("--no-hints", action="store_false", dest="hints", help="disable speech hints (default)")
@@ -235,7 +244,10 @@ def _parser() -> argparse.ArgumentParser:
     transcribe.add_argument("--sample-rate", type=_positive_integer, metavar="HZ", help="override the microphone rate before resampling")
     transcribe.add_argument("--diagnostics", action="store_true", help="show source levels, energy activity, and VAD duration")
     transcribe.add_argument("--gain-db", type=_gain_db, default=0.0, metavar="DB", help="optional recognition-only gain, -30 to +30 dB; default 0")
-    transcribe.add_argument("--language", metavar="CODE", help="spoken language code, e.g. en; default: automatic detection")
+    transcribe.add_argument("--language", metavar="CODE", default=DEFAULT_LANGUAGE,
+                            help="spoken language code for Whisper; default: en; 'auto' detects it")
+    transcribe.add_argument("--asr", choices=("parakeet", "whisper"), default=DEFAULT_ASR,
+                            help="speech recogniser: parakeet (default) or whisper")
     selection = transcribe.add_mutually_exclusive_group()
     selection.add_argument("--model", choices=tuple(MODEL_DIRS), help=f"locally installed speech model; default: {DEFAULT_MODEL}")
     selection.add_argument("--model-dir", type=Path, metavar="PATH", help="complete local CTranslate2 Whisper model directory")
@@ -252,11 +264,13 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--sample-rate", type=_positive_integer, metavar="HZ", help="override capture rate before resampling")
     compare.add_argument("--diagnostics", action="store_true", help="show source and recognition diagnostics")
     compare.add_argument("--gain-db", type=_gain_db, default=0.0, metavar="DB", help="recognition gain; default: 0 (no automatic gain)")
-    compare.add_argument("--language", metavar="CODE", help="spoken language code, e.g. en; default: automatic detection")
+    compare.add_argument("--language", metavar="CODE", default=DEFAULT_LANGUAGE,
+                         help="spoken language code; default: en; 'auto' detects it")
     compare.add_argument("--hotwords", metavar="TEXT", help="custom context for hinted passes instead of the default vocabulary")
     setup = commands.add_parser("setup-model", help="verify a local Whisper model; download only with --download")
-    setup.add_argument("--model", choices=tuple(MODEL_SOURCES), default="base",
-                       help="Whisper model to verify or install (Base about 148 MB, Small about 486 MB); default: base")
+    setup.add_argument("--model", choices=(*MODEL_SOURCES, "parakeet"), default="base",
+                       help="model to verify or install: Whisper base (about 148 MB), small (about 486 MB), or "
+                            "parakeet (Parakeet TDT 0.6B v3 int8, about 671 MB; the default recogniser); default: base")
     setup.add_argument("--model-dir", type=Path, metavar="PATH", help="directory to verify or install into; default: the model's own directory")
     setup.add_argument("--download", action="store_true", help="explicitly permit the one-time pinned model download if files are missing")
     wake_setup = commands.add_parser("setup-wake", help="verify local Hey Aqua assets; download only with --download")
@@ -383,6 +397,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             hotwords = normalize_hotwords(args.hotwords)
         except ValueError as exc:
             parser.error(str(exc))
+    if args.command in ("transcribe", "compare", "voice-chat", "handsfree"):
+        if args.language.casefold() == "auto":
+            args.language = None  # Whisper detects the language (about twice as slow).
+    if args.command in ("transcribe", "voice-chat", "handsfree") and args.asr == "parakeet":
+        whisper_only = [flag for flag, used in (
+            ("--speech-model", getattr(args, "speech_model", None)), ("--speech-model-dir", getattr(args, "speech_model_dir", None)),
+            ("--model", getattr(args, "model", None) if args.command == "transcribe" else None),
+            ("--model-dir", getattr(args, "model_dir", None) if args.command == "transcribe" else None),
+            ("--hints", args.hints), ("--hotwords", args.hotwords)) if used]
+        if whisper_only:
+            parser.error(f"{', '.join(whisper_only)} apply to Whisper only; add --asr whisper "
+                         "(Parakeet uses no hotwords: they lowered its accuracy)")
     try:
         if args.command == "benchmark":
             from aqua.benchmark.runner import run
@@ -433,9 +459,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     common["lookup"] = False
             if args.command == "chat":
                 return run_text_chat(**common)
-            speech_path = resolve_model_dir(args.speech_model, args.speech_model_dir)
+            speech_path = (resolve_model_dir(args.speech_model, args.speech_model_dir)
+                           if args.asr == "whisper" else None)
             speech_options = dict(
-                **common, speech_model_dir=speech_path, device=args.device,
+                **common, speech_model_dir=speech_path, device=args.device, asr=args.asr,
                 sample_rate=args.sample_rate, gain_db=args.gain_db, language=args.language,
                 hotwords=hotwords if args.hints else None,
             )
@@ -475,6 +502,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 return 1
             print(f"Offline Hey Aqua wake assets ready: {path}")
             return 0
+        if args.command == "setup-model" and args.model == "parakeet":
+            from aqua.speech import parakeet
+            target = args.model_dir if args.model_dir is not None else parakeet.PARAKEET_DIR
+            if args.download:
+                print(f"Setting up Parakeet TDT 0.6B v3 int8 at {target} (about {parakeet.APPROXIMATE_MB} MB if "
+                      f"missing) from {parakeet.REPO} at revision {parakeet.REVISION[:12]}; every file is "
+                      "checked against its pinned SHA-256.")
+            path = parakeet.setup(target, download=args.download)
+            print(f"Offline Parakeet model ready: {path} (NVIDIA, CC-BY-4.0: {parakeet.MODEL_PAGE})")
+            return 0
         if args.command == "setup-model":
             model_dir = args.model_dir if args.model_dir is not None else MODEL_DIRS[args.model]
             if args.download:
@@ -501,11 +538,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         recognizer = None
         comparison_models = []
         if args.command == "transcribe":
-            model_dir = resolve_model_dir(args.model, args.model_dir)
-            print(f"Loading the local speech model from {model_dir} (CPU INT8; offline).")
             # Validate and load before capturing, so setup failures never open
             # the microphone or discard a sentence while waiting for a model.
-            recognizer = OfflineRecognizer(model_dir)
+            if args.asr == "parakeet":
+                from aqua.speech.parakeet import PARAKEET_DIR, ParakeetRecognizer
+                print(f"Loading the local Parakeet speech model from {PARAKEET_DIR} (CPU INT8; offline).")
+                recognizer = ParakeetRecognizer()
+            else:
+                model_dir = resolve_model_dir(args.model, args.model_dir)
+                print(f"Loading the local speech model from {model_dir} (CPU INT8; offline).")
+                recognizer = OfflineRecognizer(model_dir)
             if args.hints:
                 print("Vocabulary hints enabled as recognition context.")
         elif args.command == "compare":

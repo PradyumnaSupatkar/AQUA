@@ -18,6 +18,10 @@ from aqua.speech.vocabulary import DEFAULT_HOTWORDS
 
 class V021CliTests(unittest.TestCase):
     def setUp(self):
+        # These tests cover Whisper; the CLI default recogniser is Parakeet.
+        _asr = patch("aqua.cli.DEFAULT_ASR", "whisper")
+        _asr.start()
+        self.addCleanup(_asr.stop)
         self.source = Recording(
             array("h", [1024] * 5000).tobytes(), 1000,
             AudioLevels(1 / 32, 1 / 32, 0), 0,
@@ -55,7 +59,7 @@ class V021CliTests(unittest.TestCase):
                 constructor.assert_called_once_with(expected)
                 self.assertIsNone(record.call_args.kwargs["device"])
                 constructor.return_value.transcribe.assert_called_once_with(
-                    self.source.pcm, 1000, gain_db=0.0, language=None,
+                    self.source.pcm, 1000, gain_db=0.0, language="en",
                 )
 
     def test_transcribe_small_selects_its_registered_local_directory(self):
@@ -110,7 +114,7 @@ class V021CliTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(errors, "")
         constructor.return_value.transcribe.assert_called_once_with(
-            self.source.pcm, 1000, gain_db=0.0, language=None, hotwords=DEFAULT_HOTWORDS,
+            self.source.pcm, 1000, gain_db=0.0, language="en", hotwords=DEFAULT_HOTWORDS,
         )
         self.assertIn(f"Recognized text: {unrelated}", output)
 
@@ -122,7 +126,7 @@ class V021CliTests(unittest.TestCase):
             status, _output, _errors = self.invoke(["transcribe", "--no-hints"])
         self.assertEqual(status, 0)
         constructor.return_value.transcribe.assert_called_once_with(
-            self.source.pcm, 1000, gain_db=0.0, language=None,
+            self.source.pcm, 1000, gain_db=0.0, language="en",
         )
 
     def test_custom_vocabulary_is_normalized_when_hints_are_enabled(self):
@@ -175,7 +179,7 @@ class V021CliTests(unittest.TestCase):
         self.assertIs(compare.call_args.args[1], models)
         self.assertEqual(compare.call_args.kwargs["hotwords"], DEFAULT_HOTWORDS)
         self.assertEqual(compare.call_args.kwargs["gain_db"], 0.0)
-        self.assertIsNone(compare.call_args.kwargs["language"])
+        self.assertEqual(compare.call_args.kwargs["language"], "en")
         self.assertIn("Small without hints", output)
         self.assertIn("Hello, Ako.", output)
         self.assertIn("Small with hints", output)

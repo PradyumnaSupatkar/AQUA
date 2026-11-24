@@ -48,6 +48,7 @@ class OfflineRecognizer:
 
     def __init__(self, model_dir: Path | str = DEFAULT_MODEL_DIR) -> None:
         model_path = validate_model(model_dir)
+        self.name = f"whisper {model_path.name.removeprefix('faster-whisper-')}"
         configure_runtime(offline=True)
         try:
             model_class = _whisper_model_class()

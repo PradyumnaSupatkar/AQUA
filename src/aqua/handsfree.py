@@ -19,6 +19,7 @@ from aqua.audio.vad import StreamingVad, UtteranceCollector, UtteranceConfig
 from aqua.brain.conversation import Conversation
 from aqua.brain.ollama import DEFAULT_CHAT_MODEL, GenerationSettings
 from aqua.speech.models import SpeechError
+from aqua.speech.parakeet import ParakeetRecognizer
 from aqua.speech.recognizer import OfflineRecognizer
 from aqua.speech.reliability import transcript_rejection_reason
 from aqua.wake.keyword import SherpaWakeDetector
@@ -146,8 +147,8 @@ def run_handsfree(
     *, model: str = DEFAULT_CHAT_MODEL, settings: GenerationSettings | None = None,
     timeout: float = 120.0, max_turns: int = 8, max_chars: int = 12000,
     speech_model_dir: Path | None = None, device: int | None = None,
-    sample_rate: int | None = None, gain_db: float = 0.0, language: str | None = None,
-    hotwords: str | None = None, diagnostics: bool = False,
+    sample_rate: int | None = None, gain_db: float = 0.0, language: str | None = "en",
+    hotwords: str | None = None, diagnostics: bool = False, asr: str = "whisper",
     wake_model_dir: Path | None = None, wake_threshold: float = .25,
     wake_score: float = 1.0, wake_cooldown: float = 2.0,
     end_silence: float = .8, initial_timeout: float = 5.0,
@@ -191,9 +192,11 @@ def run_handsfree(
         detector = SherpaWakeDetector(wake_model_dir, threshold=wake_threshold, score=wake_score)
         frontend = HandsfreeFrontend(detector, StreamingVad(), config, cooldown=wake_cooldown)
         started = perf_counter()
-        recognizer = OfflineRecognizer() if speech_model_dir is None else OfflineRecognizer(speech_model_dir)
+        recognizer = chat.load_recognizer(asr, speech_model_dir, whisper=OfflineRecognizer,
+                                          parakeet=ParakeetRecognizer)
         if diagnostics:
-            print(f"Speech model loading: {perf_counter() - started:.3f}s (once per session; CPU INT8)")
+            print(f"Speech model loading: {perf_counter() - started:.3f}s ({chat.recognizer_name(recognizer)}; "
+                  "once per session; CPU INT8)")
         speaker = chat._open_speaker(speak=speak, tts_engine=tts_engine, voice=voice,
                                      voice_model_dir=voice_model_dir, speech_rate=speech_rate,
                                      tts_threads=tts_threads)

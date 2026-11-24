@@ -231,7 +231,7 @@ class VoiceSessionTests(_SessionHarness):
         self.assertEqual(self.capture.call_count, 2)
         self.assertEqual(self.recognizer.transcribe.call_count, 2)
         self.capture.assert_called_with(device=None, sample_rate=None)
-        self.recognizer.transcribe.assert_called_with(self.capture.return_value.pcm, 100, gain_db=0.0, language=None)
+        self.recognizer.transcribe.assert_called_with(self.capture.return_value.pcm, 100, gain_db=0.0, language="en")
         self.assertEqual(len(self.client.stream_chat.call_args.args[0]), 4)
         self.assertIn("Recognized text: Hello Aqua.", output)
 

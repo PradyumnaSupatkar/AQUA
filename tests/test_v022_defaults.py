@@ -19,6 +19,10 @@ from aqua.speech.recognizer import OfflineRecognizer
 
 class FinalizedSpeechDefaultsTests(unittest.TestCase):
     def setUp(self):
+        # These tests cover Whisper; the CLI default recogniser is Parakeet.
+        _asr = patch("aqua.cli.DEFAULT_ASR", "whisper")
+        _asr.start()
+        self.addCleanup(_asr.stop)
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)

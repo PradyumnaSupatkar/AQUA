@@ -83,7 +83,7 @@ class FinalizedConversationDefaultsTests(unittest.TestCase):
         load.assert_called_once_with()
         self.assertEqual(capture.call_count, 2)
         capture.assert_called_with(device=None, sample_rate=None)
-        recognizer.transcribe.assert_called_with(recording.pcm, 100, gain_db=0.0, language=None)
+        recognizer.transcribe.assert_called_with(recording.pcm, 100, gain_db=0.0, language="en")
         self.assertEqual(client.stream_chat.call_args.kwargs["model"], DEFAULT_CHAT_MODEL)
         self.assertEqual(len(client.stream_chat.call_args.args[0]), 4)
         self.assertEqual(errors.getvalue(), "")

@@ -13,6 +13,12 @@ from aqua.speech.vocabulary import DEFAULT_HOTWORDS
 
 
 class ChatCliTests(unittest.TestCase):
+    def setUp(self):
+        # These tests cover Whisper; the CLI default recogniser is Parakeet.
+        _asr = patch("aqua.cli.DEFAULT_ASR", "whisper")
+        _asr.start()
+        self.addCleanup(_asr.stop)
+
     def invoke(self, arguments):
         output, errors = StringIO(), StringIO()
         with redirect_stdout(output), redirect_stderr(errors):
@@ -76,7 +82,7 @@ class ChatCliTests(unittest.TestCase):
         self.assertIsNone(options["device"])
         self.assertIsNone(options["sample_rate"])
         self.assertEqual(options["gain_db"], 0.0)
-        self.assertIsNone(options["language"])
+        self.assertEqual(options["language"], "en")
         self.assertIsNone(options["hotwords"])
         self.assertEqual(options["timeout"], 120)
         self.assertEqual(options["settings"].num_predict, 1024)

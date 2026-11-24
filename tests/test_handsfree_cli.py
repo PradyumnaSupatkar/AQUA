@@ -16,6 +16,10 @@ from aqua.wake.models import WakeError
 
 class HandsfreeCliTests(unittest.TestCase):
     def setUp(self):
+        # These tests cover Whisper; the CLI default recogniser is Parakeet.
+        _asr = patch("aqua.cli.DEFAULT_ASR", "whisper")
+        _asr.start()
+        self.addCleanup(_asr.stop)
         for target in ("socket.create_connection", "socket.socket.connect", "socket.getaddrinfo", "subprocess.Popen"):
             manager = patch(target, side_effect=AssertionError("CLI tests must not perform external effects."))
             manager.start()

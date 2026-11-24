@@ -17,6 +17,12 @@ from aqua.speech.recognizer import Transcript
 
 
 class TranscribeCliTests(unittest.TestCase):
+    def setUp(self):
+        # These tests cover Whisper; the CLI default recogniser is Parakeet.
+        _asr = patch("aqua.cli.DEFAULT_ASR", "whisper")
+        _asr.start()
+        self.addCleanup(_asr.stop)
+
     @staticmethod
     def recording(*, sample_rate=44100, selected=True):
         microphone = DeviceInfo(
@@ -78,7 +84,7 @@ class TranscribeCliTests(unittest.TestCase):
         self.assertEqual(status, 0)
         model_class.assert_called_once_with(DEFAULT_MODEL_DIR)
         model_class.return_value.transcribe.assert_called_once_with(
-            source.pcm, 1000, gain_db=0.0, language=None
+            source.pcm, 1000, gain_db=0.0, language="en"
         )
         self.assertIsNone(record.call_args.kwargs["device"])
         self.assertIsNone(record.call_args.kwargs["sample_rate"])

@@ -273,6 +273,9 @@ def _parser() -> argparse.ArgumentParser:
         "setup-browser", help="register the Aqua browser bridge's native host for Brave or Chrome (per user, no admin)")
     browser_setup.add_argument("--browser", required=True, choices=("brave", "chrome"), help="browser to set up")
     browser_setup.add_argument("--uninstall", action="store_true", help="remove the registration for that browser")
+    browser_setup.add_argument("--check", action="store_true",
+                               help="report the registry key, host manifest, host script, Aqua pipe and when the "
+                                    "extension last started the host; changes nothing")
     chat = commands.add_parser("chat", help="interactive text chat with the local Ollama service")
     _chat_options(chat)
     _voice_options(chat, speak_default=False)
@@ -448,7 +451,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         if args.command == "setup-browser":
             from aqua.browser.setup import run as setup_browser
-            return setup_browser(args.browser, remove=args.uninstall)
+            return setup_browser(args.browser, remove=args.uninstall, check_only=args.check)
         if args.command == "setup-voice":
             from aqua.voice.engines import VoiceError
             from aqua.voice.setup import notices

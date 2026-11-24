@@ -269,6 +269,10 @@ def _parser() -> argparse.ArgumentParser:
     voice_setup.add_argument("--model-dir", type=Path, metavar="PATH", help="install or verify a single voice in this directory instead of the default")
     voice_setup.add_argument("--download", action="store_true", help="explicitly permit downloading the pinned voice archive(s) from the sherpa-onnx release")
     voice_setup.add_argument("--from-archive", type=Path, metavar="FILE", help="install from an already downloaded copy of the pinned archive (size and SHA-256 are checked); no network")
+    browser_setup = commands.add_parser(
+        "setup-browser", help="register the Aqua browser bridge's native host for Brave or Chrome (per user, no admin)")
+    browser_setup.add_argument("--browser", required=True, choices=("brave", "chrome"), help="browser to set up")
+    browser_setup.add_argument("--uninstall", action="store_true", help="remove the registration for that browser")
     chat = commands.add_parser("chat", help="interactive text chat with the local Ollama service")
     _chat_options(chat)
     _voice_options(chat, speak_default=False)
@@ -442,6 +446,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 pre_roll=args.pre_roll, vad_threshold=args.vad_threshold,
                 follow_up=args.follow_up,
             )
+        if args.command == "setup-browser":
+            from aqua.browser.setup import run as setup_browser
+            return setup_browser(args.browser, remove=args.uninstall)
         if args.command == "setup-voice":
             from aqua.voice.engines import VoiceError
             from aqua.voice.setup import notices

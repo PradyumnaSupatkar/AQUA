@@ -1,0 +1,642 @@
+[
+ {
+  "id": "write-second-line",
+  "prompt": "write this is a second line into notepad",
+  "heard": "Right, this is a second line into notepad.",
+  "fixed": "Write this is a second line into notepad.",
+  "notes": [
+   "'Right' -> 'write' (typing destination: notepad)"
+  ],
+  "with_fixes": {
+   "text": "Write this is a second line into notepad.",
+   "ok": true,
+   "calls": "launch_app(app=Notepad) ok; type_text(text=this is a second line) ok",
+   "reply": "Brought Notepad to the front and typed your text into Notepad.",
+   "seconds": 7.23
+  },
+  "raw": {
+   "text": "Right, this is a second line into notepad.",
+   "ok": false,
+   "calls": "launch_app(app=Notepad) ok",
+   "reply": "I have opened Notepad as requested.",
+   "seconds": 6.81
+  }
+ },
+ {
+  "id": "write-hello",
+  "prompt": "write hello I am Aqua",
+  "heard": "Right, hello I am Aqua.",
+  "fixed": "Right, hello I am Aqua.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Right, hello I am Aqua.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "Hello, I'm Aqua, your hands-free voice assistant. How can I help you today?",
+   "seconds": 2.7
+  },
+  "raw": {
+   "text": "Right, hello I am Aqua.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "Hello, I'm Aqua, your hands-free voice assistant. How can I help you today?",
+   "seconds": 2.7
+  }
+ },
+ {
+  "id": "write-meeting",
+  "prompt": "write meeting at noon",
+  "heard": "Right meeting at noon.",
+  "fixed": "Right meeting at noon.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Right meeting at noon.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "The meeting is scheduled for noon, but it is currently 5:45 PM on Tuesday, 24 November 2026. That means the meeting has already passed.",
+   "seconds": 4.97
+  },
+  "raw": {
+   "text": "Right meeting at noon.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "The meeting is scheduled for noon, but it is currently 5:45 PM on Tuesday, 24 November 2026. That means the meeting has already passed.",
+   "seconds": 4.97
+  }
+ },
+ {
+  "id": "write-shopping",
+  "prompt": "write buy milk and eggs into notepad",
+  "heard": "Ride by milk and eggs in the notepad.",
+  "fixed": "Write by milk and eggs in the notepad.",
+  "notes": [
+   "'Ride' -> 'write' (typing destination: notepad)"
+  ],
+  "with_fixes": {
+   "text": "Write by milk and eggs in the notepad.",
+   "ok": false,
+   "calls": "launch_app(app=Notepad) ok; type_text(text=by milk and eggs) ok",
+   "reply": "I have written \"by milk and eggs\" in Notepad.",
+   "seconds": 8.85
+  },
+  "raw": {
+   "text": "Ride by milk and eggs in the notepad.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I can't help with that. Would you like me to open Notepad and write something else for you?",
+   "seconds": 6.61
+  }
+ },
+ {
+  "id": "open-notepad",
+  "prompt": "open notepad",
+  "heard": "Open notepad.",
+  "fixed": "Open notepad.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open notepad.",
+   "ok": true,
+   "calls": "launch_app(app=Notepad) ok",
+   "reply": "Brought Notepad to the front.",
+   "seconds": 3.55
+  },
+  "raw": {
+   "text": "Open notepad.",
+   "ok": true,
+   "calls": "launch_app(app=Notepad) ok",
+   "reply": "Brought Notepad to the front.",
+   "seconds": 3.55
+  }
+ },
+ {
+  "id": "open-vscode",
+  "prompt": "open VS Code",
+  "heard": "Open VS Code.",
+  "fixed": "Open VS Code.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open VS Code.",
+   "ok": true,
+   "calls": "launch_app(app=VS Code) ok",
+   "reply": "Opened Visual Studio Code.",
+   "seconds": 3.31
+  },
+  "raw": {
+   "text": "Open VS Code.",
+   "ok": true,
+   "calls": "launch_app(app=VS Code) ok",
+   "reply": "Opened Visual Studio Code.",
+   "seconds": 3.31
+  }
+ },
+ {
+  "id": "open-spotify",
+  "prompt": "open Spotify",
+  "heard": "Open Spotify.",
+  "fixed": "Open Spotify.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open Spotify.",
+   "ok": true,
+   "calls": "launch_app(app=Spotify) ok",
+   "reply": "Brought Spotify to the front.",
+   "seconds": 3.38
+  },
+  "raw": {
+   "text": "Open Spotify.",
+   "ok": true,
+   "calls": "launch_app(app=Spotify) ok",
+   "reply": "Brought Spotify to the front.",
+   "seconds": 3.38
+  }
+ },
+ {
+  "id": "open-calculator",
+  "prompt": "open Calculator",
+  "heard": "Open calculator.",
+  "fixed": "Open calculator.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open calculator.",
+   "ok": true,
+   "calls": "launch_app(app=Calculator) ok",
+   "reply": "Opened Calculator.",
+   "seconds": 3.28
+  },
+  "raw": {
+   "text": "Open calculator.",
+   "ok": true,
+   "calls": "launch_app(app=Calculator) ok",
+   "reply": "Opened Calculator.",
+   "seconds": 3.28
+  }
+ },
+ {
+  "id": "open-chrome",
+  "prompt": "open Chrome",
+  "heard": "Open Chrome.",
+  "fixed": "Open Chrome.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open Chrome.",
+   "ok": true,
+   "calls": "launch_app(app=Chrome) ok",
+   "reply": "Opened Google Chrome.",
+   "seconds": 3.24
+  },
+  "raw": {
+   "text": "Open Chrome.",
+   "ok": true,
+   "calls": "launch_app(app=Chrome) ok",
+   "reply": "Opened Google Chrome.",
+   "seconds": 3.24
+  }
+ },
+ {
+  "id": "open-brave",
+  "prompt": "open Brave",
+  "heard": "Open Brave.",
+  "fixed": "Open Brave.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open Brave.",
+   "ok": true,
+   "calls": "launch_app(app=Brave) ok",
+   "reply": "Opened Brave.",
+   "seconds": 3.34
+  },
+  "raw": {
+   "text": "Open Brave.",
+   "ok": true,
+   "calls": "launch_app(app=Brave) ok",
+   "reply": "Opened Brave.",
+   "seconds": 3.34
+  }
+ },
+ {
+  "id": "open-visual-studio-code",
+  "prompt": "open Visual Studio Code",
+  "heard": "Open Visual Studio Code.",
+  "fixed": "Open Visual Studio Code.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open Visual Studio Code.",
+   "ok": true,
+   "calls": "launch_app(app=Visual Studio Code) ok",
+   "reply": "Opened Visual Studio Code.",
+   "seconds": 3.5
+  },
+  "raw": {
+   "text": "Open Visual Studio Code.",
+   "ok": true,
+   "calls": "launch_app(app=Visual Studio Code) ok",
+   "reply": "Opened Visual Studio Code.",
+   "seconds": 3.5
+  }
+ },
+ {
+  "id": "pause-video",
+  "prompt": "pause the video",
+  "heard": "Pause the video.",
+  "fixed": "Pause the video.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Pause the video.",
+   "ok": true,
+   "calls": "media(action=pause) ok",
+   "reply": "Paused the playback.",
+   "seconds": 4.23
+  },
+  "raw": {
+   "text": "Pause the video.",
+   "ok": true,
+   "calls": "media(action=pause) ok",
+   "reply": "Paused the playback.",
+   "seconds": 4.23
+  }
+ },
+ {
+  "id": "pause-music",
+  "prompt": "pause the music",
+  "heard": "Pause the music.",
+  "fixed": "Pause the music.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Pause the music.",
+   "ok": true,
+   "calls": "media(action=pause) ok",
+   "reply": "Paused the playback.",
+   "seconds": 3.39
+  },
+  "raw": {
+   "text": "Pause the music.",
+   "ok": true,
+   "calls": "media(action=pause) ok",
+   "reply": "Paused the playback.",
+   "seconds": 3.39
+  }
+ },
+ {
+  "id": "pause-it",
+  "prompt": "pause it",
+  "heard": "Was it.",
+  "fixed": "Was it.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Was it.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I don't know what you meant by \"Was it.\" Could you clarify your request?",
+   "seconds": 2.76
+  },
+  "raw": {
+   "text": "Was it.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I don't know what you meant by \"Was it.\" Could you clarify your request?",
+   "seconds": 2.76
+  }
+ },
+ {
+  "id": "volume-down",
+  "prompt": "turn the volume down",
+  "heard": "Turn the volume down.",
+  "fixed": "Turn the volume down.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Turn the volume down.",
+   "ok": true,
+   "calls": "volume(action=down) ok",
+   "reply": "Turned the volume down to 40%.",
+   "seconds": 3.22
+  },
+  "raw": {
+   "text": "Turn the volume down.",
+   "ok": true,
+   "calls": "volume(action=down) ok",
+   "reply": "Turned the volume down to 40%.",
+   "seconds": 3.22
+  }
+ },
+ {
+  "id": "volume-30",
+  "prompt": "set the volume to 30",
+  "heard": "Set the volume to 30.",
+  "fixed": "Set the volume to 30.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Set the volume to 30.",
+   "ok": true,
+   "calls": "volume(action=set, level=30) ok",
+   "reply": "Set the volume to 30%.",
+   "seconds": 4.05
+  },
+  "raw": {
+   "text": "Set the volume to 30.",
+   "ok": true,
+   "calls": "volume(action=set, level=30) ok",
+   "reply": "Set the volume to 30%.",
+   "seconds": 4.05
+  }
+ },
+ {
+  "id": "lock",
+  "prompt": "lock my screen",
+  "heard": "Lock my screen.",
+  "fixed": "Lock my screen.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Lock my screen.",
+   "ok": true,
+   "calls": "lock_screen() ok",
+   "reply": "Locked the screen.",
+   "seconds": 2.83
+  },
+  "raw": {
+   "text": "Lock my screen.",
+   "ok": true,
+   "calls": "lock_screen() ok",
+   "reply": "Locked the screen.",
+   "seconds": 2.83
+  }
+ },
+ {
+  "id": "quality-1080",
+  "prompt": "set the quality to 1080p",
+  "heard": "Set the quality to ten ADP.",
+  "fixed": "Set the quality to 1080p.",
+  "notes": [
+   "numbers: 'Set the quality to ten ADP.' -> 'Set the quality to 1080p.'"
+  ],
+  "with_fixes": {
+   "text": "Set the quality to 1080p.",
+   "ok": true,
+   "calls": "youtube(action=quality, quality=1080p) ok",
+   "reply": "Set the quality to 1080p.",
+   "seconds": 5.1
+  },
+  "raw": {
+   "text": "Set the quality to ten ADP.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I don't know what \"ten ADP\" is. Could you please clarify?",
+   "seconds": 2.31
+  }
+ },
+ {
+  "id": "back-10",
+  "prompt": "go back 10 seconds",
+  "heard": "Go back ten seconds.",
+  "fixed": "Go back 10 seconds.",
+  "notes": [
+   "numbers: 'Go back ten seconds.' -> 'Go back 10 seconds.'"
+  ],
+  "with_fixes": {
+   "text": "Go back 10 seconds.",
+   "ok": true,
+   "calls": "youtube(action=seek, seconds=-10) ok",
+   "reply": "Moved the video to 0:55.",
+   "seconds": 4.18
+  },
+  "raw": {
+   "text": "Go back ten seconds.",
+   "ok": true,
+   "calls": "youtube(action=seek, seconds=-10) ok",
+   "reply": "Moved the video to 0:55.",
+   "seconds": 4.27
+  }
+ },
+ {
+  "id": "jump-230",
+  "prompt": "jump to 2:30",
+  "heard": "Jump to two minutes thirty.",
+  "fixed": "Jump to 2:30.",
+  "notes": [
+   "numbers: 'Jump to two minutes thirty.' -> 'Jump to 2:30.'"
+  ],
+  "with_fixes": {
+   "text": "Jump to 2:30.",
+   "ok": true,
+   "calls": "youtube(action=seek, seconds=150) ok",
+   "reply": "Moved the video to 3:35.",
+   "seconds": 4.26
+  },
+  "raw": {
+   "text": "Jump to two minutes thirty.",
+   "ok": true,
+   "calls": "youtube(action=seek, seconds=150) ok",
+   "reply": "Moved the video to 3:35.",
+   "seconds": 4.26
+  }
+ },
+ {
+  "id": "search-lofi",
+  "prompt": "search youtube for lofi hip hop",
+  "heard": "Search Yu for Lo Fee Hip Hop.",
+  "fixed": "Search Yu for Lo Fee Hip Hop.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Search Yu for Lo Fee Hip Hop.",
+   "ok": false,
+   "calls": "web_search(query=Yu for Lo Fee Hip Hop) ok",
+   "reply": "Searched the web for Yu for Lo Fee Hip Hop.",
+   "seconds": 5.87
+  },
+  "raw": {
+   "text": "Search Yu for Lo Fee Hip Hop.",
+   "ok": false,
+   "calls": "web_search(query=Yu for Lo Fee Hip Hop) ok",
+   "reply": "Searched the web for Yu for Lo Fee Hip Hop.",
+   "seconds": 5.87
+  }
+ },
+ {
+  "id": "play-second",
+  "prompt": "play the second one",
+  "heard": "Play the second one.",
+  "fixed": "Play the second one.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Play the second one.",
+   "ok": true,
+   "calls": "youtube(action=play_result, n=2) ok",
+   "reply": "Played result 2.",
+   "seconds": 5.54
+  },
+  "raw": {
+   "text": "Play the second one.",
+   "ok": true,
+   "calls": "youtube(action=play_result, n=2) ok",
+   "reply": "Played result 2.",
+   "seconds": 5.54
+  }
+ },
+ {
+  "id": "whats-playing",
+  "prompt": "what's playing on youtube",
+  "heard": "What's playing on YouTube?",
+  "fixed": "What's playing on YouTube?",
+  "notes": [],
+  "with_fixes": {
+   "text": "What's playing on YouTube?",
+   "ok": true,
+   "calls": "youtube(action=now_playing) ok",
+   "reply": "Currently playing on YouTube is \"Lofi beats to study to\" by Lofi Girl, at 1:05 into a 1:00:00 duration.",
+   "seconds": 9.02
+  },
+  "raw": {
+   "text": "What's playing on YouTube?",
+   "ok": true,
+   "calls": "youtube(action=now_playing) ok",
+   "reply": "Currently playing on YouTube is \"Lofi beats to study to\" by Lofi Girl, at 1:05 into a 1:00:00 duration.",
+   "seconds": 9.02
+  }
+ },
+ {
+  "id": "question-time",
+  "prompt": "what time is it",
+  "heard": "What time is it?",
+  "fixed": "What time is it?",
+  "notes": [],
+  "with_fixes": {
+   "text": "What time is it?",
+   "ok": true,
+   "calls": "no tool (answer) [reply: The time is 5:47 PM on Tuesday, 24 November 2026.]",
+   "reply": "The time is 5:47 PM on Tuesday, 24 November 2026.",
+   "seconds": 2.9
+  },
+  "raw": {
+   "text": "What time is it?",
+   "ok": true,
+   "calls": "no tool (answer) [reply: The time is 5:47 PM on Tuesday, 24 November 2026.]",
+   "reply": "The time is 5:47 PM on Tuesday, 24 November 2026.",
+   "seconds": 2.9
+  }
+ },
+ {
+  "id": "question-fact",
+  "prompt": "who wrote pride and prejudice",
+  "heard": "Hodo Pride and Prejudice.",
+  "fixed": "Hodo Pride and Prejudice.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Hodo Pride and Prejudice.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I don't know how to handle that request. Could you please rephrase or provide more details?",
+   "seconds": 3.02
+  },
+  "raw": {
+   "text": "Hodo Pride and Prejudice.",
+   "ok": false,
+   "calls": "no tool (answer)",
+   "reply": "I don't know how to handle that request. Could you please rephrase or provide more details?",
+   "seconds": 3.02
+  }
+ },
+ {
+  "id": "negation-chrome",
+  "prompt": "don't open Chrome",
+  "heard": "Don't open Chrome.",
+  "fixed": "Don't open Chrome.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Don't open Chrome.",
+   "ok": true,
+   "calls": "no tool (answer)",
+   "reply": "I will not open Chrome as requested.",
+   "seconds": 1.0
+  },
+  "raw": {
+   "text": "Don't open Chrome.",
+   "ok": true,
+   "calls": "no tool (answer)",
+   "reply": "I will not open Chrome as requested.",
+   "seconds": 1.0
+  }
+ },
+ {
+  "id": "close-notepad",
+  "prompt": "close notepad",
+  "heard": "Close notepad.",
+  "fixed": "Close notepad.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Close notepad.",
+   "ok": true,
+   "calls": "close_app(app=notepad) ok",
+   "reply": "Closed Notepad.",
+   "seconds": 2.92
+  },
+  "raw": {
+   "text": "Close notepad.",
+   "ok": true,
+   "calls": "close_app(app=notepad) ok",
+   "reply": "Closed Notepad.",
+   "seconds": 2.92
+  }
+ },
+ {
+  "id": "minimise-spotify",
+  "prompt": "minimise Spotify",
+  "heard": "Minimize Spotify.",
+  "fixed": "Minimize Spotify.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Minimize Spotify.",
+   "ok": true,
+   "calls": "window_action(action=minimise, window=Spotify) ok",
+   "reply": "Minimised Spotify Premium.",
+   "seconds": 3.27
+  },
+  "raw": {
+   "text": "Minimize Spotify.",
+   "ok": true,
+   "calls": "window_action(action=minimise, window=Spotify) ok",
+   "reply": "Minimised Spotify Premium.",
+   "seconds": 3.27
+  }
+ },
+ {
+  "id": "brightness-up",
+  "prompt": "make the screen a bit brighter",
+  "heard": "Make the screen a bit brighter.",
+  "fixed": "Make the screen a bit brighter.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Make the screen a bit brighter.",
+   "ok": true,
+   "calls": "brightness(action=up) ok",
+   "reply": "Turned the brightness up to 80%.",
+   "seconds": 2.37
+  },
+  "raw": {
+   "text": "Make the screen a bit brighter.",
+   "ok": true,
+   "calls": "brightness(action=up) ok",
+   "reply": "Turned the brightness up to 80%.",
+   "seconds": 2.37
+  }
+ },
+ {
+  "id": "long-sentence",
+  "prompt": "open notepad and write remember to call the dentist on Monday morning before the team meeting starts",
+  "heard": "Open notepad and write. Remember to call the dentist on Monday morning before the tea meeting starts.",
+  "fixed": "Open notepad and write. Remember to call the dentist on Monday morning before the tea meeting starts.",
+  "notes": [],
+  "with_fixes": {
+   "text": "Open notepad and write. Remember to call the dentist on Monday morning before the tea meeting starts.",
+   "ok": false,
+   "calls": "launch_app(app=Notepad) ok",
+   "reply": "I have opened Notepad and am ready to write. I cannot assist with calling the dentist or scheduling meetings as no tool is available for that action.",
+   "seconds": 5.35
+  },
+  "raw": {
+   "text": "Open notepad and write. Remember to call the dentist on Monday morning before the tea meeting starts.",
+   "ok": false,
+   "calls": "launch_app(app=Notepad) ok",
+   "reply": "I have opened Notepad and am ready to write. I cannot assist with calling the dentist or scheduling meetings as no tool is available for that action.",
+   "seconds": 5.35
+  }
+ }
+]

@@ -245,7 +245,9 @@ class TypeTextTests(unittest.TestCase):
 
     def test_missing_window_and_unverified_readback(self):
         ctx = context()
-        self.assertEqual(type_text.run({"text": "hi", "app": "notepad"}, ctx).status, "failed")
+        self.assertEqual(type_text.run({"text": "hi", "app": "wordstar"}, ctx).status, "failed")  # Not installed.
+        opened = type_text.run({"text": "hi", "app": "notepad"}, ctx)  # Installed but closed: opened first.
+        self.assertEqual((opened.status, opened.done), ("ok", "opened Notepad and typed your text"))
         desktop = FakeDesktop(readback=False)
         desktop.add_window("Untitled - Notepad", "notepad.exe")
         outcome = type_text.run({"text": "hi", "app": "notepad"}, context(desktop))

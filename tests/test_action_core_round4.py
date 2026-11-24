@@ -222,5 +222,85 @@ class HowToTests(unittest.TestCase):
         self.assertIn("answer them with the steps", SYSTEM_PROMPT)
 
 
+class UnplacedDictationTests(unittest.TestCase):
+    def test_write_text_with_nowhere_to_type_asks_which_app(self):
+        engine, desktop, model = make_engine("I don't know how to schedule a meeting.")
+        asked = engine.respond("write meeting at noon")
+        self.assertEqual((asked.outcome, asked.text), ("clarify", "Which app should I type that into?"))
+        self.assertEqual(len(model.requests), 0)
+        engine.respond("notepad")
+        self.assertEqual(list(desktop.text.values()), ["meeting at noon"])
+
+    def test_composing_or_a_window_in_front_goes_to_the_model(self):
+        from aqua.agent.context import ToolContext
+        from aqua.tools.app_index import AppIndex
+        from aqua.tools.input import unplaced_dictation
+        desktop = FakeDesktop()
+        context = ToolContext(desktop=desktop, apps=AppIndex(desktop.app_entries))
+        for request in ("write a poem about rain", "write me an email", "write hello into notepad",
+                        "what should I write", "type it again"):
+            context.begin_request(request)
+            self.assertIsNone(unplaced_dictation(context), request)
+        context.begin_request("type hello there")
+        self.assertEqual(unplaced_dictation(context), "hello there")
+        desktop.add_window("notes.txt - Notepad", "notepad.exe", front=True)
+        self.assertIsNone(unplaced_dictation(context))  # Notepad in front: the model types there.
+
+
+class NamedAppTests(unittest.TestCase):
+    def test_named_app_phrasings(self):
+        from aqua.agent.context import ToolContext
+        from aqua.tools.app_index import AppIndex
+        from aqua.tools.input import requested_app
+        desktop = FakeDesktop()
+        context = ToolContext(desktop=desktop, apps=AppIndex(desktop.app_entries))
+        for request in ("Write hello I am your assistant into the notepad window", "type hi in notepad",
+                        "write this to my notepad please", "put hello into the note pad"):
+            context.begin_request(request)
+            self.assertEqual(requested_app(context), "Notepad", request)
+        for request in ("write I am going to school", "type hello in a minute", "write meet me on the corner"):
+            context.begin_request(request)
+            self.assertIsNone(requested_app(context), request)
+
+    def test_named_app_that_is_not_open_is_opened_then_typed_into(self):
+        engine, desktop, model = make_engine([call("type_text", text="hello I am your assistant")])
+        result = engine.respond("Write hello I am your assistant into the notepad window")
+        self.assertEqual(desktop.launched, ["Notepad"])
+        self.assertEqual(list(desktop.text.values()), ["hello I am your assistant"])
+        self.assertEqual(result.text, "Opened Notepad and typed your text.")
+
+    def test_spoken_app_argument_finds_the_open_window(self):
+        desktop = FakeDesktop()
+        notepad = desktop.add_window("notes.txt - Notepad", "notepad.exe", front=False)
+        engine, _, _ = make_engine([call("type_text", text="hi", app="the notepad window")], desktop=desktop)
+        engine.respond("type hi in the notepad window")
+        self.assertEqual((desktop.launched, desktop.text), ([], {notepad.handle: "hi"}))
+
+
+class NewLineTests(unittest.TestCase):
+    def _typed(self, existing, text, process="notepad.exe"):
+        desktop = FakeDesktop()
+        window = desktop.add_window("notes.txt - Notepad" if process == "notepad.exe" else "General - Team Chat",
+                                    process, front=False)
+        desktop.text[window.handle] = existing
+        app = "Notepad" if process == "notepad.exe" else "Team Chat"
+        engine, _, _ = make_engine([call("type_text", text=text, app=app)], desktop=desktop)
+        result = engine.respond(f"write {text} into {app}")
+        return desktop.text[window.handle], result
+
+    def test_text_after_other_text_starts_on_a_new_line_in_plain_editors(self):
+        text, result = self._typed("meeting at noon", "hello I am your assistant")
+        self.assertEqual(text, "meeting at noon\nhello I am your assistant")
+        self.assertEqual(result.task.operations[0].status, "ok")  # The check allows for the new line.
+
+    def test_no_new_line_after_whitespace_or_in_an_empty_document(self):
+        self.assertEqual(self._typed("meeting at noon\n", "hello")[0], "meeting at noon\nhello")
+        self.assertEqual(self._typed("", "hello")[0], "hello")
+        self.assertEqual(self._typed("notes ", "hello")[0], "notes hello")
+
+    def test_other_apps_never_get_a_new_line(self):
+        self.assertEqual(self._typed("hi", "there", process="teamchat.exe")[0], "hithere")
+
+
 if __name__ == "__main__":
     unittest.main()

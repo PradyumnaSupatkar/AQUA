@@ -96,7 +96,7 @@ class ClarificationGroundingTests(unittest.TestCase):
         self.assertTrue(dictated("meeting at noon", "Notepad", ("write meeting at noon",)))
         self.assertFalse(dictated("meeting at noon", "Notepad"))
         engine, _, _ = make_engine("Hello!", "Fine.")
-        engine.respond("write meeting at noon somewhere")  # Answered, not asked.
+        engine.respond("tell me about a meeting at noon somewhere")  # Answered, not asked.
         engine.respond("Notepad")
         self.assertEqual(engine.context.earlier, ())
 

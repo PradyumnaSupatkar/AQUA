@@ -513,6 +513,16 @@ class AgentEngine:
             # "write meeting at noon" -> "Which app?" -> "Notepad": the host opens (or brings
             # forward) that app and types the kept text, so the dictation cannot get lost.
             return self._type_into_answer(text, awaiting, app, emit, result)
+        if "type_text" in self.registry.names:
+            from aqua.tools.input import unplaced_dictation
+            dictation = unplaced_dictation(self.context)
+            if dictation is not None:
+                # "write meeting at noon" with nothing to type into: ask where (and keep the words),
+                # rather than letting the model guess at a meaning ("schedule a meeting").
+                self._awaiting_text = dictation
+                emit("Which app should I type that into?")
+                self._remember(text, "Which app should I type that into?")
+                return result("clarify", "clarify", None, status="waiting")
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
         bare = classify_reply(text)

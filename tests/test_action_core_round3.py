@@ -177,7 +177,7 @@ class InsertionCheckTests(unittest.TestCase):
 
 class DictationAcrossQuestionTests(unittest.TestCase):
     def _asked(self, *rounds):
-        engine, desktop, model = make_engine([call("type_text", text="meeting at noon")], *rounds)
+        engine, desktop, model = make_engine(*rounds)  # Round 4: the host asks without the model.
         asked = engine.respond("write meeting at noon")
         self.assertEqual(asked.text, "Which app should I type that into?")
         return engine, desktop, model
@@ -188,7 +188,7 @@ class DictationAcrossQuestionTests(unittest.TestCase):
         self.assertEqual(desktop.launched, ["Notepad"])
         self.assertEqual(list(desktop.text.values()), ["meeting at noon"])
         self.assertEqual(result.text, "Opened Notepad and typed your text.")
-        self.assertEqual(len(model.requests), 1)  # The host did it; the model could not drop the text.
+        self.assertEqual(len(model.requests), 0)  # The host asked and typed; the model could not drop the text.
 
     def test_spoken_variants_name_the_app(self):
         engine, desktop, _ = self._asked()
@@ -208,7 +208,7 @@ class DictationAcrossQuestionTests(unittest.TestCase):
         engine, desktop, model = self._asked("Okay, never mind.")
         engine.respond("actually forget it, what time is it")
         self.assertEqual(desktop.typed, [])
-        self.assertEqual(len(model.requests), 2)
+        self.assertEqual(len(model.requests), 1)  # Only the second request reached the model.
         self.assertIsNone(engine._awaiting_text)
 
 

@@ -108,9 +108,10 @@ class LaunchToTypeTests(unittest.TestCase):
         engine, desktop, _ = make_engine([call("launch_app", app="Notepad")], [call("type_text", text="Hello from Aqua")],
                                          "Opened Notepad and typed your text.")
         asked = engine.respond("Please type Hello from Aqua.")
-        self.assertEqual(asked.text, "Open Notepad to type into it? Say yes or no.")
+        # Round 4: nowhere to type, so the host asks where (the model's guess at Notepad is never needed).
+        self.assertEqual(asked.text, "Which app should I type that into?")
         self.assertEqual(desktop.launched, [])
-        engine.respond("yes")
+        engine.respond("Notepad")
         self.assertEqual(desktop.launched, ["Notepad"])
         self.assertEqual(list(desktop.text.values()), ["Hello from Aqua"])
 

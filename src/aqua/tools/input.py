@@ -8,7 +8,7 @@ from aqua.agent.registry import SAFE, Tool, ToolOutcome
 
 from .adapter import Window
 from .app_index import normalize
-from .apps import window_matches_app
+from .apps import app_named, window_matches_app
 from .windows import find_windows, label
 
 MAX_TEXT = 1000
@@ -40,12 +40,75 @@ def _launched_window(context: ToolContext, app: str | None) -> Window | None:
 def _target(args: dict, context: ToolContext) -> Window | None:
     app = args.get("app")
     if app:
-        return _launched_window(context, app) or next(iter(find_windows(context.desktop, app, titles=False)), None)
+        for name in dict.fromkeys((app, clean_app(app))):  # "the notepad window" -> "notepad"
+            window = _launched_window(context, name) or next(iter(find_windows(context.desktop, name, titles=False)),
+                                                             None)
+            if window is not None:
+                return window
+        return None
     window = _launched_window(context, None) or _named_in_request(context)
     if window is not None:
         return window
+    requested = requested_app(context)
+    if requested is not None:
+        return _launched_window(context, requested) or next(iter(find_windows(context.desktop, requested,
+                                                                              titles=False)), None)
     front = context.desktop.foreground()
     return None if front is None or context.desktop.is_terminal(front) else front
+
+
+# Where to type: "into the notepad window", "in notepad", "to my notepad", "inside VS Code".
+_PLACE = re.compile(r"\b(?:into|in|on|onto|to|inside)\s+(?:the\s+|my\s+|a\s+|your\s+|our\s+)?(?:new\s+|open\s+)?",
+                    re.I)
+_PLACE_FILLER = frozenset({"the", "my", "a", "your", "our", "new", "open", "window", "app", "application", "file",
+                           "document", "tab", "editor", "please", "now", "for", "me"})
+
+
+def clean_app(app: str) -> str:
+    """A spoken target without filler: "the notepad window" -> "notepad"."""
+    words = _plain(app).split()
+    while words and words[0] in _PLACE_FILLER:
+        words.pop(0)
+    while words and words[-1] in _PLACE_FILLER:
+        words.pop()
+    return " ".join(words) or app
+
+
+def requested_app(context: ToolContext) -> str | None:
+    """The installed app the request names as the place to type, open or not, e.g. Notepad
+    for "write hello into the notepad window". The name must appear in the request itself."""
+    for said in (context.request, *reversed(context.earlier)):
+        for match in reversed(list(_PLACE.finditer(said))):
+            words = clean_app(said[match.end():]).split()
+            for size in (3, 2, 1):
+                candidate = [w for w in words[:size]]
+                while candidate and candidate[-1] in _PLACE_FILLER:
+                    candidate.pop()
+                for name in dict.fromkeys((" ".join(candidate), "".join(candidate))):
+                    if not name:
+                        continue
+                    found = context.apps.find(name)
+                    if found.kind == "found" and found.entry is not None and app_named(said, name, found.entry):
+                        return found.entry.name
+    return None
+
+
+# "write meeting at noon" / "type hello": dictation, as opposed to "write a poem" (composing).
+_DICTATE = re.compile(r"^(?:(?:please|now|just|ok|okay)\s+|(?:could|can|would|will)\s+you\s+(?:please\s+)?)*"
+                      r"(?:write|type)(?:\s+(?:down|out))?\s+(?P<text>.+?)\s*[.!]?$", re.I)
+_COMPOSE = re.compile(r"^(?:a|an|me|some|the|my|your|another|something|anything|this|that|it|what|how|why|"
+                      r"about|up|back|to|for|in|on|into)\b", re.I)
+
+
+def unplaced_dictation(context: ToolContext) -> str | None:
+    """The words of "write <text>" when nothing says where: no app named, no window opened or
+    named, and nothing to type into in front. The host then asks which app (and keeps the text)."""
+    match = _DICTATE.match(context.request.strip())
+    if match is None or _COMPOSE.match(match.group("text")) or _PLACE.search(match.group("text")):
+        return None
+    if requested_app(context) is not None or _target({"text": match.group("text")}, context) is not None:
+        return None
+    return match.group("text")
 
 
 def _named_in_request(context: ToolContext) -> Window | None:
@@ -67,9 +130,10 @@ def _check(args: dict, context: ToolContext):
     text = args["text"]
     if any((ord(c) < 32 and c not in "\t\r\n") or ord(c) == 127 for c in text):
         return deny("The text contains control characters.")
-    if not args.get("app") and _target(args, context) is None:
+    app = args.get("app") or requested_app(context)
+    if not app and _target(args, context) is None:
         return clarify("Which app should I type that into?")
-    target = f" into {args['app']}" if args.get("app") else ""
+    target = f" into {app}" if app else ""
     if "\n" in text or "\r" in text or not dictated(text, context.request, context.earlier):
         # Text the model wrote (a poem, an email) is read back first; dictation is typed at once.
         return ask(*read_back(text, context.request, target, keep_lines=plain_editor(args, context)))
@@ -160,14 +224,15 @@ def inserted(before: str | None, after: str, text: str) -> bool:
 
 def _run(args: dict, context: ToolContext) -> ToolOutcome:
     desktop = context.desktop
-    window = _target(args, context)
+    window, opened, undo = _target(args, context), "", None
     if window is None:
-        return ToolOutcome("failed", f"No open window matches {args.get('app')}. Open the app first, then type.")
-    if window.process.casefold() in PLAIN_EDITORS:
-        # Line ends normalised (each line break is one Enter press); the text is otherwise as written.
-        text = _lines(args["text"])
-    else:
-        text = one_line(args["text"])
+        # The app was named ("into the notepad window") but is not open: open it, then type.
+        window, opened, undo, failure = _open_for_typing(args, context)
+        if failure:
+            return ToolOutcome("failed", failure)
+    plain = window.process.casefold() in PLAIN_EDITORS
+    # Line ends normalised in plain editors (each line break is one Enter press); one line elsewhere.
+    text = _lines(args["text"]) if plain else one_line(args["text"])
     name = label(window)
     if desktop.is_terminal(window):
         # Text left at a shell prompt runs on the next Enter, so never type there.
@@ -176,6 +241,10 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
     if (front is None or front.handle != window.handle) and not desktop.focus(window.handle):
         return ToolOutcome("failed", f"Could not bring {name} to the front, so nothing was typed.")
     before = desktop.read_focused_text()  # The document may already hold text (e.g. restored tabs).
+    if plain and before and not before[-1].isspace() and text[:1] and not text[0].isspace():
+        # "meeting at noon" + "hello" must not become "meeting at noonhello": a new line first.
+        # (The caret is taken to be at the end of the document, where Notepad puts it.)
+        text = "\n" + text
     typed = desktop.type_text(window.handle, text)
     if typed < len(text):
         detail = "Nothing was typed" if typed == 0 else f"Only {typed} of {len(text)} characters were typed"
@@ -185,11 +254,31 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
         # The editor can be read and the text did not go in exactly: say so, never claim success.
         return ToolOutcome("failed", f"The text did not arrive correctly in {name}; please check it.",
                            data={"window": name})
+    lead = f"Opened {name}, then typed" if opened else "Typed"
+    done = f"{opened} and typed your text" if opened else f"typed your text into {name}"
     if readback is not None:
-        return ToolOutcome("ok", f"Typed the text into {name}.", done=f"typed your text into {name}",
-                           data={"window": name})
-    return ToolOutcome("unverified", f"Typed the text into {name} (not verified).", done="typed your text",
-                       data={"window": name})
+        return ToolOutcome("ok", f"{lead} the text into {name}.", done=done, data={"window": name}, undo=undo)
+    return ToolOutcome("unverified", f"{lead} the text into {name} (not verified).",
+                       done=f"{opened} and typed your text" if opened else "typed your text",
+                       data={"window": name}, undo=undo)
+
+
+def _open_for_typing(args: dict, context: ToolContext):
+    """(window, done phrase, undo, failure message) after opening the named app to type into."""
+    from aqua.agent.policy import CLARIFY, DENY
+
+    from .apps import launch_app
+    app = clean_app(args["app"]) if args.get("app") else requested_app(context)
+    if not app or context.apps.find(app).entry is None:
+        return None, "", None, f"No open window matches {args.get('app')}. Open the app first, then type."
+    decision = launch_app.check({"app": app}, context)
+    if decision is not None and decision.action in {DENY, CLARIFY}:
+        return None, "", None, f"Did not open {app}: {decision.reason or decision.question}"
+    launched = launch_app.run({"app": app}, context)
+    window = _launched_window(context, None) if launched.succeeded else None
+    if window is None:
+        return None, "", None, f"{app} did not open a window to type into, so nothing was typed."
+    return window, launched.done, launched.undo, ""
 
 
 type_text = Tool(

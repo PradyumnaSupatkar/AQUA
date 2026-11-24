@@ -1,0 +1,138 @@
+{
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "suite_sha256": "22503a5d7cc7cd2743164c7d83f3c007c9ff1570260359e51ecf834e8740cc7d + extra e29905f1e240f2de78a737217016f3256cbb5fb2cbc1d161dde3d4298bc52232 + long d0e317ad7d000676de14532a0947ca815717dd34f1e4ba40fc567267b095c8b0",
+ "runs": 2,
+ "guards": "all on",
+ "finished": "Run 2026-11-24 15:43 India Standard Time, 861 s",
+ "source_sha256": {
+  "src/aqua/agent/loop.py": "607d517cacd1a30bea7b4eee52ac8aa24591b957a0c0b00ae51e43b7e81cc538",
+  "src/aqua/agent/prompt.py": "bd0b162bea4ee75d111b7b2b46cb6776b15a1475fd14987a8a9429ab7ac1fa8f",
+  "src/aqua/agent/selection.py": "9650166b1f9df602bb1d8734458c17078025c864d3eed2b23bf025675cafb262",
+  "src/aqua/tools/knowledge.py": "6c49ffe7806bf3d0a003c4c808b1fc5fe01b91f7a32ab7dfe1fa3332fc2aeb35"
+ },
+ "cases": 144,
+ "turns": 342,
+ "case_success": 0.9722222222222222,
+ "case_success_question_ok": 0.9722222222222222,
+ "cases_passing_every_run": 139,
+ "turn_success": 0.9766081871345029,
+ "unwanted_actions": 0,
+ "unwanted_actions_on_no_action_requests": 0,
+ "unnecessary_confirmations": 1,
+ "wrong_refusals": 0,
+ "errors": 0,
+ "latency_seconds": {
+  "median": 2.0965,
+  "p90": 5.065,
+  "max": 23.467
+ },
+ "model_requests_per_turn": 1.3070175438596492,
+ "by_category": {
+  "asr": {
+   "passed": 10,
+   "of": 14
+  },
+  "blocked": {
+   "passed": 11,
+   "of": 12
+  },
+  "confirmation": {
+   "passed": 16,
+   "of": 16
+  },
+  "direct": {
+   "passed": 54,
+   "of": 54
+  },
+  "extra-composed": {
+   "passed": 12,
+   "of": 12
+  },
+  "extra-offer": {
+   "passed": 4,
+   "of": 6
+  },
+  "indirect": {
+   "passed": 10,
+   "of": 10
+  },
+  "long-action": {
+   "passed": 4,
+   "of": 4
+  },
+  "long-device-state": {
+   "passed": 2,
+   "of": 2
+  },
+  "long-no-action": {
+   "passed": 36,
+   "of": 36
+  },
+  "lookup": {
+   "passed": 10,
+   "of": 10
+  },
+  "lookup-recent": {
+   "passed": 3,
+   "of": 4
+  },
+  "multi-step": {
+   "passed": 10,
+   "of": 10
+  },
+  "no-action": {
+   "passed": 34,
+   "of": 34
+  },
+  "polite": {
+   "passed": 8,
+   "of": 8
+  },
+  "privacy": {
+   "passed": 10,
+   "of": 10
+  },
+  "si-ambiguous": {
+   "passed": 8,
+   "of": 8
+  },
+  "si-direct": {
+   "passed": 6,
+   "of": 6
+  },
+  "si-implicit": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-indirect": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-literal": {
+   "passed": 4,
+   "of": 4
+  },
+  "si-observation": {
+   "passed": 4,
+   "of": 4
+  },
+  "si-paraphrase": {
+   "passed": 10,
+   "of": 10
+  },
+  "si-unsupported": {
+   "passed": 4,
+   "of": 4
+  },
+  "undo": {
+   "passed": 6,
+   "of": 6
+  }
+ },
+ "failure_causes": {
+  "action not taken (model only talked)": 4,
+  "wrong outcome (confirm/decline/cancel flow)": 2,
+  "reply check failed": 1,
+  "answered without look_up": 1
+ }
+}

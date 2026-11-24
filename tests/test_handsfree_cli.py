@@ -56,7 +56,7 @@ class HandsfreeCliTests(unittest.TestCase):
         self.assertEqual(options["end_silence"], .8)
         self.assertEqual(options["initial_timeout"], 5)
         self.assertEqual(options["max_utterance"], 15)
-        self.assertEqual(options["pre_roll"], .5)
+        self.assertEqual(options["pre_roll"], 0.0)  # The pre-roll is mostly the wake phrase itself.
         self.assertEqual(options["vad_threshold"], .5)
 
     def test_explicit_audio_wake_vad_and_generation_settings_are_forwarded(self):

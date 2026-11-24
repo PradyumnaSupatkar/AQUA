@@ -171,7 +171,7 @@ def run_handsfree(
     wake_model_dir: Path | None = None, wake_threshold: float = .25,
     wake_score: float = 1.0, wake_cooldown: float = 2.0,
     end_silence: float = .8, initial_timeout: float = 5.0,
-    max_utterance: float = 15.0, pre_roll: float = .5, vad_threshold: float = .5,
+    max_utterance: float = 15.0, pre_roll: float = 0.0, vad_threshold: float = .5,
     text_entry_apps: tuple[str, ...] = (),
     speak: bool = False, tts_engine: str = "kokoro", voice: str | None = None,
     voice_model_dir: Path | None = None, speech_rate: float = 1.0,

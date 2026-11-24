@@ -98,6 +98,27 @@ class SessionWiringTests(unittest.TestCase):
         self.assertTrue(engine.awaiting_app)
 
 
+class FillerTests(unittest.TestCase):
+    def test_leading_fillers_go_before_the_other_fixes(self):
+        from aqua.speech.postprocess import strip_fillers
+        # Live Parakeet transcripts from hands-free mode.
+        self.assertEqual(prepare("Well jump to one minute thirty seconds")[0], "jump to 1:30")
+        self.assertEqual(prepare("Well Right meeting at noon into notepad")[0], "Write meeting at noon into notepad")
+        self.assertEqual(prepare("Well Right meeting at noon.", awaiting_app=True)[0], "Write meeting at noon.")
+        self.assertEqual(strip_fillers("Um, so, open notepad"), ("open notepad", "dropped leading filler 'Um, so'"))
+        self.assertEqual(strip_fillers("Hey, pause the video")[0], "pause the video")
+
+    def test_a_lone_filler_or_a_filler_inside_a_word_stays(self):
+        from aqua.speech.postprocess import strip_fillers
+        for text in ("okay", "Okay.", "well", "Wellington is in New Zealand", "Sonos speaker off", "open notepad",
+                     "Oklahoma weather"):
+            self.assertEqual(strip_fillers(text), (text, None), text)
+
+    def test_diagnostics_show_the_dropped_filler(self):
+        _text, notes = prepare("Well jump to two thirty")
+        self.assertEqual(notes[0], "dropped leading filler 'Well'")
+
+
 class PrepareTests(unittest.TestCase):
     def test_both_fixes_with_notes(self):
         text, notes = prepare("Right the volume is at thirty into notepad")

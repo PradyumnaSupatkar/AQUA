@@ -124,9 +124,30 @@ def spoken_numbers(text: str) -> tuple[str, str | None]:
     return (changed, f"numbers: '{text}' -> '{changed}'") if changed != text.strip() else (text, None)
 
 
+# -- 0. leading fillers ---------------------------------------------------------------------------
+
+# Parakeet often starts with "Well ..." (heard in the end of the wake phrase or a breath). These words
+# are dropped from the start when more words follow; a bare "okay" stays (it can be a yes).
+_FILLER = re.compile(r"^\W*(?:well|so|um+|uh+|erm?|oh|okay|ok|hey)\b[\s,.!?;:-]*(?=\S)", re.I)
+
+
+def strip_fillers(text: str) -> tuple[str, str | None]:
+    stripped = text
+    while (match := _FILLER.match(stripped)) and re.search(r"\w", stripped[match.end():]):
+        stripped = stripped[match.end():]
+    if stripped == text:
+        return text, None
+    removed = text[:len(text) - len(stripped)].strip(" ,.")
+    return stripped, f"dropped leading filler '{removed}'"
+
+
 def prepare(text: str, *, awaiting_app: bool = False, is_app=None) -> tuple[str, list[str]]:
-    """The transcript the engine should see, and notes for --diagnostics."""
+    """The transcript the engine should see, and notes for --diagnostics. Fillers go first, so
+    "Well Right meeting at noon into notepad" still gets the write fix."""
     notes = []
+    text, note = strip_fillers(text)
+    if note:
+        notes.append(note)
     text, note = fix_write(text, awaiting_app=awaiting_app, is_app=is_app)
     if note:
         notes.append(note)

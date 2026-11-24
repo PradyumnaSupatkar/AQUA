@@ -203,7 +203,7 @@ class HandsfreeEntryTests(unittest.TestCase):
                 self.assertEqual(controller.conversation.last_task.decisions, 6)
                 self.assertEqual(self.worker.calls[-1]["text"], payload)
                 self.assertEqual(len([r for r in self.worker.calls if r["operation"] == "set_control_text"]), 1)
-                self.assertEqual(model.calls[0][0][-1]["content"], handsfree.command_text(spoken))
+                # The engine sees the prepared transcript (leading fillers such as "So," dropped).`n                self.assertEqual(model.calls[0][0][-1]["content"], chat.prepare_spoken(handsfree.command_text(spoken)))
 
     def test_ambiguous_transcription_is_not_repaired_from_old_payload(self):
         model = Model()

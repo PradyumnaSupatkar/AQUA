@@ -308,7 +308,8 @@ def _parser() -> argparse.ArgumentParser:
     handsfree.add_argument("--end-silence", type=_finite_range(.1, 3), default=.8, metavar="SECONDS", help="sustained silence before ending a turn; default: 0.8")
     handsfree.add_argument("--initial-timeout", type=_finite_range(.5, 15), default=5.0, metavar="SECONDS", help="wait for speech after wake; default: 5")
     handsfree.add_argument("--max-utterance", type=_finite_range(1, 30), default=15.0, metavar="SECONDS", help="discard speech exceeding this duration; default: 15")
-    handsfree.add_argument("--pre-roll", type=_finite_range(0, 2), default=.5, metavar="SECONDS", help="bounded audio retained before wake; default: 0.5")
+    handsfree.add_argument("--pre-roll", type=_finite_range(0, 2), default=0.0, metavar="SECONDS", help="audio kept from before the wake detection; default: 0 (it is mostly the wake phrase, "
+                                "which Parakeet hears as a word such as 'Well')")
     handsfree.add_argument("--vad-threshold", type=_finite_range(.01, 1), default=.5, help="speech activity threshold, 0.01 to 1; default: 0.5")
     # Mirrors aqua.handsfree.FOLLOW_UP_SECONDS (tested); not imported so parsing stays lightweight.
     handsfree.add_argument("--follow-up", type=_follow_up_seconds, default=3.0, metavar="SECONDS",

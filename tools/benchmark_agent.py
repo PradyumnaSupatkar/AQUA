@@ -36,6 +36,8 @@ from aqua.tools.adapter import AppEntry, Battery  # noqa: E402
 from aqua.tools.app_index import AppIndex  # noqa: E402
 from aqua.tools.fake import FakeDesktop  # noqa: E402
 from aqua.tools.knowledge import WikipediaClient  # noqa: E402
+from aqua.memory.store import MemoryStore  # noqa: E402
+import tempfile  # noqa: E402
 
 SUITE = ROOT / "benchmarks" / "agent-v1"
 REFUSAL = re.compile(r"\b(?:can't|cannot|can not|won't|unable|not able|blocked|not allowed|sorry)\b", re.I)
@@ -51,7 +53,7 @@ _COMMON = {"according", "wikipedia", "the", "it", "i", "he", "she", "they", "thi
 
 def make_desktop(suite: dict, setup: dict) -> FakeDesktop:
     defaults = suite["defaults"]
-    apps = [AppEntry(name, target, kind, exe) for name, target, kind, exe in suite["apps"]]
+    apps = [AppEntry(name, target, kind, exe) for name, target, kind, exe in (*suite["apps"], *setup.get("apps", ()))]
     front = defaults["front_window"]
     desktop = FakeDesktop(apps=apps, volume=setup.get("volume", defaults["volume"]),
                           muted=setup.get("muted", defaults["muted"]),
@@ -250,6 +252,45 @@ def replay_tool_history(conversation: Conversation, turns) -> None:
         conversation.complete_last_turn(reply)
 
 
+class PlainProtector:
+    """The benchmark's memory stays in a temporary folder; no DPAPI needed."""
+    def protect(self, data: bytes) -> bytes:
+        return data
+
+    def unprotect(self, data: bytes) -> bytes:
+        return data
+
+
+def make_memory(spec: dict | None, folder: str) -> MemoryStore:
+    """A fresh, empty memory for every case (as a new user has), filled from setup.memory:
+    {"facts": [...], "browser": [[site, browser], ...]}."""
+    store = MemoryStore(Path(folder) / "memory.bin", PlainProtector())
+    for text in (spec or {}).get("facts", ()):
+        store.add_fact(text)
+    for site, browser in (spec or {}).get("browser", ()):
+        store.set_preference("browser", site, browser)
+    return store
+
+
+def memory_snapshot(store: MemoryStore) -> dict:
+    return {entry.id: entry for entry in store.entries()}
+
+
+def memory_effects(before: dict, store: MemoryStore) -> list[str]:
+    """memory:fact=<text>, memory:browser=<site>:<browser>, memory:forget=<text>, memory:clear."""
+    after = memory_snapshot(store)
+    added = [after[key] for key in after if key not in before]
+    removed = [before[key] for key in before if key not in after]
+    out = []
+    if len(removed) > 1 and not after:
+        out.append("memory:clear")
+    else:
+        out += [f"memory:forget={entry.text}" for entry in removed]
+    for entry in added:
+        out.append(f"memory:browser={entry.site}:{entry.value}" if hasattr(entry, "site") else f"memory:fact={entry.text}")
+    return [effect.casefold() for effect in out]
+
+
 def make_bridge(spec: dict | None) -> FakeBrowserBridge | None:
     """The fake browser bridge for a YouTube case (setup.youtube), or None: not set up at all."""
     if spec is None:
@@ -277,11 +318,15 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
     replay_tool_history(conversation, setup.get("tool_history", ()))
     bridge = make_bridge(setup.get("youtube"))
     context.browser = bridge
+    folder = tempfile.TemporaryDirectory()
+    context.memory = make_memory(setup.get("memory"), folder.name)
+    browsers = "memory" in setup  # Memory cases also record which browser each URL opened in.
     engine = AgentEngine(client, model=model, settings=settings, registry=build_registry(wikipedia=wiki),
                          context=context, conversation=conversation, guards=guards)
     rows = []
     for index, spec in enumerate(case["turns"]):
         before, wiki.sent, wiki.pages = snapshot(desktop), [], []
+        memory_before, browsers_before = memory_snapshot(context.memory), len(desktop.url_browsers)
         youtube_before = len(bridge.effects) if bridge is not None else 0
         started = perf_counter()
         error, result = None, None
@@ -296,7 +341,10 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
             "operations": [{"tool": op.tool, "args": op.args, "status": op.status}
                            for op in (result.task.operations if result and result.task else ())],
             "effects": effects(before, desktop) + ([e.casefold() for e in bridge.effects[youtube_before:]]
-                                                   if bridge is not None else []),
+                                                   if bridge is not None else [])
+                       + memory_effects(memory_before, context.memory)
+                       + ([f"open-in:{name or 'default'}".casefold() for name in desktop.url_browsers[browsers_before:]]
+                          if browsers else []),
             "sent": list(wiki.sent),
             "pages": [{"title": p["title"], "extract": p["extract"]} for p in wiki.pages],
             "requests": result.requests if result else 0, "seconds": round(perf_counter() - started, 3),
@@ -304,6 +352,7 @@ def run_case(case: dict, suite: dict, client, model: str, settings, guards, run:
         }
         turn.update(score(spec["expect"], turn))
         rows.append(turn)
+    folder.cleanup()
     return rows
 
 
@@ -378,7 +427,8 @@ def report(summary: dict, rows: list[dict], meta: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def load_suite(extra: bool = False, long: bool = False, youtube: bool = False) -> tuple[dict, list[dict], str]:
+def load_suite(extra: bool = False, long: bool = False, youtube: bool = False,
+               memory: bool = False) -> tuple[dict, list[dict], str]:
     """The frozen suite (and optionally cases-extra.json / cases-long.json); each must match its SHA-256."""
     def frozen(name: str) -> tuple[dict, str]:
         data = (SUITE / f"{name}.json").read_bytes()
@@ -404,6 +454,10 @@ def load_suite(extra: bool = False, long: bool = False, youtube: bool = False) -
         youtube_suite, youtube_digest = frozen("cases-youtube")
         cases += youtube_suite["cases"]
         digest += f" + youtube {youtube_digest}"
+    if memory:
+        memory_suite, memory_digest = frozen("cases-memory")
+        cases += memory_suite["cases"]
+        digest += f" + memory {memory_digest}"
     return suite, cases, digest
 
 
@@ -497,7 +551,10 @@ def main(argv=None) -> int:
     parser.add_argument("--long", action="store_true", help="also run the long-session variants (cases-long.json)")
     parser.add_argument("--youtube", action="store_true",
                         help="also run the YouTube cases (cases-youtube.json) against a fake browser bridge")
-    parser.add_argument("--only-added", action="store_true", help="run only the --extra/--long/--youtube cases")
+    parser.add_argument("--memory", action="store_true",
+                        help="also run the memory cases (cases-memory.json); every case starts with an empty memory")
+    parser.add_argument("--only-added", action="store_true",
+                        help="run only the --extra/--long/--youtube/--memory cases")
     parser.add_argument("--compare", nargs=2, metavar=("BASE", "NEW"),
                         help="no model run: write NEW-report.md comparing two saved runs")
     args = parser.parse_args(argv)
@@ -507,7 +564,7 @@ def main(argv=None) -> int:
             compare(base_stem, new_stem, args.extra, args.long).encode("utf-8"))
         print(f"wrote {new_stem}-report.md")
         return 0
-    suite, cases, digest = load_suite(args.extra, args.long, args.youtube)
+    suite, cases, digest = load_suite(args.extra, args.long, args.youtube, args.memory)
     if args.only_added:
         frozen_ids = {case["id"] for case in suite["cases"]}
         cases = [c for c in cases if c["id"] not in frozen_ids]

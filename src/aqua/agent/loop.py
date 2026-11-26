@@ -118,6 +118,16 @@ _HOST_ASK_NUDGE = ("[Aqua host: you asked the user yourself, but nothing is wait
                    "request \"asked\"; Aqua asks the user itself when the action needs it.]")
 
 
+# Whole requests that are a plain "forget": the most recent memory, or everything (asked first).
+_FORGET_PHRASE = {phrase: "last" for phrase in (
+    "forget that", "forget it", "forget this", "forget what i just said", "forget what i said", "please forget that",
+    "aqua forget that", "forget the last thing", "forget that please", "never mind forget that")} | {
+    phrase: "all" for phrase in (
+        "forget everything", "forget everything you know about me", "forget everything you remember",
+        "forget everything you remember about me", "forget all of it", "forget all memories", "clear your memory",
+        "please forget everything", "forget everything about me", "wipe your memory")}
+
+
 def without_host_ask(text: str) -> str:
     """The text without its "Say yes or no." sentences."""
     return " ".join(_HOST_ASK_SENTENCE.sub(" ", text).split())
@@ -616,6 +626,12 @@ class AgentEngine:
             if asked:
                 # Windows lets no app change the default browser: say so and open Default apps.
                 return self._default_browser(text, browser, emit, result)
+        if "forget" in self.registry.names and getattr(self.context, "memory", None) is not None:
+            target = _FORGET_PHRASE.get(" ".join(re.findall(r"[a-z']+", text.casefold().replace("’", "'"))))
+            if target is not None:
+                # "forget that" / "forget everything": the host runs forget itself (the policy still
+                # asks before forgetting everything).
+                return self._host_forget(text, target, emit, result)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups,
                              video_active=self._video_active())
@@ -1098,6 +1114,24 @@ class AgentEngine:
         name, args = next(iter(found.values()))
         request = "asked" if self._commanded_request(turn) and not turn.offer_mode else "unsure"
         return {"function": {"name": name, "arguments": {**args, "request": request}}}
+
+    def _host_forget(self, text: str, target: str, emit, result) -> AgentTurnResult:
+        turn = _Turn(text, ("forget",), [], groups=("memory",))
+        self._last_groups = turn.groups
+        call = {"function": {"name": "forget", "arguments": {"target": target}}}
+        turn.messages.append({"role": "assistant", "content": "", "tool_calls": [call]})
+        stop = self._handle_call(turn, "forget", call["function"]["arguments"])
+        if stop is not None:
+            emit(stop[1])
+            self._remember(text, stop[1], turn)
+            return result(stop[0], stop[0], turn, status="waiting")
+        op = turn.operations[-1]
+        done = op.status == "ok"
+        reply = (join_phrases([op.done]) if done else
+                 "There's nothing I remember to forget." if "No remembered item" in op.message else op.message)
+        emit(reply)
+        self._remember(text, reply, turn)
+        return result("action" if done else "answer", "host-reply", turn)
 
     def _default_browser(self, text: str, browser: str | None, emit, result) -> AgentTurnResult:
         """'make Brave my default browser': Windows requires the user to choose it, so the host

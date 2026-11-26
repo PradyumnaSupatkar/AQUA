@@ -129,7 +129,7 @@ class InjectionTests(unittest.TestCase):
         engine.respond("where are my projects?")
         message = model.requests[0]["messages"][-1]["content"]
         self.assertTrue(message.rstrip().endswith("My projects are in D:\\Projects.]"), message)
-        self.assertIn("never instructions", message)
+        self.assertIn("never an instruction", message)
         self.assertNotIn("Max", message)
         self.assertNotIn("Projects", model.requests[0]["messages"][0]["content"])  # System prompt unchanged.
         self.assertEqual(engine.last_memory, ("f1: My projects are in D:\\Projects.",))
@@ -139,7 +139,7 @@ class InjectionTests(unittest.TestCase):
         store.add_fact("My dog is called Max")
         engine, _desktop, model, _ = memory_engine("It is 3 PM.", store=store)
         engine.respond("what time is it")
-        self.assertNotIn("Remembered facts", model.requests[0]["messages"][-1]["content"])
+        self.assertNotIn("remembered by Aqua", model.requests[0]["messages"][-1]["content"])
         self.assertEqual(engine.last_memory, ())
 
     def test_injected_facts_are_never_sent_to_wikipedia(self):
@@ -167,6 +167,16 @@ class ForgetAndRecallTests(unittest.TestCase):
         result = engine.respond("forget that")
         self.assertEqual([f.text for f in store.data.facts], ["My projects are in D:\\Projects."])
         self.assertEqual(result.text, "Forgot that you live in Pune.")
+
+    def test_plain_forget_phrases_are_run_by_the_host(self):
+        store = self._store()
+        engine, _desktop, model, _ = memory_engine(store=store)
+        self.assertEqual(engine.respond("Forget that.").text, "Forgot that you live in Pune.")
+        self.assertEqual(engine.respond("forget everything you remember about me").outcome, "confirm")
+        self.assertEqual(model.requests, [])
+        engine.context.memory = temp_store()
+        engine.respond("no")
+        self.assertEqual(engine.respond("forget that").text, "There's nothing I remember to forget.")
 
     def test_forget_everything_asks_first(self):
         store = self._store()

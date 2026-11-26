@@ -191,5 +191,32 @@ class ScoringTests(unittest.TestCase):
             "model": "m", "suite_sha256": "x", "guards": "all on", "finished": "now"}))
 
 
+class MemorySuiteTests(unittest.TestCase):
+    def test_memory_cases_are_frozen_and_load_with_the_suite(self):
+        data = (SUITE / "cases-memory.json").read_bytes()
+        self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-memory.sha256").read_text().strip())
+        suite, cases, digest = bench.load_suite(memory=True)
+        memory = json.loads(data)["cases"]
+        self.assertTrue(10 <= len(memory) <= 15)
+        self.assertEqual(len(cases), len(suite["cases"]) + len(memory))
+        self.assertIn("+ memory", digest)
+
+    def test_memory_effects(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            store = bench.make_memory({"facts": ["I live in Pune"], "browser": [["youtube.com", "Brave"]]}, folder)
+            before = bench.memory_snapshot(store)
+            store.add_fact("My dog is called Max")
+            store.set_preference("browser", "", "Chrome")
+            effects = bench.memory_effects(before, store)
+            self.assertEqual(sorted(effects), ["memory:browser=:chrome", "memory:fact=my dog is called max."])
+            before = bench.memory_snapshot(store)
+            store.forget(store.latest().id)
+            self.assertEqual(bench.memory_effects(before, store), ["memory:forget=use chrome for websites"])
+            before = bench.memory_snapshot(store)
+            store.clear()
+            self.assertEqual(bench.memory_effects(before, store), ["memory:clear"])
+
+
 if __name__ == "__main__":
     unittest.main()

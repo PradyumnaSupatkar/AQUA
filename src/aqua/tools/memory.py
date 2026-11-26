@@ -101,7 +101,8 @@ def _remember(args: dict, context: ToolContext) -> ToolOutcome:
     if why:
         return ToolOutcome("failed", "Not saved: " + why)
     fact, replaced = store.add_fact(text)
-    context.observe(fact.text)  # Personal: look_up never sends it to Wikipedia.
+    from aqua.memory.store import private_parts
+    context.observe(*private_parts(fact.text))  # Personal: look_up never sends it to Wikipedia.
     done = f"remembered that {spoken(fact.text)}"
     message = f"Saved fact {fact.id}: {fact.text}" + (f" (replaces: {replaced.text})" if replaced else "")
     return ToolOutcome("ok", message, done=done, data={"memory_saved": done})

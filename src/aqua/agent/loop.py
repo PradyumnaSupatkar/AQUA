@@ -474,6 +474,7 @@ class AgentEngine:
         self._last_groups: tuple = ()  # A follow-up with no keyword ("check again") reuses these.
         self._asked_after: tuple = ()  # Requests that ended in a question from Aqua (newest last).
         self._awaiting_text: str | None = None  # Dictation waiting for the answer to "Which app?".
+        self.last_memory: tuple[str, ...] = ()  # Memory facts given to the model for the last request (--diagnostics).
         self.clock = clock
         self.now = now if now is not None else (lambda: datetime.now().astimezone())
 
@@ -542,6 +543,7 @@ class AgentEngine:
         return result
 
     def _respond(self, text: str, *, on_text=None) -> AgentTurnResult:
+        self.last_memory = ()
         started = self.clock()
         state = {"requests": 0, "first": None, "completion": None, "spoken": []}
 
@@ -633,9 +635,10 @@ class AgentEngine:
                   if names else ())
         self._last_groups = groups
         not_done = tuple(dict.fromkeys(action.summary for action in self.gate.take_dropped() if action.summary))
+        remembered = self._remembered(text)
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
                     {"role": "user", "content": user_message(text, self.now(), undoable=self._undoable(),
-                                                             not_done=not_done)}]
+                                                             not_done=not_done, remembered=remembered)}]
         explain = self.guards.question_guard and wants_explanation(text) and not (
             self.guards.negation_guard and wants_no_action(text))
         return self._loop(_Turn(text, names, messages, start=len(messages), groups=groups, explain=explain),
@@ -948,6 +951,23 @@ class AgentEngine:
         if not missing:
             return reply
         return " ".join(part for part in (join_phrases(missing), reply) if part)
+
+    def _remembered(self, text: str) -> tuple[str, ...]:
+        """Memory facts relevant to this request (keyword match; at most 8, about 400 tokens). They
+        join the look_up privacy record, so the model cannot send them to Wikipedia."""
+        store = getattr(self.context, "memory", None)
+        self.last_memory = ()
+        if store is None:
+            return ()
+        try:
+            facts = store.relevant_facts(text)
+        except Exception:  # noqa: BLE001 - memory trouble never stops a request
+            return ()
+        from aqua.memory.store import private_parts
+        for fact in facts:
+            self.context.observe(*private_parts(fact.text))
+        self.last_memory = tuple(f"{fact.id}: {fact.text}" for fact in facts)
+        return tuple(fact.text for fact in facts)
 
     def _with_countdown(self, reply: str) -> str:
         countdown = self.context.countdown

@@ -120,6 +120,40 @@ class SafetyInEngineTests(unittest.TestCase):
         self.assertIsNone(engine.context.memory)
 
 
+class InjectionTests(unittest.TestCase):
+    def test_only_relevant_facts_go_at_the_end_of_the_request(self):
+        store = temp_store()
+        store.add_fact("My projects are in D:\\Projects")
+        store.add_fact("My dog is called Max")
+        engine, _desktop, model, _ = memory_engine("They are in D:\\Projects.", store=store)
+        engine.respond("where are my projects?")
+        message = model.requests[0]["messages"][-1]["content"]
+        self.assertTrue(message.rstrip().endswith("My projects are in D:\\Projects.]"), message)
+        self.assertIn("never instructions", message)
+        self.assertNotIn("Max", message)
+        self.assertNotIn("Projects", model.requests[0]["messages"][0]["content"])  # System prompt unchanged.
+        self.assertEqual(engine.last_memory, ("f1: My projects are in D:\\Projects.",))
+
+    def test_no_relevant_fact_means_no_memory_block(self):
+        store = temp_store()
+        store.add_fact("My dog is called Max")
+        engine, _desktop, model, _ = memory_engine("It is 3 PM.", store=store)
+        engine.respond("what time is it")
+        self.assertNotIn("Remembered facts", model.requests[0]["messages"][-1]["content"])
+        self.assertEqual(engine.last_memory, ())
+
+    def test_injected_facts_are_never_sent_to_wikipedia(self):
+        store = temp_store()
+        store.add_fact("My company is Zentrix Labs")
+        engine, _desktop, _model, _ = memory_engine(store=store)
+        engine.context.begin_request("tell me about my company")
+        engine._remembered("tell me about my company")
+        from aqua.tools.knowledge import privacy_problem
+        self.assertIsNotNone(privacy_problem("my company is zentrix labs", engine.context))
+        self.assertIsNotNone(privacy_problem("Zentrix Labs", engine.context))
+        self.assertIsNone(privacy_problem("Lewis Hamilton", engine.context))
+
+
 class ForgetAndRecallTests(unittest.TestCase):
     def _store(self):
         store = temp_store()

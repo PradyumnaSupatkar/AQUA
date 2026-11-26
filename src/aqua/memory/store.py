@@ -116,6 +116,14 @@ def fact_key(text: str) -> str:
     return " ".join((match.group("s") or match.group("v")).casefold().split())
 
 
+def private_parts(text: str) -> tuple[str, ...]:
+    """What the look_up privacy guard must never send for this fact: the fact itself and its
+    value ("My company is Zentrix Labs." -> "my company is zentrix labs", "zentrix labs")."""
+    whole = " ".join(text.casefold().split()).rstrip(" .")
+    match = re.search(r"\b(?:is|are|was|were|in|at|for|called|named)\s+(?P<v>.+)$", whole)
+    return tuple(p for p in (whole, match.group("v").strip() if match else "") if len(p) >= 3)
+
+
 def normalize_site(site: str) -> str:
     """"YouTube" / "https://www.youtube.com/watch" -> "youtube.com"; "" for the default."""
     text = (site or "").strip().casefold()

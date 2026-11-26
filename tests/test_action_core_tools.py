@@ -37,8 +37,9 @@ class RegistryTests(unittest.TestCase):
                                                "window_action", "get_time", "get_battery", "volume", "media",
                                                "lock_screen", "close_app", "force_quit_app", "inspect_window",
                                                "brightness", "power", "open_url", "web_search", "look_up",
-                                               "device_status", "youtube", "open_settings"})
-        disruptive = {"force_quit_app", "power"}
+                                               "device_status", "youtube", "open_settings", "remember", "forget",
+                                               "recall"})
+        disruptive = {"force_quit_app", "power"}  # forget is tier 2 only for target "all".
         for name in registry.names:
             self.assertEqual(registry.get(name).tier_for({"action": "sleep"}, None) > SAFE, name in disruptive, name)
             self.assertIn(registry.get(name).group, GROUP_KEYWORDS, name)

@@ -37,6 +37,9 @@ class ToolContext:
     browser: object = None
     # (site, query) searches opened in this request, so a repeated search is not opened twice.
     searches: list = field(default_factory=list)
+    # The local memory (aqua.memory.store.MemoryStore), or None with --no-memory. Its facts are data
+    # for the model; only its preferences are applied, by host code (browser routing).
+    memory: object = None
 
     def begin_request(self, request: str = "", earlier: tuple[str, ...] = ()) -> None:
         self.launches.clear()

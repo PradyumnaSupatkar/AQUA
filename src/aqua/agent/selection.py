@@ -30,6 +30,9 @@ GROUP_KEYWORDS = {
                   "prime minister", "wikipedia", "look up", "tell me about", "history of", "fact", "facts",
                   "record", "tallest", "largest", "biggest", "oldest", "first"),
     "undo": ("undo", "revert", "take back", "put it back", "change it back"),
+    # Aqua's local memory (remember, forget, recall).
+    "memory": ("remember", "forget", "from now on", "about me", "know about me", "by default", "my favourite",
+               "my favorite", "i prefer", "call me", "my name is", "keep in mind", "going forward", "in future"),
     # Pages of Windows Settings (open_settings): things Windows lets only the user change.
     "settings": ("settings", "default browser", "default app", "default apps", "default program",
                  "bluetooth", "wifi", "wi-fi", "notifications", "notification", "windows update", "updates",
@@ -46,7 +49,7 @@ GROUP_KEYWORDS = {
     # Bare "pause"/"play" stay with the media keys (which pause YouTube too); "pause the video" adds youtube.
 }
 GROUP_ORDER = ("apps", "input", "browser", "windows", "system", "audio", "display", "power", "web", "knowledge",
-               "undo", "settings")
+               "undo", "settings", "memory")
 
 _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE)
              for group, words in GROUP_KEYWORDS.items()}
@@ -182,14 +185,44 @@ def replay_groups(text: str, groups: tuple[str, ...], *, video_active: bool) -> 
     return ("browser", *(group for group in groups if group not in {"browser", "power", "audio", "apps"}))
 
 
+# A lasting preference or fact the user states ("always open YouTube in Brave", "from now on ...",
+# "remember that ...", "my projects are in D:\Projects"). Such a statement is saved, not acted on:
+# only the memory tools are shown, so "always open YouTube in Brave" cannot open YouTube now.
+_LASTING = re.compile(
+    r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+)?(?:always|from\s+now\s+on|by\s+default|in\s+(?:the\s+)?future|"
+    r"going\s+forward|remember\s+(?:that|this|:)|keep\s+in\s+mind|note\s+that|for\s+future\s+reference)\b|"
+    r"\bfrom\s+now\s+on\b", re.IGNORECASE)
+_FACT = re.compile(r"^\W*(?:remember\s+)?(?:my|our)\s+[\w' ]{2,40}?\s+(?:is|are|was|lives?|sits?)\b|"
+                   r"^\W*(?:remember\s+)?i\s+(?:live|work|study)\s+(?:in|at|for)\b|^\W*(?:remember\s+)?call\s+me\b",
+                   re.IGNORECASE)
+
+
+def wants_memory(text: str) -> bool:
+    """A statement to remember, not an action or a question. A plain "my X is Y" counts only when
+    no other tool group matches ("my screen is too bright" stays a brightness request)."""
+    text = text.replace("’", "'").strip()
+    if asks_question(text) or wants_no_action(text):
+        return False
+    if _LASTING.search(text):
+        return True
+    return bool(_FACT.search(text)) and not (set(matched_groups(text)) - {"memory", "system", "knowledge"})
+
+
 def select_tools(text: str, registry, *, negation_guard: bool = True, question_guard: bool = True,
                  previous: tuple[str, ...] = (), video_active: bool = False) -> tuple[str, ...]:
     """The core tools plus every selected group's tools, capped at eight. ``video_active``: a
     YouTube tab is connected, so "replay" or "start it over" means the video."""
     if negation_guard and wants_no_action(text):
         return ()
+    if registry.in_group("memory") and wants_memory(text):
+        return tuple(n for n in registry.in_group("memory") if n != "recall") + ("recall",)
     names = [name for name in CORE_TOOLS if registry.get(name) is not None]
     groups = replay_groups(text, selected_groups(text, previous), video_active=video_active)
+    if "memory" in groups and re.search(r"\bdon'?t\s+forget\s+to\b", text.replace("’", "'"), re.I):
+        groups = tuple(group for group in groups if group != "memory")  # A reminder phrasing, not memory.
+    if "memory" in groups:
+        # Remembering, forgetting or recalling: those tools first, so the cap never drops them.
+        names += [name for name in registry.in_group("memory")]
     for group in groups:
         for name in registry.in_group(group):
             if name not in names:

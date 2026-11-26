@@ -60,6 +60,9 @@ _ACTION_CLAIMS = (
     (re.compile(r"\b(?:restarting|shutting\s+down|signing\s+(?:you\s+)?out|signed\s+out|going\s+to\s+sleep|"
                 r"put\s+(?:the\s+)?(?:computer|pc)\s+to\s+sleep)\b", re.I), {"power"}),
     (re.compile(r"\bsearched\b", re.I), {"web_search", "youtube"}),
+    (re.compile(r"\b(?:remembered|memori[sz]ed|saved|noted|stored|forgotten|forgot|erased)\b|"
+                r"\bwill\s+(?:remember|keep\s+in\s+mind)\b|\bi'?ll\s+(?:remember|keep\s+in\s+mind)\b", re.I),
+     {"remember", "forget"}),
 )
 _STATE_CLAIMS = (
     # Device state must come from a live reading this turn, never from earlier turns.
@@ -90,6 +93,7 @@ _PROMISE = re.compile(
     r"\b(?:i'?ll|i\s+will|let\s+me|i'?m\s+going\s+to|i\s+am\s+going\s+to|i\s+can(?!['’]t|not)(?:\s+also)?)\b[^.?!]{0,40}?"
     r"\b(?:open|launch|start|type|write|put|mute|unmute|turn|set|lock|close|quit|minimi[sz]e|maximi[sz]e|restore|"
     r"bring|switch|pause|play|resume|skip|search|undo|adjust|raise|lower|reduce|increase|dim|brighten|do\s+that|"
+    r"remember|forget|save|note|"
     r"do\s+it)\b", re.I)
 _PROMISE_NUDGE = ("[Aqua host: you said you would do it, but no tool was called, so nothing happened. If the user "
                   "asked for it, call the tool now with request \"asked\". Otherwise answer without promising an "
@@ -866,6 +870,7 @@ class AgentEngine:
                     if not reply:
                         reply = join_phrases([op.done for op in turn.operations]) or (
                             "Done." if acted else "Sorry, I didn't get a reply. Please try again.")
+                    reply = self._with_memory_note(reply, turn)
                     reply = self._with_countdown(reply)
                     if already and reply.startswith(already):
                         reply = reply[len(already):].strip()  # The streamed start was already spoken.
@@ -933,6 +938,16 @@ class AgentEngine:
             return tool is not None and callable(tool.tier) and tool.tier_for(op.args, self.context) == 0
         except Exception:
             return True
+
+    @staticmethod
+    def _with_memory_note(reply: str, turn: _Turn) -> str:
+        """A reply after remember or forget always says what changed, in the host's words."""
+        notes = [op.done for op in turn.operations
+                 if op.tool in {"remember", "forget"} and op.status == "ok" and op.done]
+        missing = [note for note in notes if note.casefold() not in reply.casefold()]
+        if not missing:
+            return reply
+        return " ".join(part for part in (join_phrases(missing), reply) if part)
 
     def _with_countdown(self, reply: str) -> str:
         countdown = self.context.countdown
@@ -1336,9 +1351,10 @@ class AgentEngine:
 
 def build_engine(client, *, model: str, settings: GenerationSettings, max_turns: int = 8,
                  max_chars: int = 12000, desktop=None, policy: Policy | None = None,
-                 lookup: bool = True, browser=None) -> AgentEngine:
+                 lookup: bool = True, browser=None, memory: bool = True, memory_store=None) -> AgentEngine:
     """The real session engine: Windows adapter, app index, all tools (look_up unless disabled),
-    and the browser bridge (real sessions only; tests pass a desktop and get none)."""
+    the browser bridge (real sessions only; tests pass a desktop and get none) and the local memory
+    (``memory=False``: --no-memory, no memory tools and nothing read or saved)."""
     from aqua.tools import build_registry
     from aqua.tools.app_index import AppIndex
     real_desktop = desktop is None
@@ -1354,8 +1370,11 @@ def build_engine(client, *, model: str, settings: GenerationSettings, max_turns:
     context = ToolContext(desktop=desktop, apps=apps,
                           policy=policy if policy is not None else Policy.from_user_config(),
                           preferred_browser=read_preferred_browser(), browser=browser)
+    if memory:
+        from aqua.memory.store import MemoryStore
+        context.memory = memory_store if memory_store is not None else MemoryStore()
     conversation = Conversation(max_turns=max_turns, max_chars=max_chars, system_prompt=SYSTEM_PROMPT)
-    return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup),
+    return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup, memory=memory),
                        context=context, conversation=conversation)
 
 

@@ -11,7 +11,9 @@ from aqua.tools.fake import FakeDesktop
 
 from action_core_helpers import call, make_engine
 
-READ_ONLY = {"get_time", "get_battery", "device_status", "list_windows", "inspect_window", "look_up"}
+READ_ONLY = {"get_time", "get_battery", "device_status", "list_windows", "inspect_window", "look_up", "recall"}
+# Memory is saved automatically (no "unsure" host question); "forget everything" is tier 2 and always asked.
+AUTOMATIC = {"remember", "forget"}
 
 
 class RequestArgumentTests(unittest.TestCase):
@@ -19,7 +21,7 @@ class RequestArgumentTests(unittest.TestCase):
         registry = build_registry()
         for name in registry.names:
             parameters = registry.get(name).parameters
-            if name in READ_ONLY:
+            if name in READ_ONLY or name in AUTOMATIC:
                 self.assertNotIn("request", parameters["properties"], name)
             else:
                 self.assertEqual(parameters["properties"]["request"], REQUEST_PARAMETER, name)

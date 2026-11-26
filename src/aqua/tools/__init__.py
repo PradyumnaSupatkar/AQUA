@@ -3,8 +3,9 @@
 from aqua.agent.registry import Registry
 
 
-def build_registry(*, lookup: bool = True, wikipedia=None) -> Registry:
-    """All milestone 1 and 2 tools; ``lookup=False`` leaves out the Wikipedia look_up."""
+def build_registry(*, lookup: bool = True, wikipedia=None, memory: bool = True) -> Registry:
+    """All milestone 1 and 2 tools; ``lookup=False`` leaves out the Wikipedia look_up and
+    ``memory=False`` (--no-memory) the remember/forget/recall tools."""
     from .apps import close_app, force_quit_app, launch_app
     from .input import type_text
     from .power import power
@@ -20,4 +21,7 @@ def build_registry(*, lookup: bool = True, wikipedia=None) -> Registry:
     if lookup:
         from .knowledge import make_look_up
         tools.append(make_look_up(wikipedia))
+    if memory:
+        from .memory import forget, recall, remember
+        tools += [remember, forget, recall]
     return Registry(tools)

@@ -35,7 +35,7 @@ class MemoryCommandTests(unittest.TestCase):
         status, out, _ = run("list", self.store)
         self.assertEqual(status, 0)
         self.assertIn("f1  My projects are in D:\\Projects.", out)
-        self.assertIn("p2  open youtube.com in Brave", out)
+        self.assertIn("p2  open YouTube in Brave", out)
         self.assertIn("encrypted", out)
 
     def test_forget_by_id(self):

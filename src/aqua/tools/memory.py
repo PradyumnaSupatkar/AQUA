@@ -65,8 +65,8 @@ def spoken(fact: str) -> str:
 
 
 def _site_label(site: str) -> str:
-    names = {"youtube.com": "YouTube", "github.com": "GitHub", "google.com": "Google", "gmail.com": "Gmail"}
-    return names.get(site, site)
+    from aqua.memory.store import site_label
+    return site_label(site)
 
 
 def _store(context):
@@ -143,17 +143,34 @@ def _forget(args: dict, context: ToolContext) -> ToolOutcome:
         "forgot that open", "forgot to open").replace("forgot that use", "forgot to use"))
 
 
+EMPTY = "I don't remember anything about you yet."
+
+
+def entry_phrase(entry) -> str:
+    """How a memory is said: "your projects are in D:\\Projects (f1)", "open YouTube in Brave (p2)"."""
+    return f"{spoken(entry.text) if entry.id.startswith('f') else entry.text} ({entry.id})"
+
+
+def recall_reply(store) -> str:
+    """The host's own answer to "what do you remember about me?": every fact and preference, with ids."""
+    if store is None:
+        return "Memory is turned off for this session, so I don't remember anything."
+    entries = store.entries()
+    if not entries:
+        return EMPTY
+    return "I remember: " + "; ".join(entry_phrase(entry) for entry in entries) + "."
+
+
 def listing(store, query: str = "") -> str:
+    """recall's answer: everything, or only what matches ``query`` (everything when nothing does)."""
     entries = store.entries()
     if query:
         words = [w for w in re.findall(r"[a-z0-9]+", query.casefold()) if len(w) >= 3]
         picked = [e for e in entries if any(w in e.text.casefold() for w in words)]
         entries = picked or entries
     if not entries:
-        return "I don't remember anything about you yet."
-    parts = [spoken(e.text) if e.id.startswith("f") else e.text for e in entries[:12]]
-    more = f" and {len(entries) - 12} more" if len(entries) > 12 else ""
-    return "I remember that " + "; ".join(parts) + more + "."
+        return EMPTY
+    return "I remember: " + "; ".join(entry_phrase(entry) for entry in entries) + "."
 
 
 def _recall(args: dict, context: ToolContext) -> ToolOutcome:

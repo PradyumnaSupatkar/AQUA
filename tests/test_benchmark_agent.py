@@ -212,7 +212,7 @@ class MemorySuiteTests(unittest.TestCase):
             self.assertEqual(sorted(effects), ["memory:browser=:chrome", "memory:fact=my dog is called max."])
             before = bench.memory_snapshot(store)
             store.forget(store.latest().id)
-            self.assertEqual(bench.memory_effects(before, store), ["memory:forget=use chrome for websites"])
+            self.assertEqual(bench.memory_effects(before, store), ["memory:forget=use chrome for other websites"])
             before = bench.memory_snapshot(store)
             store.clear()
             self.assertEqual(bench.memory_effects(before, store), ["memory:clear"])

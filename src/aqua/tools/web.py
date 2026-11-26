@@ -78,6 +78,46 @@ BROWSERS = ("google chrome", "microsoft edge", "mozilla firefox", "brave browser
 SITE_NAMES = {"youtube": "YouTube", "google": "Google", "wikipedia": "Wikipedia", "amazon": "Amazon",
               "github": "GitHub", "duckduckgo": "DuckDuckGo"}
 _SITE = r"(you\s?tube|google(?!\s+chrome)|wikipedia|amazon|git\s?hub)"
+
+# Websites people open by name ("open youtube"): name -> address.
+KNOWN_SITES = {
+    "youtube": "youtube.com", "you tube": "youtube.com", "github": "github.com", "git hub": "github.com",
+    "gmail": "mail.google.com", "google": "google.com", "google drive": "drive.google.com",
+    "google maps": "maps.google.com", "reddit": "reddit.com", "netflix": "netflix.com", "wikipedia": "wikipedia.org",
+    "amazon": "amazon.com", "twitter": "x.com", "x": "x.com", "facebook": "facebook.com", "instagram": "instagram.com",
+    "linkedin": "linkedin.com", "twitch": "twitch.tv", "stack overflow": "stackoverflow.com",
+    "stackoverflow": "stackoverflow.com", "chatgpt": "chatgpt.com", "outlook": "outlook.live.com",
+    "duckduckgo": "duckduckgo.com", "prime video": "primevideo.com", "hotstar": "hotstar.com",
+    "spotify": "open.spotify.com", "whatsapp": "web.whatsapp.com", "discord": "discord.com",
+}
+_DOMAIN_NAME = re.compile(r"^(?:https?://)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,24}(?:/\S*)?$", re.I)
+# A whole request that only opens a site: "open youtube", "go to github.com", "open youtube in edge".
+_OPEN_SITE = re.compile(
+    r"^\W*(?:(?:hey\s+)?aqua\W+)?(?:please\s+|can\s+you\s+|could\s+you\s+)*(?:open(?:\s+up)?|go\s+to|visit|load|"
+    r"bring\s+up|take\s+me\s+to|navigate\s+to|launch|pull\s+up)\s+(?:the\s+)?(?P<site>[\w.:/-]+(?:\s+[\w.-]+)?)"
+    r"(?:\s+(?:website|site|web\s?site|page|homepage|home\s+page))?(?:\s+(?:in|on|with|using)\s+(?:the\s+)?"
+    rf"(?P<browser>(?:{'|'.join(map(re.escape, ('google chrome', 'microsoft edge', 'mozilla firefox', 'brave browser', 'brave', 'chrome', 'firefox', 'edge', 'opera', 'vivaldi')))}))"
+    r"(?:\s+browser)?)?(?:\s+(?:please|for\s+me|now))?\W*$", re.I)
+
+
+def site_url(name: str) -> str | None:
+    """The address a spoken site name or a domain means ("youtube" -> youtube.com), or None."""
+    text = " ".join(str(name).casefold().strip(" .!?").split())
+    text = re.sub(r"\s+dot\s+com$", ".com", text)
+    if text in KNOWN_SITES:
+        return KNOWN_SITES[text]
+    return text if _DOMAIN_NAME.match(text) and not text.endswith((".exe", ".lnk", ".txt")) else None
+
+
+def open_site_request(text: str) -> tuple[str, str] | None:
+    """(site name as said, address) when the whole request just opens a website, else None."""
+    match = _OPEN_SITE.match(text.replace("’", "'").strip())
+    if not match:
+        return None
+    site = re.sub(r"\s+(?:website|site|web\s?site|page|homepage|please|now)$", "", match.group("site").strip(),
+                  flags=re.I)
+    url = site_url(site)
+    return (site, url) if url else None
 # A site the request searches on: "on YouTube", "search YouTube for", "open YouTube (and search)".
 _SITE_PLACE = (re.compile(rf"\b(?:on|in|at|using|via|with)\s+(?:the\s+)?{_SITE}\b", re.I),
                re.compile(rf"\bsearch\s+{_SITE}\s+for\b", re.I),

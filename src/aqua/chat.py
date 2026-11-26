@@ -28,10 +28,29 @@ from aqua.speech.reliability import transcript_rejection_reason
 
 def _help(*, voice: bool) -> None:
     print("/quit exits; /clear forgets this session; /help shows these commands.")
+    if not voice:
+        print("/memory lists what Aqua remembers; /memory forget <id> forgets one item; /memory clear forgets "
+              "everything (new engine).")
     if voice:
         print(f"Press Enter to record {RECORD_SECONDS} seconds. Responses appear as text.")
     else:
         print("Type a message to chat. Responses stream from the local model.")
+
+
+def memory_slash(text: str) -> str | None:
+    """/memory, /memory list, /memory forget <id>, /memory clear -> the matching "aqua memory ..."
+    line, which the new engine answers itself; None for anything else."""
+    parts = text.strip().split()
+    if not parts or parts[0].casefold() != "/memory":
+        return None
+    rest = [p.casefold() for p in parts[1:]]
+    if not rest or rest == ["list"]:
+        return "aqua memory list"
+    if rest == ["clear"]:
+        return "aqua memory clear"
+    if rest[0] == "forget":
+        return "aqua memory forget" + (f" {rest[1]}" if len(rest) > 1 else "")
+    return "aqua memory list"
 
 
 def _control_command(
@@ -388,6 +407,13 @@ def run_text_chat(
                 conversation.action_state.clear()
                 print("\nChat ended.")
                 return 0
+            memory_line = memory_slash(text)
+            if memory_line is not None:
+                if agent is None:
+                    print("Memory needs the new engine: python -m aqua chat --engine new")
+                    continue
+                _respond_agent(agent, memory_line, diagnostics=diagnostics, speaker=speaker)
+                continue
             command = _control_command(text, conversation, voice=False)
             if command is not None and agent is not None:
                 agent.cancel_pending()

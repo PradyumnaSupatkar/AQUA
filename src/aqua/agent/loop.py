@@ -118,6 +118,52 @@ _HOST_ASK_NUDGE = ("[Aqua host: you asked the user yourself, but nothing is wait
                    "request \"asked\"; Aqua asks the user itself when the action needs it.]")
 
 
+# Whole requests asking what Aqua remembers: the host lists the store itself (no model call).
+_RECALL_PHRASES = frozenset({
+    "what do you remember", "what do you remember about me", "what do you know about me", "what do you know",
+    "what do you remember of me", "what have you remembered", "what have you remembered about me",
+    "what did you remember", "what did you remember about me", "tell me what you remember",
+    "tell me what you know about me", "list memories", "list my memories", "list your memories", "list memory",
+    "show memories", "show my memories", "show your memories", "show memory", "show me my memories",
+    "show me what you remember", "memory list", "my memories", "memories", "/memory", "memory",
+    "what's in your memory", "what is in your memory", "what do you have in memory"})
+_LEADING = re.compile(r"^(?:(?:hey|hi|ok|okay)\s+)?(?:aqua\s+)?(?:please\s+|can\s+you\s+|could\s+you\s+)*")
+
+
+def command_words(text: str) -> str:
+    """A short request reduced for matching fixed phrases: lower case, no greeting or "please",
+    no punctuation except "/" and "'" ("Hey Aqua, what do you remember about me?" -> "what do you
+    remember about me")."""
+    words = " ".join(re.findall(r"[a-z0-9/']+", text.casefold().replace("’", "'")))
+    return _LEADING.sub("", words).strip()
+
+
+# A CLI line typed into chat: "aqua memory list", "python -m aqua memory forget f2", "--no-memory".
+_MEMORY_CLI = re.compile(r"^\s*(?:python\s+-m\s+)?aqua\s+memory\s+(?P<action>list|forget|clear)(?:\s+(?P<id>\S+))?"
+                         r"(?:\s+--yes)?\s*$", re.I)
+_FLAG = re.compile(r"^\s*(?:(?:python\s+-m\s+)?aqua\s+(?:chat|voice-chat|handsfree)\s+)?(?P<flags>--[a-z][\w-]*"
+                   r"(?:\s+(?:--)?[\w-]+)*)\s*$", re.I)
+# A reply recalling something about the user ("I remember that your WiFi password is ...", "you told
+# me ..."): its content must be in the memory store (or said in this session), else the host lists the store.
+_MEMORY_CLAIM = re.compile(
+    r"\b(?:i\s+(?:do\s+|still\s+)?remember|i\s+recall|i\s+(?:have|'ve)\s+(?:it\s+)?(?:saved|stored|noted|remembered)|"
+    r"you\s+(?:have\s+|'ve\s+)?(?:told|mentioned\s+to|said\s+to)\s+me|you\s+(?:once\s+)?mentioned|"
+    r"from\s+what\s+you\s+(?:told|said)|i\s+know\s+(?:that\s+)?your)\b", re.I)
+_CLAIM_FILLER = frozenset("""that the a an is are was were your you you're my i me it its of in on at to for and or
+with from so this these those about earlier before once said told mentioned remember recall know saved stored
+noted have has had be been also just still do does did""".split())
+
+
+def memory_claim_words(sentence: str) -> list[str]:
+    """Content words a sentence claims to remember ("I remember that your WiFi password is test123"
+    -> ["wifi", "password", "test123"]); [] when it claims nothing."""
+    match = _MEMORY_CLAIM.search(sentence.replace("’", "'"))
+    if not match:
+        return []
+    tail = sentence[match.end():]
+    return [w for w in re.findall(r"[a-z0-9:\\]+", tail.casefold()) if w not in _CLAIM_FILLER and len(w) >= 2]
+
+
 # Whole requests that are a plain "forget": the most recent memory, or everything (asked first).
 _FORGET_PHRASE = {phrase: "last" for phrase in (
     "forget that", "forget it", "forget this", "forget what i just said", "forget what i said", "please forget that",
@@ -626,12 +672,22 @@ class AgentEngine:
             if asked:
                 # Windows lets no app change the default browser: say so and open Default apps.
                 return self._default_browser(text, browser, emit, result)
+        routed = self._command_route(text, emit, result)
+        if routed is not None:
+            return routed
         if "forget" in self.registry.names and getattr(self.context, "memory", None) is not None:
             target = _FORGET_PHRASE.get(" ".join(re.findall(r"[a-z']+", text.casefold().replace("’", "'"))))
             if target is not None:
                 # "forget that" / "forget everything": the host runs forget itself (the policy still
                 # asks before forgetting everything).
                 return self._host_forget(text, target, emit, result)
+        if "open_url" in self.registry.names and not wants_no_action(text):
+            from aqua.tools.web import open_site_request
+            site = open_site_request(text)
+            if site is not None and not self._installed_app(site[0]):
+                # "open youtube": a website, never an app the PC does not have or the YouTube
+                # control tool (live: three wrong routes). The browser preference applies.
+                return self._host_call(text, "open_url", {"url": site[1], "request": "asked"}, ("web",), emit, result)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups,
                              video_active=self._video_active())
@@ -802,8 +858,13 @@ class AgentEngine:
                     if acted and not looked_up:
                         reply = with_unable_part(reply, content)  # "... but I can't delete files." stays.
                     can_look_up = "look_up" in turn.tool_names and not looked_up
-                    recent = beyond_model_memory(turn.request, reply, self.now(),
-                                                 knowledge_cutoff=self.guards.knowledge_cutoff)
+                    # "right now" about the user's own PC (a YouTube status, a device reading) is
+                    # local, never news: the recency guard is for world knowledge only.
+                    local = any(op.status in {"ok", "unverified", "empty"} and op.tool not in _KNOWLEDGE_TOOLS
+                                for op in turn.operations) or bool(
+                        set(matched_groups(turn.request)) - {"knowledge", "web", "apps", "input"})
+                    recent = not local and beyond_model_memory(turn.request, reply, self.now(),
+                                                               knowledge_cutoff=self.guards.knowledge_cutoff)
                     cited = self.guards.citation_strip and bool(_WIKI_CLAIM.search(reply))
                     if not nudged and can_look_up and (recent or cited):
                         # Recent events, or a Wikipedia citation without a look-up: look it up first.
@@ -889,6 +950,9 @@ class AgentEngine:
                     if not reply:
                         reply = join_phrases([op.done for op in turn.operations]) or (
                             "Done." if acted else "Sorry, I didn't get a reply. Please try again.")
+                    if "recall" in self.registry.names and self._unbacked_memory_claim(reply):
+                        from aqua.tools.memory import recall_reply
+                        reply = recall_reply(getattr(self.context, "memory", None))
                     reply = self._with_memory_note(reply, turn)
                     reply = self._with_countdown(reply)
                     if already and reply.startswith(already):
@@ -1115,6 +1179,117 @@ class AgentEngine:
         request = "asked" if self._commanded_request(turn) and not turn.offer_mode else "unsure"
         return {"function": {"name": name, "arguments": {**args, "request": request}}}
 
+    def _host_answer(self, text: str, reply: str, emit, result) -> AgentTurnResult:
+        emit(reply)
+        self._remember(text, reply)
+        return result("answer", "host-reply", None)
+
+    def _command_route(self, text: str, emit, result) -> AgentTurnResult | None:
+        """Host replies needing no model: startup flags and aqua memory lines typed into chat, and
+        "what do you remember about me?" (the store, listed with ids)."""
+        flags = _FLAG.match(text)
+        if flags:
+            return self._host_answer(text, "That's a startup option. Restart with: python -m aqua chat --engine new "
+                                     + " ".join(flags.group("flags").split()), emit, result)
+        has_memory = "recall" in self.registry.names
+        cli = _MEMORY_CLI.match(text)
+        if cli:
+            if not has_memory:
+                return self._host_answer(text, "Memory is turned off for this session.", emit, result)
+            action, entry_id = cli.group("action").casefold(), cli.group("id")
+            if action == "list":
+                return self._recall_answer(text, emit, result)
+            if action == "clear":
+                return self._host_forget(text, "all", emit, result)
+            if not entry_id:
+                return self._host_answer(text, "Say which one to forget, for example: aqua memory forget f1.",
+                                         emit, result)
+            return self._host_forget(text, entry_id.casefold(), emit, result)
+        if has_memory and command_words(text).rstrip("? ") in _RECALL_PHRASES:
+            return self._recall_answer(text, emit, result)
+        return None
+
+    def _recall_answer(self, text: str, emit, result) -> AgentTurnResult:
+        from aqua.tools.memory import recall_reply
+        return self._host_answer(text, recall_reply(getattr(self.context, "memory", None)), emit, result)
+
+    def _installed_app(self, name: str) -> bool:
+        """An installed app has exactly this name ("Spotify"), so "open spotify" means the app."""
+        from aqua.tools.app_index import executable_stem, normalize
+        try:
+            match = self.context.apps.find(name)
+        except Exception:
+            return False
+        entry, wanted = match.entry, normalize(name)
+        return (match.kind == "found" and entry is not None
+                and (normalize(entry.name) == wanted or executable_stem(entry) == wanted.replace(" ", "")))
+
+    def _host_call(self, text: str, name: str, args: dict, groups: tuple, emit, result) -> AgentTurnResult:
+        """Run one tool call the host chose, through the usual policy, and say what happened."""
+        turn = _Turn(text, (name,), [], groups=groups)
+        self._last_groups = groups
+        call = {"function": {"name": name, "arguments": args}}
+        turn.messages.append({"role": "assistant", "content": "", "tool_calls": [call]})
+        stop = self._handle_call(turn, name, args)
+        if stop is not None:
+            emit(stop[1])
+            self._remember(text, stop[1], turn)
+            return result(stop[0], stop[0], turn, status="waiting")
+        op = turn.operations[-1]
+        done = op.status in {"ok", "unverified"} and bool(op.done)
+        reply = host_summary([op.done]) if done else (op.message or "Sorry, I couldn't do that.")
+        if op.status == "denied":
+            reply = "Not done: " + op.message
+        emit(reply)
+        self._remember(text, reply, turn)
+        return result("action" if done else "answer", "host-reply", turn)
+
+    def _site_fallback(self, turn: _Turn, tool, args: dict, outcome: ToolOutcome):
+        """(open_url tool, args, outcome) when an open request reached the wrong tool: launch_app
+        found no app with a website's name, or the youtube control tool had no tab or connection."""
+        from aqua.tools.web import site_url
+        url = None
+        if tool.name == "launch_app" and outcome.status == "failed" and outcome.message.startswith("No installed app"):
+            url = site_url(args.get("app", ""))
+        elif (tool.name == "youtube" and outcome.status == "failed" and args.get("action") != "search"
+              and _OPEN_VERB.search(turn.request) and re.search(r"\byou\s?tube\b", turn.request, re.I)
+              and ("not connected" in outcome.message or "No YouTube tab" in outcome.message)):
+            url = "youtube.com"
+        site = self.registry.get("open_url")
+        if not url or site is None:
+            return None
+        new_args = {"url": url, "request": "asked"}
+        if self.context.policy.decide(site, new_args, self.context).action != "run":
+            return None
+        return site, new_args, self._run(site, new_args)
+
+    def _unbacked_memory_claim(self, reply: str) -> bool:
+        """The reply says it remembers something about the user that neither the memory store nor
+        this session's own words contain (live: a refused WiFi password repeated as remembered)."""
+        claims = [words for sentence in _SENTENCE_END.split(" ".join(reply.split()))
+                  if (words := memory_claim_words(sentence))]
+        if not claims:
+            return False
+        from aqua.tools.memory import spoken
+        store = getattr(self.context, "memory", None)
+        known = [self.context.request]
+        if store is not None:
+            known += [f"{e.id} {e.text} {spoken(e.text)}" for e in store.entries()]
+        known += [m.get("content", "") for m in self.conversation.history if m.get("role") == "user"]
+        source = " ".join(known).casefold()
+        return any(any(word not in source for word in words) for words in claims)
+
+    def _sensitive_turn(self, user_text: str, turn: _Turn | None) -> bool:
+        """A secret or sensitive detail the user asked Aqua to remember (refused): it never stays in
+        the history the model sees."""
+        from aqua.memory.safety import secret, sensitive
+        refused = turn is not None and any(
+            op.tool == "remember" and op.status == "failed" and ("passwords" in op.message or "sensitive" in op.message)
+            for op in turn.operations)
+        asked = bool(re.search(r"\b(?:remember|save|store|note|keep|memori[sz]e|don'?t\s+forget)\b",
+                               user_text.replace("’", "'"), re.I))
+        return refused or (asked and (secret(user_text) or sensitive(user_text)))
+
     def _host_forget(self, text: str, target: str, emit, result) -> AgentTurnResult:
         turn = _Turn(text, ("forget",), [], groups=("memory",))
         self._last_groups = turn.groups
@@ -1237,7 +1412,11 @@ class AgentEngine:
                                           start=turn.start, summary=summary))
             return "confirm", decision.question
         outcome = self._run(tool, args)
-        turn.messages.append(self._tool_message(tool.name, outcome))
+        message_name = tool.name
+        fallback = self._site_fallback(turn, tool, args, outcome)
+        if fallback is not None:
+            tool, args, outcome = fallback  # The result answers the original call (same tool name).
+        turn.messages.append(self._tool_message(message_name, outcome))
         turn.operations.append(Operation(tool.name, args, outcome.status, outcome.message, outcome.done, _steps(outcome)))
         if isinstance(outcome.data, dict) and "untrusted_page_data" in outcome.data:
             turn.tainted = True
@@ -1283,6 +1462,8 @@ class AgentEngine:
             return True  # A written-out tool call after some text is never spoken either.
         if _HOST_ASK.search(sentence):
             return True  # Only a real pending action says "Say yes or no."; checked before it is spoken.
+        if memory_claim_words(sentence):
+            return True  # "I remember that ..." is checked against the memory store before it is spoken.
         return self.guards.claim_retry and (unsupported_claim(sentence, set()) or bool(_PROMISE.search(sentence)))
 
     def _model_round(self, messages, definitions, stream_to):
@@ -1373,6 +1554,9 @@ class AgentEngine:
             return
         if looks_like_tool_text(reply):
             reply = "Okay."  # Raw tool-call text never enters history (the model would copy it).
+        if self._sensitive_turn(user_text, turn):
+            # A refused secret leaves the session: no user words, no tool call holding it, no echo.
+            user_text, reply, turn = "[sensitive detail not kept]", "I didn't keep that detail.", None
         exchanges = [] if turn is None else self._exchanges(turn)
         try:
             if not exchanges:

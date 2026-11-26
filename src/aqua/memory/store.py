@@ -92,7 +92,7 @@ class Preference:
     @property
     def text(self) -> str:
         if self.kind == "browser":
-            return f"open {self.site} in {self.value}" if self.site else f"use {self.value} for websites"
+            return f"open {site_label(self.site)} in {self.value}" if self.site else f"use {self.value} for other websites"
         return f"{self.kind} {self.site} {self.value}".strip()
 
 
@@ -114,6 +114,17 @@ def fact_key(text: str) -> str:
     if not match:
         return ""
     return " ".join((match.group("s") or match.group("v")).casefold().split())
+
+
+_SITE_LABELS = {"youtube.com": "YouTube", "github.com": "GitHub", "google.com": "Google", "gmail.com": "Gmail",
+                "mail.google.com": "Gmail", "reddit.com": "Reddit", "netflix.com": "Netflix",
+                "wikipedia.org": "Wikipedia", "wikipedia.com": "Wikipedia", "amazon.com": "Amazon", "x.com": "X",
+                "twitter.com": "Twitter", "twitch.tv": "Twitch"}
+
+
+def site_label(site: str) -> str:
+    """"youtube.com" -> "YouTube" for replies; other sites as they are."""
+    return _SITE_LABELS.get(site, site)
 
 
 def private_parts(text: str) -> tuple[str, ...]:

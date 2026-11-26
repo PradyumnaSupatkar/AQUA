@@ -45,7 +45,7 @@ class StoreTests(unittest.TestCase):
         raw = store.path.read_bytes()
         self.assertNotIn(b"Projects", raw)
         again = MemoryStore(store.path, FakeProtector())
-        self.assertEqual([e.text for e in again.entries()], ["My projects are in D:\\Projects.", "open youtube.com in Brave"])
+        self.assertEqual([e.text for e in again.entries()], ["My projects are in D:\\Projects.", "open YouTube in Brave"])
 
     def test_a_damaged_or_foreign_file_is_reported_not_used(self):
         store = temp_store()

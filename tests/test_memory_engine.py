@@ -194,8 +194,8 @@ class ForgetAndRecallTests(unittest.TestCase):
         engine, _desktop, _model, _ = memory_engine([call("recall", request=None)], "You told me a few things.",
                                                     store=store)
         result = engine.respond("what do you remember about me?")
-        self.assertEqual(result.text, "I remember that your projects are in D:\\Projects; you live in Pune; "
-                                      "open youtube.com in Brave.")
+        self.assertEqual(result.text, "I remember: your projects are in D:\\Projects (f1); you live in Pune (f2); "
+                                      "open YouTube in Brave (p3).")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,158 @@
+{
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "suite_sha256": "22503a5d7cc7cd2743164c7d83f3c007c9ff1570260359e51ecf834e8740cc7d + extra fbaaf2f0c2222cadaad1f2ef276dc649b7cc8cc63679151ec91ac4c494464608 + long d0e317ad7d000676de14532a0947ca815717dd34f1e4ba40fc567267b095c8b0 + youtube 3ee06a4e0e811ea05419775e50c504a27f9b591c18f2393585da3f004d455be5",
+ "runs": 2,
+ "guards": "all on",
+ "finished": "Run 2026-11-26 19:46 India Standard Time, 941 s",
+ "source_sha256": {
+  "src/aqua/agent/loop.py": "bcd0177563fd051040f67292fae60baa82abdab142cde1246bd29cfc96ff6582",
+  "src/aqua/agent/prompt.py": "638ab1acc7afc3f4b71539927e0f55036d077f1ed3a194937b987fe75eee0172",
+  "src/aqua/agent/selection.py": "a23f32a830b98e2b12d45a841274ba04693ca0048c693fd4d03aa5580ba1b2cf",
+  "src/aqua/tools/knowledge.py": "6c49ffe7806bf3d0a003c4c808b1fc5fe01b91f7a32ab7dfe1fa3332fc2aeb35"
+ },
+ "cases": 165,
+ "turns": 392,
+ "case_success": 0.9727272727272728,
+ "case_success_question_ok": 0.9727272727272728,
+ "cases_passing_every_run": 160,
+ "turn_success": 0.9770408163265306,
+ "unwanted_actions": 0,
+ "unwanted_actions_on_no_action_requests": 0,
+ "unnecessary_confirmations": 1,
+ "wrong_refusals": 1,
+ "errors": 0,
+ "latency_seconds": {
+  "median": 1.974,
+  "p90": 4.818,
+  "max": 19.194
+ },
+ "model_requests_per_turn": 1.2933673469387754,
+ "by_category": {
+  "asr": {
+   "passed": 10,
+   "of": 14
+  },
+  "blocked": {
+   "passed": 11,
+   "of": 12
+  },
+  "confirmation": {
+   "passed": 16,
+   "of": 16
+  },
+  "direct": {
+   "passed": 54,
+   "of": 54
+  },
+  "extra-composed": {
+   "passed": 12,
+   "of": 12
+  },
+  "extra-confirm": {
+   "passed": 2,
+   "of": 2
+  },
+  "extra-offer": {
+   "passed": 4,
+   "of": 6
+  },
+  "extra-settings": {
+   "passed": 4,
+   "of": 4
+  },
+  "extra-typed": {
+   "passed": 2,
+   "of": 2
+  },
+  "extra-youtube": {
+   "passed": 4,
+   "of": 4
+  },
+  "indirect": {
+   "passed": 10,
+   "of": 10
+  },
+  "long-action": {
+   "passed": 4,
+   "of": 4
+  },
+  "long-device-state": {
+   "passed": 2,
+   "of": 2
+  },
+  "long-no-action": {
+   "passed": 36,
+   "of": 36
+  },
+  "lookup": {
+   "passed": 10,
+   "of": 10
+  },
+  "lookup-recent": {
+   "passed": 4,
+   "of": 4
+  },
+  "multi-step": {
+   "passed": 10,
+   "of": 10
+  },
+  "no-action": {
+   "passed": 34,
+   "of": 34
+  },
+  "polite": {
+   "passed": 8,
+   "of": 8
+  },
+  "privacy": {
+   "passed": 10,
+   "of": 10
+  },
+  "si-ambiguous": {
+   "passed": 8,
+   "of": 8
+  },
+  "si-direct": {
+   "passed": 6,
+   "of": 6
+  },
+  "si-implicit": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-indirect": {
+   "passed": 2,
+   "of": 2
+  },
+  "si-literal": {
+   "passed": 4,
+   "of": 4
+  },
+  "si-observation": {
+   "passed": 2,
+   "of": 4
+  },
+  "si-paraphrase": {
+   "passed": 10,
+   "of": 10
+  },
+  "si-unsupported": {
+   "passed": 4,
+   "of": 4
+  },
+  "undo": {
+   "passed": 6,
+   "of": 6
+  },
+  "youtube": {
+   "passed": 30,
+   "of": 30
+  }
+ },
+ "failure_causes": {
+  "action not taken (model only talked)": 4,
+  "expected tool not called": 2,
+  "wrong outcome (confirm/decline/cancel flow)": 2,
+  "reply check failed": 1
+ }
+}

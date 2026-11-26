@@ -306,6 +306,23 @@ extra = [
     C("extra-offer-quiet-no", "extra-offer", [T("it's very quiet in here", OFFERED, ASKS, E(["volume:up=.*"])),
                                               T("no", NONE)]),
 ]
+# v4 (round 7, live typed chat): number words, dead model-written confirmations, Settings pages, replays.
+BRAVE_TAB = {"youtube": {"tabs": [{"browser": "brave", "last_accessed": 100}]}}
+RESTARTED = E(["youtube:brave:seek=0", "youtube:brave:play"], reply_any=[r"restart"])
+extra += [
+    C("extra-typed-seek-words", "extra-typed", [T("jump to one minute thirty", E(["youtube:brave:seek=90"]))],
+      **BRAVE_TAB),
+    C("extra-sleep-asked-again", "extra-confirm", [T("put the computer to sleep", OFFERED),
+                                                   T("no", E(outcome=["declined"])),
+                                                   T("put the pc to sleep", E(outcome=["confirm"], reply_any=[r"sleep"])),
+                                                   T("yes", E(["power:sleep"]))]),
+    C("extra-default-browser", "extra-settings", [T("Make Brave the default browser",
+                                                    E(["settings:defaultapps"], reply_any=[r"yourself"]))]),
+    C("extra-bluetooth-settings", "extra-settings", [T("open bluetooth settings", E(["settings:bluetooth"]))]),
+    C("extra-replay-video", "extra-youtube", [T("replay the video", RESTARTED)], **BRAVE_TAB),
+    C("extra-restart-pc-not-video", "extra-youtube", [T("restart the computer", E(outcome=["confirm"]))],
+      **BRAVE_TAB),
+]
 extra_ids = [c["id"] for c in extra]
 assert len(extra_ids) == len(set(extra_ids)) and not set(extra_ids) & set(ids), "duplicate ids"
 # Expectation changes (round 3): recorded here so cases.json stays byte-identical. The harness
@@ -327,9 +344,13 @@ EXPECTATION_CHANGES = [
     "cant-hear (frozen case, overridden here): an unmute offer as a host yes/no question is accepted.",
     "v3 (round 4): feel-like-programming and si-activity-notes (frozen, overridden here) also accept a host yes/no "
     "question, since an app the user never named is opened only after asking when the request is a wish.",
+    "v4 (round 7): six added cases (typed number words, a second sleep request after a declined one, the default "
+    "browser and Bluetooth Settings pages, replaying a video, restarting the PC while YouTube is connected); "
+    "no existing expectation changed.",
 ]
-extra_suite = {"version": 3, "name": "agent-v1-extra", "extends": "cases.json",
-               "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
+extra_suite = {"version": 4, "name": "agent-v1-extra", "extends": "cases.json",
+               "scope": ("Extra cases for composed text, offers, confirmations, Settings pages and YouTube replays, "
+                         "scored with the agent-v1 rules and setup."),
                "expectation_changes": EXPECTATION_CHANGES, "overrides": OVERRIDES, "cases": extra}
 extra_data = (json.dumps(extra_suite, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
 (OUT / "cases-extra.json").write_bytes(extra_data)

@@ -77,7 +77,7 @@ class ExtraSuiteAndCompareTests(unittest.TestCase):
         self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-extra.sha256").read_text().strip())
         suite, cases, digest = bench.load_suite(extra=True)
         extra = json.loads(data)["cases"]
-        self.assertTrue(6 <= len(extra) <= 10)
+        self.assertTrue(6 <= len(extra) <= 20)
         self.assertEqual(len(cases), len(suite["cases"]) + len(extra))
         self.assertIn("+ extra", digest)
         self.assertEqual(len(bench.load_suite()[1]), len(suite["cases"]))

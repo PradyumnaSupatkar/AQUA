@@ -1,12 +1,13 @@
 {
- "version": 3,
+ "version": 4,
  "name": "agent-v1-extra",
  "extends": "cases.json",
- "scope": "Extra cases for composed text and offers, scored with the agent-v1 rules and setup.",
+ "scope": "Extra cases for composed text, offers, confirmations, Settings pages and YouTube replays, scored with the agent-v1 rules and setup.",
  "expectation_changes": [
   "extra-offer-programming-yes, extra-offer-notes-no, extra-offer-quiet-no: a clarifying question with options is accepted on the first turn (the programming case gained the ASKS alternative; the other two had it).",
   "cant-hear (frozen case, overridden here): an unmute offer as a host yes/no question is accepted.",
-  "v3 (round 4): feel-like-programming and si-activity-notes (frozen, overridden here) also accept a host yes/no question, since an app the user never named is opened only after asking when the request is a wish."
+  "v3 (round 4): feel-like-programming and si-activity-notes (frozen, overridden here) also accept a host yes/no question, since an app the user never named is opened only after asking when the request is a wish.",
+  "v4 (round 7): six added cases (typed number words, a second sleep request after a declined one, the default browser and Bluetooth Settings pages, replaying a video, restarting the PC while YouTube is connected); no existing expectation changed."
  ],
  "overrides": {
   "cant-hear": {
@@ -463,6 +464,176 @@
      ]
     }
    ]
+  },
+  {
+   "id": "extra-typed-seek-words",
+   "category": "extra-typed",
+   "turns": [
+    {
+     "text": "jump to one minute thirty",
+     "expect": [
+      {
+       "effects": [
+        "youtube:brave:seek=90"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "tabs": [
+      {
+       "browser": "brave",
+       "last_accessed": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "extra-sleep-asked-again",
+   "category": "extra-confirm",
+   "turns": [
+    {
+     "text": "put the computer to sleep",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "no",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "declined"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "put the pc to sleep",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ],
+       "reply_any": [
+        "sleep"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "yes",
+     "expect": [
+      {
+       "effects": [
+        "power:sleep"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "extra-default-browser",
+   "category": "extra-settings",
+   "turns": [
+    {
+     "text": "Make Brave the default browser",
+     "expect": [
+      {
+       "effects": [
+        "settings:defaultapps"
+       ],
+       "reply_any": [
+        "yourself"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "extra-bluetooth-settings",
+   "category": "extra-settings",
+   "turns": [
+    {
+     "text": "open bluetooth settings",
+     "expect": [
+      {
+       "effects": [
+        "settings:bluetooth"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "extra-replay-video",
+   "category": "extra-youtube",
+   "turns": [
+    {
+     "text": "replay the video",
+     "expect": [
+      {
+       "effects": [
+        "youtube:brave:seek=0",
+        "youtube:brave:play"
+       ],
+       "reply_any": [
+        "restart"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "tabs": [
+      {
+       "browser": "brave",
+       "last_accessed": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "extra-restart-pc-not-video",
+   "category": "extra-youtube",
+   "turns": [
+    {
+     "text": "restart the computer",
+     "expect": [
+      {
+       "effects": [],
+       "outcome": [
+        "confirm"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "tabs": [
+      {
+       "browser": "brave",
+       "last_accessed": 100
+      }
+     ]
+    }
+   }
   }
  ]
 }

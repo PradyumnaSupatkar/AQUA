@@ -8,7 +8,10 @@ from unittest.mock import patch
 
 from aqua import chat
 from aqua.browser.fake import FakeBrowserBridge
+from aqua.agent.selection import select_tools
 from aqua.speech.postprocess import prepare_typed
+from aqua.tools import build_registry
+from aqua.tools.settings import PAGES, default_browser_request
 from aqua.tools.youtube import seek_from_request
 
 from action_core_helpers import call, make_engine
@@ -88,7 +91,7 @@ class CapabilityDenialTests(unittest.TestCase):
 
     def test_no_nudge_without_a_fitting_tool_or_for_questions_and_negations(self):
         for request in ("delete the files on my desktop", "how do I mute the sound?", "don't mute the sound",
-                        "make Brave the default browser"):
+                        "search my emails for the invoice"):
             engine, _desktop, model = make_engine("I can't do that.", "I can't do that.")
             engine.respond(request)
             self.assertEqual(len(model.requests), 1, request)
@@ -154,6 +157,72 @@ class DeadConfirmationTests(unittest.TestCase):
         result = engine.respond("don't put the pc to sleep")
         self.assertEqual(result.text, "Okay, I won't put it to sleep.")
         self.assertEqual(desktop.power, [])
+
+
+class OpenSettingsTests(unittest.TestCase):
+    def test_only_the_allowlisted_pages_exist_and_it_is_tier_one(self):
+        tool = build_registry().get("open_settings")
+        self.assertEqual(tool.tier, 1)
+        self.assertEqual(set(PAGES), {"default_apps", "sound", "display", "bluetooth", "wifi", "network",
+                                      "notifications", "power", "apps", "about", "windows_update"})
+        self.assertTrue(all(uri.startswith("ms-settings:") for uri, _ in PAGES.values()))
+
+    def test_a_page_opens_without_asking(self):
+        engine, desktop, _model = make_engine([call("open_settings", page="bluetooth")])
+        result = engine.respond("open bluetooth settings")
+        self.assertEqual(desktop.settings_opened, ["ms-settings:bluetooth"])
+        self.assertEqual(result.text, "Opened Bluetooth & devices in Settings.")
+
+    def test_spoken_names_map_to_pages_and_anything_else_is_refused(self):
+        engine, desktop, _model = make_engine([call("open_settings", page="wi-fi")])
+        engine.respond("open the wifi settings")
+        self.assertEqual(desktop.settings_opened, ["ms-settings:network-wifi"])
+        engine, desktop, _model = make_engine([call("open_settings", page="ms-settings:privacy")],
+                                              "I can't open that page.")
+        engine.respond("open privacy settings")
+        self.assertEqual(desktop.settings_opened, [])
+        with self.assertRaises(OSError):
+            desktop.open_settings("ms-settings:privacy")
+
+    def test_settings_words_show_the_tool(self):
+        registry = build_registry()
+        for text in ("open bluetooth settings", "show me my notifications settings", "check for windows update"):
+            self.assertIn("open_settings", select_tools(text, registry), text)
+
+
+class DefaultBrowserTests(unittest.TestCase):
+    """Live: 'Make Brave the default browser' was refused (correct, Windows blocks it) but unhelpfully."""
+
+    def test_the_live_request_explains_and_opens_default_apps_without_the_model(self):
+        engine, desktop, model = make_engine()
+        result = engine.respond("Make Brave the default browser")
+        self.assertEqual(desktop.settings_opened, ["ms-settings:defaultapps"])
+        self.assertEqual(result.text, "Windows only lets you change the default browser yourself, so I opened "
+                                      "Default apps in Settings: find Brave there and click Set default.")
+        self.assertEqual((result.outcome, model.requests), ("action", []))
+        self.assertEqual(desktop.opened_urls, [])
+
+    def test_other_wordings(self):
+        cases = {"make brave my default browser": "Brave", "set Chrome as the default browser": "Chrome",
+                 "change my default browser to Firefox": "Firefox", "I want Brave as my default browser": "Brave",
+                 "can you make it my default browser": None, "please set my default browser": None}
+        for text, browser in cases.items():
+            self.assertEqual(default_browser_request(text), (True, browser), text)
+        for text in ("what is my default browser?", "open brave", "search the web in my browser"):
+            self.assertFalse(default_browser_request(text)[0], text)
+
+    def test_questions_and_negations_go_to_the_model(self):
+        for text in ("how do I make brave my default browser?", "don't make brave my default browser"):
+            engine, desktop, model = make_engine("Open Settings, then Apps, then Default apps.")
+            engine.respond(text)
+            self.assertEqual(desktop.settings_opened, [], text)
+            self.assertEqual(len(model.requests), 1, text)
+
+    def test_when_settings_cannot_open_the_steps_are_said(self):
+        engine, desktop, _model = make_engine()
+        desktop.open_settings = lambda uri: (_ for _ in ()).throw(OSError("no"))
+        result = engine.respond("make brave my default browser")
+        self.assertIn("open Settings, then Apps, then Default apps, and find Brave there", result.text)
 
 
 if __name__ == "__main__":

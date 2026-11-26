@@ -30,6 +30,10 @@ GROUP_KEYWORDS = {
                   "prime minister", "wikipedia", "look up", "tell me about", "history of", "fact", "facts",
                   "record", "tallest", "largest", "biggest", "oldest", "first"),
     "undo": ("undo", "revert", "take back", "put it back", "change it back"),
+    # Pages of Windows Settings (open_settings): things Windows lets only the user change.
+    "settings": ("settings", "default browser", "default app", "default apps", "default program",
+                 "bluetooth", "wifi", "wi-fi", "notifications", "notification", "windows update", "updates",
+                 "control panel", "display settings", "sound settings", "power settings", "battery settings"),
     # YouTube in the browser, through the Aqua extension.
     "browser": ("youtube", "you tube", "video", "videos", "captions", "caption", "subtitles", "subtitle", "cc",
                 "fullscreen", "full screen", "quality", "resolution", "1080p", "720p", "480p", "1440p", "4k",
@@ -42,7 +46,7 @@ GROUP_KEYWORDS = {
     # Bare "pause"/"play" stay with the media keys (which pause YouTube too); "pause the video" adds youtube.
 }
 GROUP_ORDER = ("apps", "input", "browser", "windows", "system", "audio", "display", "power", "web", "knowledge",
-               "undo")
+               "undo", "settings")
 
 _PATTERNS = {group: re.compile(r"\b(?:" + "|".join(re.escape(word) for word in words) + r")\b", re.IGNORECASE)
              for group, words in GROUP_KEYWORDS.items()}

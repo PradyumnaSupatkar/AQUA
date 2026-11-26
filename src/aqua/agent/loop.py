@@ -42,7 +42,7 @@ _EXECUTED = frozenset({"ok", "unverified", "failed", "empty"})
 # never authorizes or blocks an action.
 _ACTION_CLAIMS = (
     (re.compile(r"\b(?:opened|launched|started|brought)\b|\b(?:is|are)\s+now\s+open\b", re.I),
-     {"launch_app", "window_action", "open_url", "web_search", "youtube"}),
+     {"launch_app", "window_action", "open_url", "web_search", "youtube", "open_settings"}),
     (re.compile(r"\b(?:typed|wrote|written|entered)\b", re.I), {"type_text"}),
     (re.compile(r"\b(?:muted|unmuted|lowered|raised|increased|decreased|turned\s+(?:the\s+)?(?:volume|sound|it)|"
                 r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume", "brightness", "youtube"}),
@@ -572,6 +572,12 @@ class AgentEngine:
                 emit("Which app should I type that into?")
                 self._remember(text, "Which app should I type that into?")
                 return result("clarify", "clarify", None, status="waiting")
+        if "open_settings" in self.registry.names and not wants_no_action(text) and not wants_explanation(text):
+            from aqua.tools.settings import default_browser_request
+            asked, browser = default_browser_request(text)
+            if asked:
+                # Windows lets no app change the default browser: say so and open Default apps.
+                return self._default_browser(text, browser, emit, result)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
                              question_guard=self.guards.question_guard, previous=self._last_groups)
         bare = classify_reply(text)
@@ -958,6 +964,25 @@ class AgentEngine:
         emit(reply)
         self._remember(text, reply, turn)
         return result("action" if done else "answer", "complete", turn)
+
+    def _default_browser(self, text: str, browser: str | None, emit, result) -> AgentTurnResult:
+        """'make Brave my default browser': Windows requires the user to choose it, so the host
+        explains that and opens Default apps (open_settings, through the usual policy)."""
+        from aqua.tools.settings import default_browser_reply
+        turn = _Turn(text, ("open_settings",), [], groups=("settings",))
+        self._last_groups = turn.groups
+        call = {"function": {"name": "open_settings", "arguments": {"page": "default_apps", "request": "asked"}}}
+        turn.messages.append({"role": "assistant", "content": "", "tool_calls": [call]})
+        stop = self._handle_call(turn, "open_settings", call["function"]["arguments"])
+        if stop is not None:
+            emit(stop[1])
+            self._remember(text, stop[1], turn)
+            return result(stop[0], stop[0], turn, status="waiting")
+        opened = turn.operations[-1].status == "ok"
+        reply = default_browser_reply(browser, opened)
+        emit(reply)
+        self._remember(text, reply, turn)
+        return result("action" if opened else "answer", "host-reply", turn)
 
     def _is_offer(self, turn: _Turn, content: str) -> bool:
         """The model asked the user whether to do something while action tools were shown."""

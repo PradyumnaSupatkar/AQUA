@@ -62,6 +62,7 @@ class FakeDesktop(Desktop):
         self.scheduled: str | None = None
         self.opened_urls: list[str] = []
         self.url_browsers: list[str | None] = []  # None: the default browser
+        self.settings_opened: list[str] = []      # ms-settings: URIs
         self.controls: dict[int, list[dict]] = {}
         self.clock = 0.0
         self._pending: list[tuple[float, Window]] = []
@@ -208,6 +209,12 @@ class FakeDesktop(Desktop):
     def open_url(self, url: str, browser=None) -> None:
         self.opened_urls.append(url)
         self.url_browsers.append(browser.name if browser is not None else None)
+
+    def open_settings(self, uri: str) -> None:
+        from .settings import URIS
+        if uri not in URIS:
+            raise OSError("Only the allowlisted Settings pages can be opened.")
+        self.settings_opened.append(uri)
 
     def inspect(self, handle: int) -> dict:
         if self.window(handle) is None:

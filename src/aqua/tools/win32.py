@@ -729,6 +729,12 @@ class Win32Desktop(Desktop):
         result = run_worker({"operation": "inspect_handle", "handle": int(handle)})
         return result if isinstance(result, dict) else {"status": "error"}
 
+    def open_settings(self, uri: str) -> None:
+        from .settings import URIS
+        if uri not in URIS:  # Fixed pages only; never a URI the model wrote.
+            raise OSError("Only the allowlisted Settings pages can be opened.")
+        os.startfile(uri)
+
     def media_key(self, key: str) -> None:
         code = MEDIA_KEYS[key]
         self.user.keybd_event(code, 0, KEYEVENTF_EXTENDEDKEY, 0)

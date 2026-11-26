@@ -122,6 +122,11 @@ class Desktop(ABC):
     def inspect(self, handle: int) -> dict:
         """Read-only UI Automation snapshot: {"status", "controls": [...], "truncated"}."""
 
+    def open_settings(self, uri: str) -> None:
+        """Open one allowlisted ms-settings: page (tools.settings.URIS). Not abstract, so older
+        adapters keep working; they just cannot open Settings."""
+        raise NotImplementedError("This desktop cannot open Settings.")
+
     # Time
     @abstractmethod
     def monotonic(self) -> float: ...

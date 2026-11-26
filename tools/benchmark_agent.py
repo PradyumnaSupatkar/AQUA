@@ -70,7 +70,8 @@ def make_desktop(suite: dict, setup: dict) -> FakeDesktop:
 def snapshot(desktop: FakeDesktop) -> dict:
     return {"launched": len(desktop.launched), "typed": len(desktop.typed), "closed": len(desktop.closed),
             "terminated": len(desktop.terminated), "power": len(desktop.power), "urls": len(desktop.opened_urls),
-            "media": len(desktop.media), "locked": desktop.locked, "volume": desktop.volume, "muted": desktop.muted,
+            "media": len(desktop.media), "settings": len(desktop.settings_opened), "locked": desktop.locked,
+            "volume": desktop.volume, "muted": desktop.muted,
             "brightness": desktop.brightness,
             "windows": {w.handle: (w.title, w.process, w.pid, w.minimized, w.maximized) for w in desktop.windows()}}
 
@@ -87,6 +88,7 @@ def effects(before: dict, desktop: FakeDesktop) -> list[str]:
     out += ["abort" if kind == "abort" else f"power:{kind}" for kind, _ in desktop.power[before["power"]:]]
     out += [f"url:{url}" for url in desktop.opened_urls[before["urls"]:]]
     out += [f"media:{key}" for key in desktop.media[before["media"]:]]
+    out += [f"settings:{uri.removeprefix('ms-settings:')}" for uri in desktop.settings_opened[before["settings"]:]]
     if desktop.locked and not before["locked"]:
         out.append("lock")
     for name in ("volume", "brightness"):

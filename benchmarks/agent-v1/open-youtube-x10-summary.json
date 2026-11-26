@@ -1,0 +1,37 @@
+{
+ "model": "qwen3:4b-instruct-2507-q4_K_M",
+ "suite_sha256": "22503a5d7cc7cd2743164c7d83f3c007c9ff1570260359e51ecf834e8740cc7d + memory c72990a3d1a5fcc39705a7dba0cf81892ec035c044eb2cbc11aeff8de25cc094",
+ "runs": 10,
+ "guards": "all on",
+ "finished": "Run 2026-11-26 21:06 India Standard Time, 0 s",
+ "source_sha256": {
+  "src/aqua/agent/loop.py": "859710732bc1834ed67396ae8612f6e0a3bc7bc2b65486bc55dcfe359630d337",
+  "src/aqua/agent/prompt.py": "a103fcbe8d4b97e2f29420d733fdc7f06d0dcb8c29fefed52d51930cc1e0b4b5",
+  "src/aqua/agent/selection.py": "87080f54f72dbdfa12ef3560ba41053f5df4a157681b93d35441d1ec88c712ef",
+  "src/aqua/tools/knowledge.py": "6c49ffe7806bf3d0a003c4c808b1fc5fe01b91f7a32ab7dfe1fa3332fc2aeb35"
+ },
+ "cases": 1,
+ "turns": 10,
+ "case_success": 1.0,
+ "case_success_question_ok": 1.0,
+ "cases_passing_every_run": 1,
+ "turn_success": 1.0,
+ "unwanted_actions": 0,
+ "unwanted_actions_on_no_action_requests": 0,
+ "unnecessary_confirmations": 0,
+ "wrong_refusals": 0,
+ "errors": 0,
+ "latency_seconds": {
+  "median": 0.001,
+  "p90": 0.002,
+  "max": 0.005
+ },
+ "model_requests_per_turn": 0.0,
+ "by_category": {
+  "memory": {
+   "passed": 10,
+   "of": 10
+  }
+ },
+ "failure_causes": {}
+}

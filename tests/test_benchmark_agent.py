@@ -23,7 +23,7 @@ class YouTubeSuiteTests(unittest.TestCase):
         self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-youtube.sha256").read_text().strip())
         _suite, cases, digest = bench.load_suite(youtube=True)
         youtube = [case for case in cases if case["category"] == "youtube"]
-        self.assertTrue(10 <= len(youtube) <= 15)
+        self.assertTrue(10 <= len(youtube) <= 30)
         self.assertIn("+ youtube", digest)
 
     def test_bridge_from_setup_and_its_effects(self):
@@ -197,7 +197,7 @@ class MemorySuiteTests(unittest.TestCase):
         self.assertEqual(sha256(data).hexdigest(), (SUITE / "cases-memory.sha256").read_text().strip())
         suite, cases, digest = bench.load_suite(memory=True)
         memory = json.loads(data)["cases"]
-        self.assertTrue(10 <= len(memory) <= 15)
+        self.assertTrue(10 <= len(memory) <= 40)
         self.assertEqual(len(cases), len(suite["cases"]) + len(memory))
         self.assertIn("+ memory", digest)
 

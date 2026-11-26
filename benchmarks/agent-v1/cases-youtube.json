@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "name": "agent-v1-youtube",
  "extends": "cases.json",
  "scope": "YouTube control through the Aqua browser extension, with a fake bridge (aqua.browser.fake.FakeBrowserBridge) instead of a browser; scored with the agent-v1 rules. setup.youtube: {connected, browsers, tabs: [FakeTab fields]}. Bridge effects: youtube:<browser>:<action>[=<detail>]. Media keys count for play/pause/next.",
@@ -448,6 +448,81 @@
       {
        "effects": [
         "url:https://www\\.youtube\\.com/results\\?search_query=cat\\+videos"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "connected": false
+    }
+   }
+  },
+  {
+   "id": "yt-right-now-status",
+   "category": "youtube",
+   "turns": [
+    {
+     "text": "what's playing on youtube right now?",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "lofi"
+       ],
+       "reply_none": [
+        "too recent",
+        "don't want to guess"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "tabs": [
+      {
+       "browser": "chrome",
+       "last_accessed": 100
+      }
+     ]
+    }
+   }
+  },
+  {
+   "id": "yt-open-no-tab",
+   "category": "youtube",
+   "turns": [
+    {
+     "text": "open youtube",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?youtube\\.com/?"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "youtube": {
+     "browsers": [
+      "chrome"
+     ]
+    }
+   }
+  },
+  {
+   "id": "yt-open-not-connected",
+   "category": "youtube",
+   "turns": [
+    {
+     "text": "open youtube",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?youtube\\.com/?"
        ]
       }
      ]

@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "name": "agent-v1-memory",
  "extends": "cases.json",
  "scope": "Local memory for the new engine: automatic remember, browser routing applied by the host, forget, recall, and refusals (secrets, sensitive details, page text).",
@@ -383,6 +383,372 @@
       }
      ]
     }
+   }
+  },
+  {
+   "id": "mem-wifi-echo",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "remember my wifi password is test123",
+     "expect": [
+      {
+       "effects": [],
+       "reply_none": [
+        "\\bremembered\\b"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "aqua memory list",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "don't remember anything"
+       ],
+       "reply_none": [
+        "test123"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "what do you remember about me?",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "don't remember anything"
+       ],
+       "reply_none": [
+        "test123"
+       ]
+      }
+     ]
+    },
+    {
+     "text": "what's my wifi password?",
+     "expect": [
+      {
+       "effects": [],
+       "reply_none": [
+        "test123"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {}
+   }
+  },
+  {
+   "id": "mem-recall-prefs",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "what do you remember about me?",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "(?s)(?=.*projects)(?=.*youtube in brave)(?=.*chrome)"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "facts": [
+      "My projects are in D:\\Projects"
+     ],
+     "browser": [
+      [
+       "youtube.com",
+       "Brave"
+      ],
+      [
+       "",
+       "Chrome"
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "id": "mem-recall-empty",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "what do you remember about me",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "don't remember anything"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {}
+   }
+  },
+  {
+   "id": "mem-show-memories",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "show my memories",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "pune"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "facts": [
+      "I live in Pune"
+     ]
+    }
+   }
+  },
+  {
+   "id": "mem-go-to-youtube",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "go to youtube",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?youtube\\.com/?",
+        "open-in:brave"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "browser": [
+      [
+       "youtube.com",
+       "Brave"
+      ],
+      [
+       "",
+       "Chrome"
+      ]
+     ]
+    },
+    "apps": [
+     [
+      "Brave",
+      "C:\\ProgramData\\Start Menu\\Brave.lnk",
+      "shortcut",
+      "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "mem-open-github",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "open github",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?github\\.com/?",
+        "open-in:google chrome"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "browser": [
+      [
+       "youtube.com",
+       "Brave"
+      ],
+      [
+       "",
+       "Chrome"
+      ]
+     ]
+    },
+    "apps": [
+     [
+      "Brave",
+      "C:\\ProgramData\\Start Menu\\Brave.lnk",
+      "shortcut",
+      "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "mem-open-youtube-in-edge",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "open youtube in edge",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?youtube\\.com/?",
+        "open-in:microsoft edge"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "browser": [
+      [
+       "youtube.com",
+       "Brave"
+      ],
+      [
+       "",
+       "Chrome"
+      ]
+     ]
+    },
+    "apps": [
+     [
+      "Brave",
+      "C:\\ProgramData\\Start Menu\\Brave.lnk",
+      "shortcut",
+      "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "mem-open-youtube-no-tab",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "open youtube",
+     "expect": [
+      {
+       "effects": [
+        "url:https://(www\\.)?youtube\\.com/?",
+        "open-in:brave"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "browser": [
+      [
+       "youtube.com",
+       "Brave"
+      ],
+      [
+       "",
+       "Chrome"
+      ]
+     ]
+    },
+    "apps": [
+     [
+      "Brave",
+      "C:\\ProgramData\\Start Menu\\Brave.lnk",
+      "shortcut",
+      "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+     ]
+    ],
+    "youtube": {
+     "browsers": [
+      "brave"
+     ]
+    }
+   }
+  },
+  {
+   "id": "mem-cli-list",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "aqua memory list",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "pune"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "facts": [
+      "I live in Pune"
+     ]
+    }
+   }
+  },
+  {
+   "id": "mem-cli-forget",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "aqua memory forget f1",
+     "expect": [
+      {
+       "effects": [
+        "memory:forget=my projects are in d:\\\\projects\\."
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {
+     "facts": [
+      "My projects are in D:\\Projects",
+      "I live in Pune"
+     ]
+    }
+   }
+  },
+  {
+   "id": "mem-cli-flag",
+   "category": "memory",
+   "turns": [
+    {
+     "text": "--no-memory",
+     "expect": [
+      {
+       "effects": [],
+       "reply_any": [
+        "startup option"
+       ]
+      }
+     ]
+    }
+   ],
+   "setup": {
+    "memory": {}
    }
   }
  ]

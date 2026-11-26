@@ -181,6 +181,7 @@ def run_handsfree(
     llm_threads: int | None = None,
     engine: str = "legacy",
     lookup: bool = True,
+    memory: bool = True,
 ) -> int:
     """Load detectors once, use one mic, and never send idle audio to Whisper/Qwen.
 
@@ -376,7 +377,8 @@ def run_handsfree(
                                 conversation.text_entry_apps = text_entry_apps
                                 if engine == "new":
                                     agent = chat._start_agent(client, model=model, settings=generation,
-                                                              max_turns=max_turns, max_chars=max_chars, lookup=lookup)
+                                                              max_turns=max_turns, max_chars=max_chars, lookup=lookup,
+                                                              **({} if memory else {"memory": False}))
                                     if agent is None:
                                         return 1
                                     conversation = agent.conversation

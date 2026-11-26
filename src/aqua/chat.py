@@ -228,12 +228,12 @@ ENGINES = ("legacy", "new")
 
 
 def _start_agent(client, *, model: str, settings: GenerationSettings, max_turns: int, max_chars: int,
-                 lookup: bool = True):
+                 lookup: bool = True, memory: bool = True):
     """The new action core (--engine new). Returns None if the desktop adapter cannot start."""
     from aqua.agent.loop import build_engine
     try:
         agent = build_engine(client, model=model, settings=settings, max_turns=max_turns, max_chars=max_chars,
-                             **({} if lookup else {"lookup": False}))
+                             **({} if lookup else {"lookup": False}), **({} if memory else {"memory": False}))
     except (OSError, ImportError, ValueError) as exc:
         print(f"Action engine setup error: {exc}", file=sys.stderr)
         return None
@@ -271,6 +271,8 @@ def _respond_agent(agent, user_text: str, *, diagnostics: bool, speaker=None, wa
         first = f"{result.first_token_seconds:.3f}s" if result.first_token_seconds is not None else "n/a"
         print(f"Ollama: first visible token {first}; complete response {result.total_seconds:.3f}s")
         print(f"Engine: new; chat requests {result.requests}; outcome {result.outcome}; stage {result.stage}")
+        for line in memory_diagnostics(agent, result):
+            print(line)
         if result.task is not None:
             task = result.task
             steps = ", ".join(f"{op.tool}={op.status}" for op in task.operations) or "none"
@@ -281,6 +283,19 @@ def _respond_agent(agent, user_text: str, *, diagnostics: bool, speaker=None, wa
         if speaker is not None and wait_for_speech:
             _speech_diagnostics(speaker, wait=True)
     return result
+
+
+def memory_diagnostics(agent, result) -> list[str]:
+    """--diagnostics lines for memory used or changed by this turn (nothing when unused)."""
+    lines = []
+    used = getattr(agent, "last_memory", ())
+    if isinstance(used, tuple) and used:
+        lines.append("Memory: gave the model " + "; ".join(used))
+    task = getattr(result, "task", None)
+    for op in (task.operations if task is not None else ()):
+        if op.tool in {"remember", "forget", "recall"}:
+            lines.append(f"Memory: {op.tool} {op.status}: {op.message}")
+    return lines
 
 
 def _open_speaker(*, speak: bool, tts_engine: str, voice, voice_model_dir, speech_rate: float,
@@ -341,6 +356,7 @@ def run_text_chat(
     llm_threads: int | None = None,
     engine: str = "legacy",
     lookup: bool = True,
+    memory: bool = True,
 ) -> int:
     """Run multiple local text turns until a command, EOF, or prompt Ctrl+C."""
     speaker = None
@@ -356,7 +372,8 @@ def run_text_chat(
         agent = None
         if engine == "new":
             agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns,
-                                 max_chars=max_chars, lookup=lookup)
+                                 max_chars=max_chars, lookup=lookup,
+                                 **({} if memory else {"memory": False}))
             if agent is None:
                 return 1
             conversation = agent.conversation
@@ -537,6 +554,7 @@ def run_voice_chat(
     llm_threads: int | None = None,
     engine: str = "legacy",
     lookup: bool = True,
+    memory: bool = True,
 ) -> int:
     """Load speech once, then capture and recognize each deliberate Enter turn."""
     speaker = None
@@ -552,7 +570,8 @@ def run_voice_chat(
         agent = None
         if engine == "new":
             agent = _start_agent(client, model=model, settings=generation, max_turns=max_turns,
-                                 max_chars=max_chars, lookup=lookup)
+                                 max_chars=max_chars, lookup=lookup,
+                                 **({} if memory else {"memory": False}))
             if agent is None:
                 return 1
             conversation = agent.conversation

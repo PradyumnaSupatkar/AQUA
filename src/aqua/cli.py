@@ -125,6 +125,8 @@ def _chat_options(parser: argparse.ArgumentParser, *, keep_alive: str = DEFAULT_
     parser.add_argument("--engine", choices=("legacy", "new"), default="legacy",
                         help="action engine: legacy (default) or new (tool registry with risk tiers; "
                              "opens any installed app, types text, controls windows and volume)")
+    parser.add_argument("--no-memory", action="store_true",
+                        help="new engine: no local memory this session (nothing remembered, recalled or applied)")
     parser.add_argument("--no-lookup", action="store_true",
                         help="new engine: never send look-up queries to Wikipedia (answers from the model only)")
     parser.add_argument("--allow-text-entry", action="append", choices=("notepad",), default=[],
@@ -290,6 +292,13 @@ def _parser() -> argparse.ArgumentParser:
     browser_setup.add_argument("--check", action="store_true",
                                help="report the registry key, host manifest, host script, Aqua pipe and when the "
                                     "extension last started the host; changes nothing")
+    memory = commands.add_parser("memory", help="list or forget what Aqua remembers (encrypted, this PC only)")
+    memory_actions = memory.add_subparsers(dest="memory_action", required=True)
+    memory_actions.add_parser("list", help="show every remembered fact and preference with its id")
+    forget = memory_actions.add_parser("forget", help="forget one remembered item by its id (see list)")
+    forget.add_argument("id")
+    clear = memory_actions.add_parser("clear", help="forget everything Aqua remembers")
+    clear.add_argument("--yes", action="store_true", help="do not ask for confirmation")
     chat = commands.add_parser("chat", help="interactive text chat with the local Ollama service")
     _chat_options(chat)
     _voice_options(chat, speak_default=False)
@@ -386,6 +395,41 @@ def _report_transcript(transcript: Transcript, *, diagnostics: bool, gain_db: fl
         print("No speech recognized. Check the selected microphone and try --diagnostics or --language en.")
 
 
+def memory_command(args, store=None) -> int:
+    """aqua memory list | forget <id> | clear [--yes]."""
+    from aqua.memory.store import MemoryError_, MemoryStore
+    try:
+        store = store if store is not None else MemoryStore()
+        if args.memory_action == "list":
+            entries = store.entries()
+            if not entries:
+                print("Aqua remembers nothing.")
+            for entry in entries:
+                print(f"{entry.id}  {entry.text}")
+            print(f"Stored encrypted for this Windows user in {store.path}")
+            return 0
+        if args.memory_action == "forget":
+            entry = store.forget(args.id)
+            if entry is None:
+                print(f"No remembered item has the id {args.id}.", file=sys.stderr)
+                return 1
+            print(f"Forgot {entry.id}: {entry.text}")
+            return 0
+        if not args.yes:
+            try:
+                answer = input("Forget everything Aqua remembers? Type yes to confirm: ")
+            except EOFError:
+                answer = ""
+            if answer.strip().casefold() != "yes":
+                print("Nothing was forgotten.")
+                return 1
+        print(f"Forgot {store.clear()} remembered items.")
+        return 0
+    except (MemoryError_, OSError) as exc:
+        print(f"Memory error: {exc}", file=sys.stderr)
+        return 1
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     _configure_output()
     parser = _parser()
@@ -410,6 +454,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         if whisper_only:
             parser.error(f"{', '.join(whisper_only)} apply to Whisper only; add --asr whisper "
                          "(Parakeet uses no hotwords: they lowered its accuracy)")
+    if args.command == "memory":
+        return memory_command(args)
     try:
         if args.command == "benchmark":
             from aqua.benchmark.runner import run
@@ -458,6 +504,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 common["engine"] = args.engine
                 if args.no_lookup:
                     common["lookup"] = False
+                if args.no_memory:
+                    common["memory"] = False
             if args.command == "chat":
                 return run_text_chat(**common)
             speech_path = (resolve_model_dir(args.speech_model, args.speech_model_dir)

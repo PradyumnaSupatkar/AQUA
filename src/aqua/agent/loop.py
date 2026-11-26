@@ -1391,8 +1391,13 @@ def build_engine(client, *, model: str, settings: GenerationSettings, max_turns:
                           policy=policy if policy is not None else Policy.from_user_config(),
                           preferred_browser=read_preferred_browser(), browser=browser)
     if memory:
-        from aqua.memory.store import MemoryStore
-        context.memory = memory_store if memory_store is not None else MemoryStore()
+        from aqua.memory.store import MemoryError_, MemoryStore
+        try:
+            context.memory = memory_store if memory_store is not None else MemoryStore()
+        except MemoryError_ as exc:
+            # A damaged or unreadable file is left untouched; memory is simply off this session.
+            import sys
+            print(f"Memory is off this session: {exc} (aqua memory clear starts over)", file=sys.stderr)
     conversation = Conversation(max_turns=max_turns, max_chars=max_chars, system_prompt=SYSTEM_PROMPT)
     return AgentEngine(client, model=model, settings=settings, registry=build_registry(lookup=lookup, memory=memory),
                        context=context, conversation=conversation)

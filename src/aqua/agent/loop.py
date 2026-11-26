@@ -117,6 +117,34 @@ _HOST_ASK_NUDGE = ("[Aqua host: you asked the user yourself, but nothing is wait
 def without_host_ask(text: str) -> str:
     """The text without its "Say yes or no." sentences."""
     return " ".join(_HOST_ASK_SENTENCE.sub(" ", text).split())
+
+
+# Matching a model-written yes/no question to a tool's own phrase ("Put the PC to sleep?" ->
+# power sleep, "put the computer to sleep"): content words, crude stems, a few spoken synonyms.
+_ASK_STOP = frozenset({"the", "a", "an", "to", "of", "in", "on", "for", "your", "my", "it", "and", "now", "this",
+                       "that", "you", "me", "i", "should", "shall", "want", "would", "like", "do", "can", "go"})
+_ASK_SYNONYMS = {"pc": "computer", "laptop": "computer", "reboot": "restart", "replay": "restart",
+                 "replaying": "restart", "quieter": "down", "louder": "up"}
+
+
+def _ask_words(text: str) -> list[str]:
+    words = re.findall(r"[a-z]+", text.casefold().replace("’", "'"))
+    return [_ASK_SYNONYMS.get(w, w) for w in words if w not in _ASK_STOP]
+
+
+def _says(question: list[str], word: str) -> bool:
+    stem = word[:-1] if len(word) > 3 and word.endswith("e") else word
+    return any(q == word or (len(stem) >= 3 and q.startswith(stem)) for q in question)
+
+
+def _unsaid(text: str, spoken: str) -> str:
+    """The part of ``text`` not already spoken (the streamed start of the same reply)."""
+    said, text = " ".join(spoken.split()), " ".join(text.split())
+    if not said:
+        return text
+    if text.startswith(said):
+        return text[len(said):].strip()
+    return " ".join(s for s in _SENTENCE_END.split(text) if s.strip() and s.strip() not in said)
 # "I cannot jump to a specific time as that is not a function available to me" for a command a
 # shown tool can do (live: "jump to one minute thirty", 0 tools): a capability denial, nudged once.
 _DENIAL = re.compile(
@@ -140,8 +168,10 @@ def statement_part(text: str) -> str:
 
 def without_unbacked_claims(text: str, succeeded: set[str]) -> str:
     """The text without sentences claiming an action no tool of this request performed, e.g. an
-    earlier turn's "I have typed 'this is a test' into Notepad" recapped as if it were new."""
-    kept = [s for s in _SENTENCE_END.split(" ".join(text.split())) if s and not unsupported_claim(s, succeeded)]
+    earlier turn's "I have typed 'this is a test' into Notepad" recapped as if it were new. A question
+    claims nothing ("Would you like me to open VS Code to get started?" stays)."""
+    kept = [s for s in _SENTENCE_END.split(" ".join(text.split()))
+            if s and (s.rstrip().endswith("?") or not unsupported_claim(s, succeeded))]
     return " ".join(kept)
 
 
@@ -672,6 +702,12 @@ class AgentEngine:
                         emit("Okay.", segment=True)
                         self._remember(utterance, "Okay.", turn)
                         return result("answer", "complete", turn)
+            if not calls and not acted and self.guards.cant_retry and _HOST_ASK.search(content):
+                # "Put the PC to sleep? Say yes or no." about an action a shown tool does: the host
+                # makes it the real question for that exact call (live: the model kept asking itself).
+                mapped = self._host_ask_call(turn, content)
+                if mapped is not None:
+                    calls, content, command_like = [mapped], "", True
             if not calls:
                 asks = offer is None and not nudged and not acted and self._is_offer(turn, content)
                 promised = offer is None and not nudged and not acted and not asks and self._promise_offer(turn, content)
@@ -697,7 +733,7 @@ class AgentEngine:
                     if _HOST_ASK.search(offer_text):
                         # Only a real pending action may say "Say yes or no."; the model's question
                         # survives only as the lead-in to the host's own question, without it.
-                        offer_text = statement_part(without_host_ask(offer_text))
+                        offer_text = without_host_ask(offer_text)
                     offer, nudged = (offer_text, live and offer_text == said, promised), True
                     turn.offer_mode, command_like = True, True
                     # The offer round may name any action the request could involve, even after an
@@ -714,10 +750,17 @@ class AgentEngine:
                         # A promise that named no action: never repeat it; say the new reply if it is safe.
                         plain = " ".join(strip_emoji(content).split())
                         safe = plain and not looks_like_tool_text(plain) and not self._risky(plain)
-                        emit(plain if safe else "Okay.", segment=True)
+                        said = "".join(state["spoken"])
+                        rest = _unsaid(plain, said) if safe else ""
+                        if rest or not said.strip():
+                            emit(rest or "Okay.", segment=True)
                     elif not offer[1]:
-                        # No specific action: keep the model's question (never a copied "Say yes or no.").
-                        emit(offer[0] or "Okay.", segment=True)
+                        # No specific action: keep the model's question (never a copied "Say yes or no."),
+                        # without repeating what was already streamed ("That's great! That's great!").
+                        said = "".join(state["spoken"])
+                        rest = _unsaid(offer[0], said)
+                        if rest or not said.strip():
+                            emit(rest or "Okay.", segment=True)
                     self._remember(utterance, "".join(state["spoken"]), turn)
                     return result("answer", "complete", turn)
                 if live:
@@ -852,6 +895,7 @@ class AgentEngine:
                                         if s.strip() and not self._risky(s) and s.strip() not in already)
                     elif offer is not None and not offer[1]:
                         lead = statement_part(offer[0])
+                    lead = _unsaid(lead, "".join(state["spoken"])) if lead else ""
                     emit(" ".join(part for part in (done, lead, question) if part), segment=True)
                     self._remember(utterance, "".join(state["spoken"]))
                     return result(kind, kind, turn, status="waiting")
@@ -979,6 +1023,46 @@ class AgentEngine:
         emit(reply)
         self._remember(text, reply, turn)
         return result("action" if done else "answer", "complete", turn)
+
+    def _host_ask_call(self, turn: _Turn, content: str) -> dict | None:
+        """The one shown tool call a model-written yes/no question describes, or None.
+
+        Each shown action tool's own phrase (describe) is tried for its plain argument forms:
+        no arguments, each ``action`` value, or launch_app with the app the question names. A
+        call is made only when exactly one phrase has all its words in the question."""
+        questions = _QUESTION.findall(without_host_ask(content)) or [content]
+        words = _ask_words(" ".join(questions))
+        found = {}
+        for name in turn.tool_names:
+            tool = self.registry.get(name)
+            if tool is None or self._read_only(name) or tool.describe is None:
+                continue
+            spec = tool.parameters.get("properties", {})
+            required = set(tool.parameters.get("required", ())) - {"request"}
+            if not required:
+                forms = [{}]
+            elif required == {"action"} and "enum" in spec.get("action", {}):
+                forms = [{"action": value} for value in spec["action"]["enum"]]
+            elif required == {"app"} and name == "launch_app":
+                opened = re.search(r"\bopen\s+(.+?)\s*\?", " ".join(questions), re.I)
+                app = self._named_app(opened.group(1)) if opened else None
+                forms = [{"app": app}] if app else []
+            else:
+                forms = []
+            for args in forms:
+                try:
+                    phrase = tool.describe(args)
+                    validate_arguments(tool.parameters, {**args, "request": "unsure"})
+                except Exception:
+                    continue
+                needed = _ask_words(phrase)
+                if needed and all(_says(words, word) for word in needed):
+                    found.setdefault(phrase, (name, args))
+        if len(found) != 1:
+            return None
+        name, args = next(iter(found.values()))
+        request = "asked" if self._commanded_request(turn) and not turn.offer_mode else "unsure"
+        return {"function": {"name": name, "arguments": {**args, "request": request}}}
 
     def _default_browser(self, text: str, browser: str | None, emit, result) -> AgentTurnResult:
         """'make Brave my default browser': Windows requires the user to choose it, so the host

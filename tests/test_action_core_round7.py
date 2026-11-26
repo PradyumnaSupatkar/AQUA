@@ -106,36 +106,78 @@ class DeadConfirmationTests(unittest.TestCase):
     own copy of that question (outcome answer, nothing pending), so 'yes' got 'There's nothing waiting for a yes.'"""
 
     def test_the_live_sequence_real_confirmation_then_a_second_request(self):
-        engine, desktop, model = make_engine([call("power", action="sleep")], COPIED, [call("power", action="sleep")],
-                                       "The computer is going to sleep.")
+        # The benchmark run showed the live model repeating its own question even after a nudge, so the
+        # host maps it to the exact call itself: no extra model round, the real question, then a working yes.
+        engine, desktop, model = make_engine([call("power", action="sleep")], COPIED, "The computer is going to sleep.")
         first = engine.respond("put the computer to sleep")
         self.assertEqual((first.text, first.outcome), (REAL, "confirm"))
         self.assertEqual(engine.respond("no").text, "Okay, I won't.")
         second = engine.respond("put the pc to sleep")
         self.assertEqual((second.text, second.outcome), (REAL, "confirm"))  # A real pending action this time.
-        self.assertEqual((engine.pending.tool, engine.pending.args["action"]), ("power", "sleep"))
-        self.assertIn("nothing is waiting for their answer", model.requests[2]["messages"][-1]["content"])
+        self.assertEqual((engine.pending.tool, engine.pending.args), ("power", {"action": "sleep", "request": "asked"}))
+        self.assertEqual(len(model.requests), 2)
         self.assertEqual(desktop.power, [])
         engine.respond("yes")
         self.assertEqual(desktop.power, [("sleep", 0)])
 
     def test_the_same_when_the_first_question_was_left_unanswered(self):
-        engine, desktop, _model = make_engine([call("power", action="sleep")], COPIED, [call("power", action="sleep")],
-                                       "The computer is going to sleep.")
+        engine, desktop, _model = make_engine([call("power", action="sleep")], COPIED, "The computer is going to sleep.")
         engine.respond("put the computer to sleep")
         second = engine.respond("put the pc to sleep")
         self.assertEqual((second.text, second.outcome), (REAL, "confirm"))
         engine.respond("yes")
         self.assertEqual(desktop.power, [("sleep", 0)])
 
+    def test_a_question_no_tool_phrase_matches_gets_one_nudge(self):
+        engine, desktop, model = make_engine("Doing that now? Say yes or no.", [call("power", action="sleep")],
+                                             "The computer is going to sleep.")
+        result = engine.respond("put the pc to sleep")
+        self.assertEqual((result.text, result.outcome), (REAL, "confirm"))
+        self.assertIn("nothing is waiting for their answer", model.requests[1]["messages"][-1]["content"])
+
     def test_a_model_that_keeps_asking_never_shows_the_host_phrasing(self):
-        engine, desktop, _model = make_engine(COPIED, COPIED)
+        vague = "Doing that now? Say yes or no."
+        engine, desktop, _model = make_engine(vague, vague)
         result = engine.respond("put the pc to sleep")
         self.assertNotIn("yes or no", result.text.casefold())
         self.assertEqual(result.text, "Sorry, I didn't manage to do that.")
         self.assertIsNone(engine.pending)
         self.assertEqual(engine.respond("yes").text, "There's nothing waiting for a yes.")
         self.assertEqual(desktop.power, [])
+
+    def test_an_ambiguous_question_is_not_guessed(self):
+        engine, _desktop, _model = make_engine([call("power", action="sleep")], "Okay.")
+        turn_tools = ("launch_app", "type_text", "undo_last", "lock_screen", "power")
+        from aqua.agent.loop import _Turn
+        turn = _Turn("do it", turn_tools, [])
+        self.assertIsNone(engine._host_ask_call(turn, "Lock the screen or restart the computer? Say yes or no."))
+        mapped = engine._host_ask_call(turn, "Lock the screen? Say yes or no.")
+        self.assertEqual(mapped["function"]["name"], "lock_screen")
+        self.assertEqual(mapped["function"]["arguments"]["request"], "unsure")  # Not a command: the host asks.
+
+    def test_an_open_question_names_the_app(self):
+        engine, desktop, _model = make_engine("Open Notepad? Say yes or no.", "Notepad is open.")
+        result = engine.respond("I need to write something down")
+        self.assertEqual((result.outcome, engine.pending.tool, engine.pending.args["app"]),
+                         ("confirm", "launch_app", "Notepad"))
+        self.assertTrue(result.text.startswith("Open Notepad"), result.text)
+        engine.respond("yes")
+        self.assertEqual(desktop.launched, ["Notepad"])
+
+    def test_an_offer_question_with_a_past_tense_word_is_kept(self):
+        # Benchmark: "...open a code editor ... to get started?" lost its question ("started" read as a claim).
+        offer = "That's great! Would you like me to open a code editor like Visual Studio Code to get started?"
+        engine, _desktop, _model = make_engine(offer, "Would you like me to open Visual Studio Code?")
+        result = engine.respond("I feel like programming")
+        self.assertEqual(result.text, offer)
+
+    def test_streamed_text_is_never_repeated_before_the_offer(self):
+        # Benchmark: "That's great! That's great!" (the streamed start said again, the question lost).
+        engine, _desktop, _model = make_engine(
+            "That's great! Would you like me to open Visual Studio Code? Say yes or no.",
+            "That's great! Would you like me to open Visual Studio Code?")
+        result = engine.respond("I feel like coding")
+        self.assertEqual(result.text.count("That's great!"), 1, result.text)
 
     def test_an_offer_in_host_phrasing_becomes_the_host_question(self):
         engine, desktop, _model = make_engine("Should I put the computer to sleep? Say yes or no.",

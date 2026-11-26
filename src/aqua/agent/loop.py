@@ -103,6 +103,20 @@ _OFFER_NOTE = ("[Aqua host: the user has not answered your question yet. If it o
                "that tool now with request \"unsure\": Aqua asks the user and only acts on a yes. If it offers no "
                "specific action, repeat your answer.]")
 _QUESTION = re.compile(r"[^.!?]*\?\s*")
+# "I cannot jump to a specific time as that is not a function available to me" for a command a
+# shown tool can do (live: "jump to one minute thirty", 0 tools): a capability denial, nudged once.
+_DENIAL = re.compile(
+    r"\bi\s+(?:cannot|can't|can\s+not|am\s+unable\s+to|am\s+not\s+able\s+to|"
+    r"(?:do\s+not|don't)\s+have\s+(?:the\s+)?(?:ability|capability|a\s+(?:tool|function|way)|access))\b|"
+    r"\bi'm\s+(?:unable|not\s+able)\s+to\b|"
+    r"\bnot\s+(?:a\s+)?(?:function|tool|feature|capability)\s+(?:that\s+is\s+|that's\s+)?available\b|"
+    r"\b(?:function|tool|feature|capability)\s+(?:is\s+)?not\s+available\b|"
+    r"\bno\s+(?:tool|function)\s+(?:is\s+)?(?:available|for\s+(?:that|this))\b", re.I)
+
+
+def _denial_nudge(tools: list[str]) -> str:
+    return (f"[Aqua host: you do have a tool for this: {', '.join(tools)}. If it does what the user asked, call "
+            "it now with request \"asked\". If it really cannot, say plainly which part you could not do.]")
 
 
 def statement_part(text: str) -> str:
@@ -739,6 +753,14 @@ class AgentEngine:
                                           "[Aqua host: you can read it. Call youtube with action now_playing, then "
                                           "answer from its result.]"}]
                         continue
+                    fitting = self._fitting_tools(turn) if not acted and not nudged else []
+                    if fitting and self.guards.cant_retry and _DENIAL.search(reply.replace("’", "'")):
+                        # "that is not a function available to me" while a shown tool does exactly
+                        # this kind of action: one nudge to use it (the policy still decides).
+                        nudged = True
+                        turn.messages += [{"role": "assistant", "content": content},
+                                          {"role": "user", "content": _denial_nudge(fitting)}]
+                        continue
                     acted_for_real = any(op.status in {"ok", "unverified", "empty"} and not self._read_only(op.tool)
                                          for op in turn.operations)
                     if (self.guards.claim_retry and turn.tool_names and not looked_up and not acted_for_real
@@ -845,6 +867,18 @@ class AgentEngine:
     def _commanded_request(self, turn: _Turn) -> bool:
         """The request is a direct command (polite forms included), not negated."""
         return direct_command(turn.request) and not (self.guards.negation_guard and wants_no_action(turn.request))
+
+    # Groups whose tools a capability denial is never nudged towards: a search or a look-up is
+    # not what "I can't change the default browser" was refusing.
+    _NO_DENIAL_NUDGE = frozenset({"web", "knowledge"})
+
+    def _fitting_tools(self, turn: _Turn) -> list[str]:
+        """Shown action tools of the groups the request's own words name, for a direct command."""
+        if turn.explain or not self._commanded_request(turn):
+            return []
+        groups = set(matched_groups(turn.request)) - self._NO_DENIAL_NUDGE
+        return [name for name in turn.tool_names
+                if not self._read_only(name) and self.registry.get(name).group in groups]
 
     def _promise_offer(self, turn: _Turn, content: str) -> bool:
         """The model promised an action ("I'll open Notepad for you") without a tool call."""

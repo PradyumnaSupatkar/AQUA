@@ -11,7 +11,7 @@
    "two minutes thirty" -> "2:30"), resolutions ("ten eighty p" -> "1080p") and speeds
    ("one point five x" -> "1.5x"). Ordinals and other words ("the second one") are left alone.
 
-Each fix returns a note, shown with --diagnostics.
+Each fix returns a note, shown with --diagnostics. Typed chat gets fix 2 only (``prepare_typed``).
 """
 
 import re
@@ -155,3 +155,17 @@ def prepare(text: str, *, awaiting_app: bool = False, is_app=None) -> tuple[str,
     if note:
         notes.append(note)
     return text, notes
+
+
+# Typed text that is dictation ("type ...", "write ..."): the user's own words, kept as typed.
+_DICTATION = re.compile(r"^\W*(?:please\s+)?(?:type|write|dictate|enter)\b", re.I)
+
+
+def prepare_typed(text: str) -> tuple[str, list[str]]:
+    """Typed chat input as the engine should see it: the same spoken-number fix as voice ("jump to
+    one minute thirty" -> "jump to 1:30"), so typed and spoken requests reach the tools alike. No
+    filler or homophone fixes (a keyboard does not mishear), and typed dictation is left as typed."""
+    if _DICTATION.match(text):
+        return text, []
+    text, note = spoken_numbers(text)
+    return text, [note] if note else []

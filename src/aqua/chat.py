@@ -379,7 +379,8 @@ def run_text_chat(
             if command == "continue" or not text:
                 continue
             if agent is not None:
-                _respond_agent(agent, text, diagnostics=diagnostics, speaker=speaker)
+                _respond_agent(agent, prepare_typed(text, diagnostics=diagnostics), diagnostics=diagnostics,
+                               speaker=speaker)
                 continue
             _respond(
                 client, conversation, text, model=model,
@@ -462,6 +463,17 @@ def prepare_spoken(text: str, agent=None, *, diagnostics: bool = False) -> str:
     if diagnostics:
         for note in notes:
             print(f"Speech fix: {note}")
+    return prepared
+
+
+def prepare_typed(text: str, *, diagnostics: bool = False) -> str:
+    """Typed input as the engine sees it: spoken-style numbers as digits, as for voice
+    ("jump to one minute thirty" -> "jump to 1:30"). Corrections print with --diagnostics."""
+    from aqua.speech.postprocess import prepare_typed as prepare
+    prepared, notes = prepare(text)
+    if diagnostics:
+        for note in notes:
+            print(f"Input fix: {note}")
     return prepared
 
 

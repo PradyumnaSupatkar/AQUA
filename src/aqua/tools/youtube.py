@@ -82,7 +82,10 @@ _RELATIVE = re.compile(rf"\b(?P<dir>back(?:wards?)?|rewind|ahead|forwards?|fast\
 
 def seek_from_request(request: str) -> dict | None:
     """The seek the user's own words ask for: {"to": "m:ss"} (absolute) or {"seconds": +-n}
-    (relative), or None when the words do not say. Numbers are already digits (aqua.speech.postprocess)."""
+    (relative), or None when the words do not say. Number words become digits first, so typed
+    and benchmark text ("jump to one minute thirty") reads like a fixed voice transcript."""
+    from aqua.speech.postprocess import spoken_numbers
+    request = spoken_numbers(request)[0]
     if _TO_START.search(request):
         return {"to": "0:00"}
     relative = _RELATIVE.search(request)

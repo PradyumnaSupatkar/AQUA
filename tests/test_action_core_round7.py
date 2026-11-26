@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from aqua import chat
 from aqua.browser.fake import FakeBrowserBridge
-from aqua.agent.selection import select_tools
+from aqua.agent.selection import replay_groups, replay_request, select_tools
 from aqua.speech.postprocess import prepare_typed
 from aqua.tools import build_registry
 from aqua.tools.settings import PAGES, default_browser_request
@@ -223,6 +223,55 @@ class DefaultBrowserTests(unittest.TestCase):
         desktop.open_settings = lambda uri: (_ for _ in ()).throw(OSError("no"))
         result = engine.respond("make brave my default browser")
         self.assertIn("open Settings, then Apps, then Default apps, and find Brave there", result.text)
+
+
+class ReplayTests(unittest.TestCase):
+    """Live: 'replay the video' got 'Replaying the video? Say yes or no.', then 'yes replay' pressed the
+    media keys (no media session) while YouTube played in Brave."""
+
+    def test_replay_the_video_is_one_youtube_step_with_the_host_reply(self):
+        engine, desktop, model, bridge = youtube_engine([call("youtube", action="seek", to="0:00")],
+                                                        position=420, playing=False)
+        result = engine.respond("replay the video")
+        self.assertEqual(bridge.effects, ["youtube:brave:seek=0", "youtube:brave:play"])
+        self.assertEqual((result.text, result.outcome), ("Restarted the video.", "action"))
+        self.assertEqual(len(model.requests), 1)
+        self.assertEqual(desktop.media, [])
+        self.assertNotIn("media", model.requests[0]["tools"])
+        self.assertNotIn("power", model.requests[0]["tools"])
+
+    def test_the_models_play_or_restart_become_the_restart(self):
+        for args in ({"action": "play"}, {"action": "restart"}, {"action": "seek", "seconds": -30}):
+            engine, _desktop, _model, bridge = youtube_engine([call("youtube", **args)], position=300)
+            self.assertEqual(engine.respond("play the video again from the beginning").text, "Restarted the video.")
+            self.assertEqual(bridge.effects, ["youtube:brave:seek=0", "youtube:brave:play"], args)
+
+    def test_without_video_words_it_needs_a_connected_youtube_tab(self):
+        for text in ("start it over", "replay", "play it again", "rewatch it", "restart it"):
+            engine, _desktop, model, bridge = youtube_engine([call("youtube", action="restart")])
+            engine.respond(text)
+            self.assertEqual(bridge.effects, ["youtube:brave:seek=0", "youtube:brave:play"], text)
+        self.assertEqual(replay_groups("start it over", ("apps",), video_active=False), ("apps",))
+
+    def test_the_models_dead_question_turns_into_the_restart(self):
+        engine, _desktop, model, bridge = youtube_engine("Replaying the video? Say yes or no.",
+                                                         [call("youtube", action="restart")])
+        result = engine.respond("replay the video")
+        self.assertEqual(result.text, "Restarted the video.")  # Tier 1: no confirmation.
+        self.assertEqual(bridge.effects, ["youtube:brave:seek=0", "youtube:brave:play"])
+
+    def test_restarting_the_computer_is_never_a_replay(self):
+        for text in ("restart the computer", "restart", "restart spotify", "play the song again"):
+            self.assertFalse(replay_request(text, video_active=True), text)
+        self.assertIn("power", select_tools("restart the computer", build_registry(), video_active=True))
+
+    def test_a_failed_seek_is_reported_and_play_is_not_sent(self):
+        engine, _desktop, _model, bridge = youtube_engine([call("youtube", action="restart")],
+                                                          "The YouTube tab is not showing a video.", page="home")
+        result = engine.respond("replay the video")
+        self.assertEqual(bridge.effects, [])
+        self.assertEqual([c[1] for c in bridge.calls], ["seek"])
+        self.assertIn("not showing a video", result.text)
 
 
 if __name__ == "__main__":

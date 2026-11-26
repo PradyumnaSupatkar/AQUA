@@ -102,7 +102,7 @@ _POLITE_LEAD = re.compile(
 _DIRECT_VERB = re.compile(
     r"(?:open|launch|start|lock|mute|unmute|turn|set|close|quit|exit|minimi[sz]e|maximi[sz]e|restore|bring|switch|"
     r"pause|play|resume|skip|search|undo|raise|lower|dim|brighten|increase|decrease|type|write|put|show|go|"
-    r"shut|restart|reboot|sign|log|force|kill|stop|rewind|jump|seek|fast|speed|enable|disable)\b", re.I)
+    r"shut|restart|reboot|sign|log|force|kill|stop|rewind|jump|seek|fast|speed|enable|disable|replay|rewatch)\b", re.I)
 
 
 def direct_command(request: str) -> bool:
@@ -152,13 +152,44 @@ def _has_reading(registry, name: str) -> bool:
     return tool is not None and callable(tool.tier) and tool.group == "browser"
 
 
+# Replaying the video: "replay (the video)", "restart the video", "start (it) over", "rewatch it",
+# "play it again (from the beginning)", "play the video from the start".
+_VIDEO_WORDS = re.compile(r"\b(?:video|you\s?tube|clip)\b", re.I)
+_REPLAY = re.compile(
+    r"\b(?:replay|rewatch)\b|\bstart\s+(?:it\s+|this\s+|that\s+|the\s+video\s+)?(?:over|again)\b|"
+    r"\bplay\s+(?:it|this|that|the\s+video|this\s+video)\s+(?:again|(?:over\s+)?from\s+the\s+(?:beginning|start|top))\b|"
+    r"\brestart\s+(?:it|this|that|the\s+video|this\s+video|the\s+youtube\s+video)\b|"
+    r"\b(?:play|watch)\b[^.?!]*\bfrom\s+the\s+(?:very\s+)?(?:beginning|start|top)\b", re.I)
+# "restart the computer" and the like are never a video replay.
+_NOT_VIDEO = re.compile(r"\b(?:computer|pc|laptop|windows|system|machine|device|router|app|program|song|track|"
+                        r"music|podcast|spotify|playlist)\b", re.I)
+
+
+def replay_request(request: str, *, video_active: bool) -> bool:
+    """The user's words ask to replay the video: they name the video, or a YouTube tab is
+    connected (``video_active``) and nothing else is named ("replay", "start it over")."""
+    text = request.replace("’", "'")
+    if not _REPLAY.search(text) or _NOT_VIDEO.search(text):
+        return False
+    return bool(_VIDEO_WORDS.search(text)) or video_active
+
+
+def replay_groups(text: str, groups: tuple[str, ...], *, video_active: bool) -> tuple[str, ...]:
+    """A video replay is the youtube tool's alone: never the power tools ("restart the video") nor
+    the media keys (live: "yes replay" pressed play on no media session while YouTube played)."""
+    if not replay_request(text, video_active=video_active):
+        return groups
+    return ("browser", *(group for group in groups if group not in {"browser", "power", "audio", "apps"}))
+
+
 def select_tools(text: str, registry, *, negation_guard: bool = True, question_guard: bool = True,
-                 previous: tuple[str, ...] = ()) -> tuple[str, ...]:
-    """The core tools plus every selected group's tools, capped at eight."""
+                 previous: tuple[str, ...] = (), video_active: bool = False) -> tuple[str, ...]:
+    """The core tools plus every selected group's tools, capped at eight. ``video_active``: a
+    YouTube tab is connected, so "replay" or "start it over" means the video."""
     if negation_guard and wants_no_action(text):
         return ()
     names = [name for name in CORE_TOOLS if registry.get(name) is not None]
-    groups = selected_groups(text, previous)
+    groups = replay_groups(text, selected_groups(text, previous), video_active=video_active)
     for group in groups:
         for name in registry.in_group(group):
             if name not in names:

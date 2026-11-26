@@ -23,8 +23,8 @@ from .recency import beyond_model_memory, claims_not_happened
 from .policy import CLARIFY, CONFIRM, DENY, Policy
 from .prompt import SYSTEM_PROMPT, user_message
 from .registry import SAFE, Registry, SchemaError, ToolOutcome, validate_arguments
-from .selection import (MAX_VISIBLE_TOOLS, direct_command, matched_groups, select_tools, selected_groups,
-                        wants_explanation, wants_no_action)
+from .selection import (MAX_VISIBLE_TOOLS, direct_command, matched_groups, replay_groups, replay_request,
+                        select_tools, selected_groups, wants_explanation, wants_no_action)
 
 MAX_OPERATIONS = 12
 MAX_DECISIONS = 14
@@ -48,7 +48,8 @@ _ACTION_CLAIMS = (
                 r"set\s+the\s+volume|volume\s+(?:is|has\s+been)\s+(?:now|set|turned))\b", re.I), {"volume", "brightness", "youtube"}),
     (re.compile(r"\b(?:paused|resumed|skipped)\b", re.I), {"media", "youtube"}),
     (re.compile(r"\b(?:fullscreen|full\s+screen|captions|subtitles|playback\s+speed|quality)\b[^.?!]*"
-                r"\b(?:on|off|set|now|changed|turned)\b|\b(?:rewound|fast-forwarded|jumped\s+to|moved\s+the\s+video)\b",
+                r"\b(?:on|off|set|now|changed|turned)\b|\b(?:rewound|fast-forwarded|jumped\s+to|moved\s+the\s+video|"
+                r"restarted|replayed)\b",
                 re.I), {"youtube"}),
     (re.compile(r"\blocked\b", re.I), {"lock_screen"}),
     (re.compile(r"\b(?:minimi[sz]ed|maximi[sz]ed|restored|focused|switched)\b", re.I), {"window_action", "undo_last"}),
@@ -307,6 +308,7 @@ _YOUTUBE_ASKS = {action: re.compile(pattern, re.I) for action, pattern in {
     "search": r"\b(?:search|find|look\s+(?:up|for))\b",
     "play_result": r"\b(?:play|first|second|third|fourth|fifth|one|result|number)\b",
     "skip_ad": r"\b(?:ads?|advert|skip)\b",
+    "restart": r"\b(?:replay|rewatch|restart|over|again|beginning|start)\b",
 }.items()}
 _NOW_PLAYING = re.compile(r"\bwhat(?:'s|\s+is|\s+was)\s+(?:this\s+|currently\s+|now\s+)?(?:playing|on)\b|"
                           r"\bnow\s+playing\b|\bwhat\s+(?:video|song|track)\s+is\s+(?:this|playing|on)\b|"
@@ -579,7 +581,8 @@ class AgentEngine:
                 # Windows lets no app change the default browser: say so and open Default apps.
                 return self._default_browser(text, browser, emit, result)
         names = select_tools(text, self.registry, negation_guard=self.guards.negation_guard,
-                             question_guard=self.guards.question_guard, previous=self._last_groups)
+                             question_guard=self.guards.question_guard, previous=self._last_groups,
+                             video_active=self._video_active())
         bare = classify_reply(text)
         if bare is not None and not self._asked_after:
             # A bare yes/no with nothing pending and no question from Aqua before it: the host
@@ -592,7 +595,8 @@ class AgentEngine:
             # A yes/no to Aqua's own conversational question ("Would you like a joke?"): the
             # model answers it, but it can never act on it ("no": no tools, "yes": read-only).
             names = () if bare == "no" else tuple(n for n in names if self._read_only(n))
-        groups = selected_groups(text, self._last_groups) if names else ()
+        groups = (replay_groups(text, selected_groups(text, self._last_groups), video_active=self._video_active())
+                  if names else ())
         self._last_groups = groups
         not_done = tuple(dict.fromkeys(action.summary for action in self.gate.take_dropped() if action.summary))
         messages = [{"role": "system", "content": SYSTEM_PROMPT}, *self.conversation.history,
@@ -699,7 +703,8 @@ class AgentEngine:
                     # The offer round may name any action the request could involve, even after an
                     # explanation-only question: every call it makes is "unsure", so the host asks.
                     wider = select_tools(turn.request, self.registry, negation_guard=self.guards.negation_guard,
-                                         question_guard=False, previous=turn.groups)
+                                         question_guard=False, previous=turn.groups,
+                                         video_active=self._video_active())
                     turn.tool_names = tuple(dict.fromkeys((*turn.tool_names, *wider)))[:MAX_VISIBLE_TOOLS]
                     definitions = self.registry.definitions(turn.tool_names) or None
                     turn.messages += [{"role": "assistant", "content": content}, {"role": "user", "content": _OFFER_NOTE}]
@@ -753,7 +758,8 @@ class AgentEngine:
                     if turn.explain and is_refusal(reply):
                         # "how do I lock my screen?" -> "I don't know how": give the steps instead.
                         wider = select_tools(turn.request, self.registry, negation_guard=self.guards.negation_guard,
-                                             question_guard=False, previous=turn.groups)
+                                             question_guard=False, previous=turn.groups,
+                                             video_active=self._video_active())
                         groups = matched_groups(turn.request)
                         named = [n for n in wider if self.registry.get(n).group in groups]  # Not the fallback set.
                         reply = how_to_answer(named) or reply
@@ -921,9 +927,18 @@ class AgentEngine:
                 and not (self.guards.negation_guard and wants_no_action(turn.request)))
 
     def _commanded(self, turn: _Turn, tool) -> bool:
-        """The request is a direct command for this tool's group ("lock the screen")."""
-        return (direct_command(turn.request) and tool.group in matched_groups(turn.request)
+        """The request is a direct command for this tool's group ("lock the screen", or "start it
+        over" for youtube while a YouTube tab is connected)."""
+        groups = replay_groups(turn.request, matched_groups(turn.request), video_active=self._video_active())
+        return (direct_command(turn.request) and tool.group in groups
                 and not (self.guards.negation_guard and wants_no_action(turn.request)))
+
+    def _video_active(self) -> bool:
+        """The browser extension is connected, so a YouTube tab may be playing."""
+        try:
+            return bool(getattr(self.context.browser, "connected", ()))
+        except Exception:
+            return False
 
     def _may_surface(self, turn: _Turn) -> bool:
         """A written call to a tool that was not shown may become a host question (or a read):

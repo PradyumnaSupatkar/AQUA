@@ -94,5 +94,67 @@ class CapabilityDenialTests(unittest.TestCase):
             self.assertEqual(len(model.requests), 1, request)
 
 
+COPIED = "Putting the PC to sleep? Say yes or no."  # The live model reply, copied from the host's own question.
+REAL = "Put the computer to sleep? Say yes or no."
+
+
+class DeadConfirmationTests(unittest.TestCase):
+    """Live: after a real 'Put the computer to sleep? Say yes or no.', 'put the pc to sleep' got the model's
+    own copy of that question (outcome answer, nothing pending), so 'yes' got 'There's nothing waiting for a yes.'"""
+
+    def test_the_live_sequence_real_confirmation_then_a_second_request(self):
+        engine, desktop, model = make_engine([call("power", action="sleep")], COPIED, [call("power", action="sleep")],
+                                       "The computer is going to sleep.")
+        first = engine.respond("put the computer to sleep")
+        self.assertEqual((first.text, first.outcome), (REAL, "confirm"))
+        self.assertEqual(engine.respond("no").text, "Okay, I won't.")
+        second = engine.respond("put the pc to sleep")
+        self.assertEqual((second.text, second.outcome), (REAL, "confirm"))  # A real pending action this time.
+        self.assertEqual((engine.pending.tool, engine.pending.args["action"]), ("power", "sleep"))
+        self.assertIn("nothing is waiting for their answer", model.requests[2]["messages"][-1]["content"])
+        self.assertEqual(desktop.power, [])
+        engine.respond("yes")
+        self.assertEqual(desktop.power, [("sleep", 0)])
+
+    def test_the_same_when_the_first_question_was_left_unanswered(self):
+        engine, desktop, _model = make_engine([call("power", action="sleep")], COPIED, [call("power", action="sleep")],
+                                       "The computer is going to sleep.")
+        engine.respond("put the computer to sleep")
+        second = engine.respond("put the pc to sleep")
+        self.assertEqual((second.text, second.outcome), (REAL, "confirm"))
+        engine.respond("yes")
+        self.assertEqual(desktop.power, [("sleep", 0)])
+
+    def test_a_model_that_keeps_asking_never_shows_the_host_phrasing(self):
+        engine, desktop, _model = make_engine(COPIED, COPIED)
+        result = engine.respond("put the pc to sleep")
+        self.assertNotIn("yes or no", result.text.casefold())
+        self.assertEqual(result.text, "Sorry, I didn't manage to do that.")
+        self.assertIsNone(engine.pending)
+        self.assertEqual(engine.respond("yes").text, "There's nothing waiting for a yes.")
+        self.assertEqual(desktop.power, [])
+
+    def test_an_offer_in_host_phrasing_becomes_the_host_question(self):
+        engine, desktop, _model = make_engine("Should I put the computer to sleep? Say yes or no.",
+                                              [call("power", action="sleep", request="unsure")],
+                                              "The computer is going to sleep.")
+        result = engine.respond("i think my pc needs a sleep")
+        self.assertEqual((result.text, result.outcome), (REAL, "confirm"))
+        engine.respond("yes")
+        self.assertEqual(desktop.power, [("sleep", 0)])
+
+    def test_a_tier_one_action_in_host_phrasing_just_runs(self):
+        engine, desktop, _model = make_engine("Muting the sound? Say yes or no.", [call("volume", action="mute")])
+        result = engine.respond("mute the sound")
+        self.assertTrue(desktop.muted)
+        self.assertEqual(result.text, "Muted the sound.")
+
+    def test_without_tools_the_phrase_is_dropped(self):
+        engine, desktop, _model = make_engine("Okay, I won't put it to sleep. Say yes or no.")
+        result = engine.respond("don't put the pc to sleep")
+        self.assertEqual(result.text, "Okay, I won't put it to sleep.")
+        self.assertEqual(desktop.power, [])
+
+
 if __name__ == "__main__":
     unittest.main()

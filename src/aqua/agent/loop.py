@@ -103,6 +103,19 @@ _OFFER_NOTE = ("[Aqua host: the user has not answered your question yet. If it o
                "that tool now with request \"unsure\": Aqua asks the user and only acts on a yes. If it offers no "
                "specific action, repeat your answer.]")
 _QUESTION = re.compile(r"[^.!?]*\?\s*")
+# The host's own confirmation phrasing. In a model reply it is a dead question: nothing is pending,
+# so a "yes" would get "There's nothing waiting for a yes." (live, after an earlier real one).
+_HOST_ASK = re.compile(r"\b(?:please\s+)?(?:say|answer|reply)\s+(?:with\s+)?(?:a\s+)?yes\s+or\s+(?:a\s+)?no\b", re.I)
+_HOST_ASK_SENTENCE = re.compile(r"[^.!?]*\b(?:say|answer|reply)\s+(?:with\s+)?(?:a\s+)?yes\s+or\s+(?:a\s+)?no\b"
+                                r"[^.!?]*[.!?]*\s*", re.I)
+_HOST_ASK_NUDGE = ("[Aqua host: you asked the user yourself, but nothing is waiting for their answer, so a yes "
+                   "would do nothing. Only Aqua asks for a yes. The user asked for this: call the tool now with "
+                   "request \"asked\"; Aqua asks the user itself when the action needs it.]")
+
+
+def without_host_ask(text: str) -> str:
+    """The text without its "Say yes or no." sentences."""
+    return " ".join(_HOST_ASK_SENTENCE.sub(" ", text).split())
 # "I cannot jump to a specific time as that is not a function available to me" for a command a
 # shown tool can do (live: "jump to one minute thirty", 0 tools): a capability denial, nudged once.
 _DENIAL = re.compile(
@@ -654,10 +667,13 @@ class AgentEngine:
                 promised = offer is None and not nudged and not acted and not asks and self._promise_offer(turn, content)
                 if (asks or promised) and not turn.explain and self._commanded_request(turn):
                     # "would you be able to open Chrome?" answered "Would you like me to?": the user
-                    # already asked, so one nudge to do it now instead of asking back.
+                    # already asked, so one nudge to do it now instead of asking back. A copy of the
+                    # host's own "...? Say yes or no." (live: "Putting the PC to sleep? Say yes or no.")
+                    # is a dead question: nothing is pending, so the model must call the tool.
                     nudged, command_like = True, True
+                    note = _HOST_ASK_NUDGE if _HOST_ASK.search(content) else _PROMISE_NUDGE
                     turn.messages += [{"role": "assistant", "content": content},
-                                      {"role": "user", "content": _PROMISE_NUDGE}]
+                                      {"role": "user", "content": note}]
                     continue
                 if asks or promised:
                     # One round for the model to name the exact tool of its offer; that call is
@@ -668,6 +684,10 @@ class AgentEngine:
                     # new) never reach the user, not even as the lead-in to an offer.
                     said = " ".join(strip_emoji(content).split())
                     offer_text = (without_unbacked_claims(said, set()) if self.guards.claim_retry else said)
+                    if _HOST_ASK.search(offer_text):
+                        # Only a real pending action may say "Say yes or no."; the model's question
+                        # survives only as the lead-in to the host's own question, without it.
+                        offer_text = statement_part(without_host_ask(offer_text))
                     offer, nudged = (offer_text, live and offer_text == said, promised), True
                     turn.offer_mode, command_like = True, True
                     # The offer round may name any action the request could involve, even after an
@@ -685,7 +705,8 @@ class AgentEngine:
                         safe = plain and not looks_like_tool_text(plain) and not self._risky(plain)
                         emit(plain if safe else "Okay.", segment=True)
                     elif not offer[1]:
-                        emit(offer[0] or "Okay.", segment=True)  # No specific action: keep the model's question.
+                        # No specific action: keep the model's question (never a copied "Say yes or no.").
+                        emit(offer[0] or "Okay.", segment=True)
                     self._remember(utterance, "".join(state["spoken"]), turn)
                     return result("answer", "complete", turn)
                 if live:
@@ -781,6 +802,12 @@ class AgentEngine:
                             continue
                         done = join_phrases([op.done for op in turn.operations])
                         reply = (done + " " if done else "") + "Sorry, I couldn't do " + ("the rest." if done else "that.")
+                    if _HOST_ASK.search(reply):
+                        # The host's "Say yes or no." with nothing pending (a yes would do nothing):
+                        # the model's yes/no question goes too, and the reply says what really happened.
+                        reply = statement_part(without_host_ask(reply)) or (
+                            join_phrases([op.done for op in turn.operations]) if acted else
+                            "Sorry, I didn't manage to do that." if self._commanded_request(turn) else "Okay.")
                     if not reply:
                         reply = join_phrases([op.done for op in turn.operations]) or (
                             "Done." if acted else "Sorry, I didn't get a reply. Please try again.")
@@ -935,6 +962,8 @@ class AgentEngine:
     def _is_offer(self, turn: _Turn, content: str) -> bool:
         """The model asked the user whether to do something while action tools were shown."""
         text = " ".join(strip_emoji(content).split())
+        if self.guards.cant_retry and (bool(turn.tool_names) or turn.explain) and _HOST_ASK.search(text):
+            return True  # "Putting the PC to sleep? Say yes or no.": the host's phrasing, so always an offer.
         return (self.guards.cant_retry and (bool(turn.tool_names) or turn.explain) and text.endswith("?")
                 and bool(_ASKS_PERMISSION.search(text)))
 
@@ -1059,6 +1088,8 @@ class AgentEngine:
         until the claim check has run, because spoken words cannot be taken back."""
         if "<tool_call" in sentence or '"name"' in sentence:
             return True  # A written-out tool call after some text is never spoken either.
+        if _HOST_ASK.search(sentence):
+            return True  # Only a real pending action says "Say yes or no."; checked before it is spoken.
         return self.guards.claim_retry and (unsupported_claim(sentence, set()) or bool(_PROMISE.search(sentence)))
 
     def _model_round(self, messages, definitions, stream_to):

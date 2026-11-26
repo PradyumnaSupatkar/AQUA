@@ -67,10 +67,13 @@ class FakeBrowserBridge:
     def _newest(self) -> FakeTab | None:
         return max(self.tabs, key=lambda tab: tab.last_accessed, default=None)
 
-    def youtube(self, action: str, args: dict) -> dict:
+    def youtube(self, action: str, args: dict, *, prefer: str | None = None) -> dict:
         if not self.is_connected:
             raise BridgeUnavailable("not connected")
         tab = self._newest()
+        if action == "search" and prefer and prefer in self.connected and (tab is None or tab.browser != prefer):
+            # Like the extension in the preferred browser: the search opens there.
+            tab = self.add_tab(prefer, max((t.last_accessed for t in self.tabs), default=0) + 1)
         browser = tab.browser if tab is not None else "chrome"
         self.calls.append((browser, action, dict(args)))
         result = self._run(tab, action, args)

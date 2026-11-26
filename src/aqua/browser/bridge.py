@@ -179,13 +179,21 @@ class BrowserBridge:
         for connection in connections:
             connection.close()
 
-    def youtube(self, action: str, args: dict) -> dict:
+    def youtube(self, action: str, args: dict, *, prefer: str | None = None) -> dict:
         """Run ``action`` in the most recently active YouTube tab of any connected browser.
+        A search runs in ``prefer`` (e.g. "brave", from the user's words or memory) when it is connected.
         Returns the extension's result plus ``browser``; raises BridgeUnavailable or BridgeError."""
         with self._lock:
             connections = [c for c in self._connections.values() if not c.closed]
         if not connections:
             raise BridgeUnavailable(self.error or "not connected")
+        preferred = [c for c in connections if prefer and c.browser == prefer]
+        if action == "search" and preferred:
+            reply = preferred[0].request("youtube", COMMAND_TIMEOUT, action=action, args=args)
+            if not reply.get("ok"):
+                raise BridgeError(str(reply.get("error") or "failed")[:200])
+            result = reply.get("result")
+            return {**(result if isinstance(result, dict) else {}), "browser": preferred[0].browser}
         best, best_used = None, None
         for connection in connections:
             try:

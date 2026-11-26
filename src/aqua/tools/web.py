@@ -128,16 +128,45 @@ def _launched_browser(context: ToolContext) -> str | None:
     return None
 
 
-def browser_choice(args: dict, context: ToolContext) -> str | None:
-    """The browser to use: the model's argument, else the one the request names, else one
-    launched earlier in this request, else the preferred-browser setting (None: Windows default)."""
-    return (args.get("browser") or named_browser(context.request) or _launched_browser(context)
-            or context.preferred_browser or None)
+def remembered_browser(context: ToolContext, site: str | None) -> str | None:
+    """The browser the user's memory routes this site to ("youtube.com" -> Brave), else its default."""
+    store = getattr(context, "memory", None)
+    if store is None:
+        return None
+    try:
+        return store.browser_for(site)
+    except Exception:  # noqa: BLE001 - memory trouble never stops a web action
+        return None
+
+
+def browser_choice(args: dict, context: ToolContext, site: str | None = None) -> str | None:
+    """The browser to use, first match wins: the one the user's words name (this request, or the
+    one it answers); the remembered browser for ``site`` (aqua.memory: e.g. youtube.com -> Brave,
+    default -> Chrome), unless a browser was launched earlier in this request; the model's argument;
+    the launched browser; then the preferred-browser setting (AQUA_BROWSER / preferred-browser.txt,
+    below memory). None: the Windows default."""
+    said = named_browser(context.request) or next(
+        (name for name in map(named_browser, reversed(getattr(context, "earlier", ()))) if name), None)
+    if said:
+        return said
+    launched, remembered = _launched_browser(context), remembered_browser(context, site)
+    if remembered:
+        return launched or remembered
+    return args.get("browser") or launched or context.preferred_browser or None
+
+
+def _site_host(args: dict, context: ToolContext) -> str | None:
+    """The site a web call goes to, for memory routing: the URL's host, or the search site."""
+    if args.get("url"):
+        url = normalize_url(args["url"])
+        return (urlsplit(url).hostname or None) if url else None
+    site = args.get("site") or named_site(context.request)
+    return f"{site}.com" if site else None
 
 
 def _browser(args: dict, context: ToolContext):
     """(installed browser entry or None, note for the reply)."""
-    name = browser_choice(args, context)
+    name = browser_choice(args, context, _site_host(args, context))
     if not name:
         return None, ""
     match = context.apps.find(name)
@@ -207,6 +236,7 @@ def _search(args: dict, context: ToolContext, steps: int = 1) -> ToolOutcome:
     query = " ".join(args["query"].split())
     # The model often drops the site ("open youtube and search X"): the request says it.
     site = args.get("site") or named_site(context.request)
+    args = {**args, "site": site} if site else args
     key = (site, query.casefold())
     if key in context.searches:
         return ToolOutcome("duplicate", "Already searched for that; not repeated.")

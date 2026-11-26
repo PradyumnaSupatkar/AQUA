@@ -257,6 +257,11 @@ def _run(args: dict, context: ToolContext) -> ToolOutcome:
             result = bridge.youtube("seek", payload)
             if not result.get("error"):
                 result = {**bridge.youtube("play", {}), "position": 0}
+        elif action == "search":
+            # A new search opens in the browser the user's words or memory route YouTube to.
+            from .web import browser_choice
+            prefer = browser_choice({}, context, "youtube.com")
+            result = bridge.youtube(action, payload, prefer=prefer.casefold() if prefer else None)
         else:
             result = bridge.youtube(action, payload)
     except BridgeUnavailable:
